@@ -36,8 +36,11 @@ const DEFAULT_SETTINGS = {
   purple: '#c9b7e4',
   blue: '#a9d3e5',
   logo_url: '',
+  navbar_logo_height: '34',
   splash_tagline: 'Öğrenmenin yeni adresi',
   splash_enabled: 'true',
+  splash_show_logo: 'true',
+  splash_image_url: '',
 
   landing_hero_title: 'Öğrenmenin yeni adresi',
   landing_hero_subtitle:
