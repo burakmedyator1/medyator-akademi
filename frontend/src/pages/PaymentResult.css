@@ -1,0 +1,25 @@
+.payment-result {
+  padding: 80px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.payment-result__card {
+  padding: 40px;
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.payment-result__card h1 {
+  margin: 8px 0 0;
+  font-size: 1.3rem;
+}
+
+.payment-result__card p {
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+}
