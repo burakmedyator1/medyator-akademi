@@ -39,6 +39,14 @@
   margin-bottom: 6px;
 }
 
+.instructor-card__photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 6px;
+}
+
 .instructor-card h3 {
   margin: 0;
 }
