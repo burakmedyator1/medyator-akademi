@@ -19,6 +19,7 @@ export default function AdminCourseEdit() {
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   function loadCourse() {
     api.admin.getCourses().then((courses) => {
@@ -30,11 +31,27 @@ export default function AdminCourseEdit() {
           deliveryType: found.deliveryType,
           description: found.description,
           coverColor: found.coverColor,
+          coverImageUrl: found.coverImageUrl || '',
           price: found.price,
+          displayOrder: found.displayOrder || 0,
           instructorId: found.instructorId,
         });
       }
     });
+  }
+
+  async function handleCoverUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { url } = await api.admin.uploadCourseCover(file);
+      setCourseForm((f) => ({ ...f, coverImageUrl: url }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   function loadLessons() {
@@ -181,6 +198,26 @@ export default function AdminCourseEdit() {
             value={courseForm.price}
             onChange={(e) => setCourseForm({ ...courseForm, price: Number(e.target.value) })}
           />
+        </div>
+        <div className="admin-field">
+          <label>Sıra (kurs kataloğunda küçükten büyüğe sıralanır)</label>
+          <input
+            type="number"
+            value={courseForm.displayOrder}
+            onChange={(e) => setCourseForm({ ...courseForm, displayOrder: Number(e.target.value) })}
+          />
+        </div>
+        <div className="admin-field">
+          <label>Kapak Görseli</label>
+          {courseForm.coverImageUrl && (
+            <img
+              src={courseForm.coverImageUrl}
+              alt=""
+              style={{ width: '100%', maxWidth: 240, borderRadius: 8, marginBottom: 8 }}
+            />
+          )}
+          <input type="file" accept="image/*" onChange={handleCoverUpload} />
+          {uploading && <span style={{ fontSize: '0.8rem' }}>Yükleniyor...</span>}
         </div>
         <div className="admin-field">
           <label>Açıklama</label>
