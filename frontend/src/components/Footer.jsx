@@ -26,7 +26,7 @@ export default function Footer() {
 
         <div className="footer__links">
           <strong>Keşfet</strong>
-          <Link to="/kurslar">Kurslar</Link>
+          <Link to="/kurslar">Online Eğitimler</Link>
           <Link to="/egitmenler">Eğitmenler</Link>
           <Link to="/blog">Blog</Link>
         </div>
