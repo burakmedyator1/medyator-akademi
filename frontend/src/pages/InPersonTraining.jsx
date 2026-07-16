@@ -60,7 +60,7 @@ export default function InPersonTraining() {
           <h2>Yaklaşan Programlar</h2>
           <div className="delivery-page__course-grid">
             {courses.map((course) => (
-              <CourseCard key={course.id} course={course} mode="catalog" />
+              <CourseCard key={course.id} course={course} mode="catalog" tagOverride="Yüz Yüze" />
             ))}
           </div>
         </section>
