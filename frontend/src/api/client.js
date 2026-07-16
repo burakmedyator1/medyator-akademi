@@ -151,8 +151,8 @@ export const api = {
     getStudent: (id) => request(`/admin/students/${id}`, { auth: true }),
     enrollStudent: (id, payload) =>
       request(`/admin/students/${id}/enroll`, { method: 'POST', body: payload, auth: true }),
-    resetStudentPassword: (id, newPassword) =>
-      request(`/admin/students/${id}/reset-password`, { method: 'POST', body: { newPassword }, auth: true }),
+    resetStudentPassword: (id) =>
+      request(`/admin/students/${id}/reset-password`, { method: 'POST', auth: true }),
     updateEnrollment: (id, payload) =>
       request(`/admin/enrollments/${id}`, { method: 'PATCH', body: payload, auth: true }),
 
