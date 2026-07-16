@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronUp,
@@ -7,12 +7,14 @@ import {
   PlayCircle,
   CheckCircle2,
   Circle,
+  Lock,
   Check,
   BookOpen,
   Clock,
   Share2,
 } from 'lucide-react';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import VideoPlayer from '../components/VideoPlayer';
 import LockedOverlay from '../components/LockedOverlay';
 import './Lesson.css';
@@ -32,12 +34,15 @@ const TABS = [
 
 export default function Lesson() {
   const { courseId, lessonId } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [course, setCourse] = useState(null);
   const [video, setVideo] = useState(null);
   const [locked, setLocked] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [enrolled, setEnrolled] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [curriculumOpen, setCurriculumOpen] = useState(true);
@@ -58,11 +63,22 @@ export default function Lesson() {
   }, [courseId, lessonId]);
 
   const loadProgress = useCallback(() => {
+    if (!isAuthenticated) {
+      setEnrolled(false);
+      setProgress(0);
+      return;
+    }
     api
       .getEnrollment(courseId)
-      .then((data) => setProgress(data.progress))
-      .catch(() => setProgress(0));
-  }, [courseId]);
+      .then((data) => {
+        setEnrolled(true);
+        setProgress(data.progress);
+      })
+      .catch(() => {
+        setEnrolled(false);
+        setProgress(0);
+      });
+  }, [courseId, isAuthenticated]);
 
   useEffect(() => {
     api.getCourse(courseId).then(setCourse);
@@ -75,6 +91,10 @@ export default function Lesson() {
   }, [loadVideo, loadProgress]);
 
   async function handleEnroll() {
+    if (!isAuthenticated) {
+      navigate('/giris', { state: { from: { pathname: `/kurslar/${courseId}` } } });
+      return;
+    }
     setEnrolling(true);
     try {
       await api.enroll(courseId);
@@ -114,7 +134,8 @@ export default function Lesson() {
   return (
     <div className="container lesson-page">
       <p className="lesson-page__breadcrumb">
-        <Link to="/panel">Kurslarım</Link> / {currentLesson?.title}
+        <Link to={isAuthenticated ? '/panel' : '/kurslar'}>{isAuthenticated ? 'Kurslarım' : 'Kurslar'}</Link> /{' '}
+        {currentLesson?.title}
       </p>
 
       <div className="lesson-page__header">
@@ -159,7 +180,7 @@ export default function Lesson() {
                 {course.instructorName} · {currentLesson?.durationMinutes} dk
               </p>
             </div>
-            {!locked && !loading && (
+            {!locked && !loading && enrolled && (
               <button
                 className={`btn ${isCompleted ? 'btn-outline' : 'btn-primary'}`}
                 onClick={handleComplete}
@@ -219,8 +240,9 @@ export default function Lesson() {
           {curriculumOpen && (
             <ul>
               {course.lessons.map((lesson) => {
-                const done = progress >= lesson.order_;
+                const done = enrolled && progress >= lesson.order_;
                 const active = String(lesson.id) === lessonId;
+                const accessible = enrolled || lesson.isPreview || active;
                 return (
                   <li key={lesson.id} className={active ? 'active' : ''}>
                     <Link to={`/kurslar/${course.id}/ders/${lesson.id}`}>
@@ -228,10 +250,15 @@ export default function Lesson() {
                         <PlayCircle size={16} />
                       ) : done ? (
                         <CheckCircle2 size={16} className="lesson-page__done-icon" />
-                      ) : (
+                      ) : accessible ? (
                         <Circle size={16} />
+                      ) : (
+                        <Lock size={16} />
                       )}
                       <span>{lesson.title}</span>
+                      {lesson.isPreview && !enrolled && !active && (
+                        <span className="lesson-page__preview-badge">Ücretsiz</span>
+                      )}
                       <span className="lesson-page__duration">{lesson.durationMinutes} dk</span>
                     </Link>
                   </li>
