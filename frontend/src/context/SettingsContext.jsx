@@ -16,6 +16,7 @@ function applySettings(settings) {
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState({});
+  const [loaded, setLoaded] = useState(false);
 
   const reload = useCallback(async () => {
     const data = await api.getSettings();
@@ -24,11 +25,13 @@ export function SettingsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    reload().catch(() => {});
+    reload()
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, [reload]);
 
   return (
-    <SettingsContext.Provider value={{ settings, reload }}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider value={{ settings, loaded, reload }}>{children}</SettingsContext.Provider>
   );
 }
 
