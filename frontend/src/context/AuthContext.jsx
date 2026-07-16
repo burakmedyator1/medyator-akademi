@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
     async (email, password) => {
       const data = await api.login({ email, password });
       persist(data.token, data.user);
+      return data.user;
     },
     [persist]
   );
