@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
 import CourseCard from '../components/CourseCard';
 import HeroPreview from '../components/HeroPreview';
+import VideoPlayer from '../components/VideoPlayer';
 import './Landing.css';
 
 export default function Landing() {
@@ -68,7 +69,17 @@ export default function Landing() {
           </div>
         </div>
         <div className="landing__hero-visual">
-          <HeroPreview />
+          {settings.landing_hero_video_id ? (
+            <div className="landing__hero-video">
+              <VideoPlayer
+                provider={settings.landing_hero_video_provider || 'youtube'}
+                videoId={settings.landing_hero_video_id}
+                title="Medyator Akademi"
+              />
+            </div>
+          ) : (
+            <HeroPreview />
+          )}
         </div>
       </section>
 
@@ -108,25 +119,21 @@ export default function Landing() {
         <div className="landing__instructor-grid">
           {instructors.map((instructor) => (
             <Link to={`/egitmenler/${instructor.id}`} key={instructor.id} className="landing__instructor-card">
-              <span className="landing__instructor-avatar" style={{ background: instructor.avatar_color }}>
-                {instructor.name
-                  .split(' ')
-                  .map((p) => p[0])
-                  .join('')}
-              </span>
+              {instructor.photo_url ? (
+                <img className="landing__instructor-photo" src={instructor.photo_url} alt={instructor.name} />
+              ) : (
+                <span className="landing__instructor-avatar" style={{ background: instructor.avatar_color }}>
+                  {instructor.name
+                    .split(' ')
+                    .map((p) => p[0])
+                    .join('')}
+                </span>
+              )}
               <strong>{instructor.name}</strong>
               <span>{instructor.title}</span>
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="container landing__cta">
-        <h2>{settings.landing_cta_title || 'Öğrenmeye bugün başla'}</h2>
-        <p>{settings.landing_cta_subtitle || 'Ücretsiz üye ol, kurs kataloğuna göz at ve sana uygun eğitimi seç.'}</p>
-        <Link to="/kayit" className="btn btn-primary">
-          Ücretsiz Kayıt Ol
-        </Link>
       </section>
     </div>
   );
