@@ -75,6 +75,20 @@
   color: var(--orange);
 }
 
+.course-detail__preview-icon {
+  color: var(--orange);
+}
+
+.course-detail__preview-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--white);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .course-detail__duration {
   font-size: 0.85rem;
 }
