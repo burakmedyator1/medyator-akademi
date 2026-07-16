@@ -35,7 +35,7 @@ export default function Navbar() {
                 Panelim
               </Link>
               <button className="btn btn-dark" onClick={logout}>
-                Çıkış ({user.name.split(' ')[0]})
+                Çıkış ({user.name})
               </button>
             </>
           ) : (
