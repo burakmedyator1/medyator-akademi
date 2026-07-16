@@ -22,6 +22,14 @@
   flex-shrink: 0;
 }
 
+.instructor-detail__photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .instructor-detail__header h1 {
   margin: 0 0 4px;
 }
