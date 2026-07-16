@@ -6,9 +6,9 @@ import { coverColorValue } from './colors';
 import './CourseCard.css';
 
 export default function CourseCard({ course, mode = 'catalog', tagOverride }) {
-  const continueHref = course.nextLesson
-    ? `/kurslar/${course.id}/ders/${course.nextLesson.id}`
-    : `/kurslar/${course.id}`;
+  const resumeLesson = course.resumeLesson || course.nextLesson;
+  const isFinished = course.lessonCount > 0 && course.progress >= course.lessonCount;
+  const continueHref = resumeLesson ? `/kurslar/${course.id}/ders/${resumeLesson.id}` : `/kurslar/${course.id}`;
 
   return (
     <div
@@ -37,26 +37,25 @@ export default function CourseCard({ course, mode = 'catalog', tagOverride }) {
           <div className="course-card__footer">
             <AvatarStack seed={course.id} total={40 + course.id * 12} />
             <Link to={continueHref} className="btn btn-primary course-card__cta">
-              Devam Et
+              {isFinished ? 'Tekrar İzle' : 'Devam Et'}
             </Link>
           </div>
         </>
       ) : (
         <>
           <p className="course-card__meta">
-            {[
-              course.instructorName,
-              course.lessonCount != null ? `${course.lessonCount} ders` : null,
-              course.price != null ? `${course.price} TL` : null,
-            ]
+            {[course.instructorName, course.lessonCount != null ? `${course.lessonCount} ders` : null]
               .filter(Boolean)
               .join(' · ')}
           </p>
           <div className="course-card__footer">
             <AvatarStack seed={course.id} total={40 + course.id * 12} />
-            <Link to={`/kurslar/${course.id}`} className="btn btn-dark course-card__cta">
-              Kursa Git
-            </Link>
+            <div className="course-card__actions">
+              {course.price > 0 && <span className="course-card__price">{course.price} TL</span>}
+              <Link to={`/kurslar/${course.id}`} className="btn btn-dark course-card__cta">
+                Kursa Git
+              </Link>
+            </div>
           </div>
         </>
       )}
