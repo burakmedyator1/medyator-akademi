@@ -26,6 +26,8 @@ import InternApplication from './pages/InternApplication';
 import InstructorApplication from './pages/InstructorApplication';
 import InstructorDashboard from './pages/InstructorDashboard';
 import MyQuestions from './pages/MyQuestions';
+import Checkout from './pages/Checkout';
+import PaymentResult from './pages/PaymentResult';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses';
@@ -118,6 +120,15 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/odeme/:courseId"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/odeme/sonuc" element={<PaymentResult />} />
 
             <Route
               path="/admin"
