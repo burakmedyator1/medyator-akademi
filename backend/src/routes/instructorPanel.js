@@ -2,6 +2,8 @@ import { Router } from 'express';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireInstructor } from '../middleware/instructor.js';
+import { imageUpload } from '../imageUpload.js';
+import { slugify } from '../slugify.js';
 
 const router = Router();
 router.use(requireAuth, requireInstructor);
@@ -35,6 +37,42 @@ router.patch('/questions/:id', (req, res) => {
     .run(answerText.trim(), req.params.id, req.user.instructorId);
   if (result.changes === 0) return res.status(404).json({ error: 'Soru bulunamadı' });
   res.json({ updated: true });
+});
+
+// ---------- Blog (instructor submissions require admin approval) ----------
+
+router.get('/blog', (req, res) => {
+  const posts = db
+    .prepare(
+      'SELECT id, title, slug, excerpt, cover_image_url AS coverImageUrl, status, created_at AS createdAt FROM blog_posts WHERE instructor_id = ? ORDER BY created_at DESC'
+    )
+    .all(req.user.instructorId);
+  res.json(posts);
+});
+
+router.post('/blog/cover', (req, res) => {
+  imageUpload.single('cover')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
+});
+
+router.post('/blog', (req, res) => {
+  const { title, excerpt, content, coverImageUrl } = req.body;
+  if (!title || !title.trim() || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+  }
+  let slug = slugify(title);
+  const existing = db.prepare('SELECT id FROM blog_posts WHERE slug = ?').get(slug);
+  if (existing) slug = `${slug}-${Date.now()}`;
+
+  const result = db
+    .prepare(
+      "INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, status, instructor_id) VALUES (?, ?, ?, ?, ?, 'pending', ?)"
+    )
+    .run(title.trim(), slug, excerpt || '', content.trim(), coverImageUrl || null, req.user.instructorId);
+  res.status(201).json({ id: result.lastInsertRowid, slug });
 });
 
 export default router;
