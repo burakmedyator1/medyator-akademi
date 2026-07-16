@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, KeyRound } from 'lucide-react';
 import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_FORM = { name: '', title: '', bio: '', avatarColor: '#f0653c' };
+const EMPTY_FORM = { name: '', title: '', bio: '', avatarColor: '#f0653c', photoUrl: '', email: '' };
 
 export default function AdminInstructors() {
   const [instructors, setInstructors] = useState([]);
@@ -12,6 +12,8 @@ export default function AdminInstructors() {
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState(null);
 
   function load() {
     api.admin.getInstructors().then(setInstructors);
@@ -21,18 +23,36 @@ export default function AdminInstructors() {
 
   function startEdit(instructor) {
     setEditingId(instructor.id);
+    setGeneratedPassword(null);
     setForm({
       name: instructor.name,
       title: instructor.title,
       bio: instructor.bio,
       avatarColor: instructor.avatar_color,
+      photoUrl: instructor.photo_url || '',
+      email: instructor.email || '',
     });
+  }
+
+  async function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { url } = await api.admin.uploadInstructorPhoto(file);
+      setForm((f) => ({ ...f, photoUrl: url }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   function resetForm() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setError('');
+    setGeneratedPassword(null);
   }
 
   async function handleSubmit(e) {
@@ -41,11 +61,14 @@ export default function AdminInstructors() {
     setError('');
     try {
       if (editingId) {
-        await api.admin.updateInstructor(editingId, form);
+        const { password } = await api.admin.updateInstructor(editingId, form);
+        resetForm();
+        if (password) setGeneratedPassword(password);
       } else {
-        await api.admin.createInstructor(form);
+        const { password } = await api.admin.createInstructor(form);
+        setGeneratedPassword(password);
+        setForm(EMPTY_FORM);
       }
-      resetForm();
       load();
     } catch (err) {
       setError(err.message);
@@ -59,6 +82,15 @@ export default function AdminInstructors() {
       await api.admin.deleteInstructor(id);
       load();
       if (editingId === id) resetForm();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleResetPassword(id) {
+    try {
+      const { password } = await api.admin.resetInstructorPassword(id);
+      setGeneratedPassword(password);
     } catch (err) {
       setError(err.message);
     }
@@ -80,6 +112,7 @@ export default function AdminInstructors() {
               <tr>
                 <th>Ad</th>
                 <th>Unvan</th>
+                <th>E-posta</th>
                 <th></th>
               </tr>
             </thead>
@@ -88,8 +121,18 @@ export default function AdminInstructors() {
                 <tr key={instructor.id} className="clickable" onClick={() => startEdit(instructor)}>
                   <td>{instructor.name}</td>
                   <td>{instructor.title}</td>
+                  <td>{instructor.email || '—'}</td>
                   <td>
                     <div className="admin-table__actions">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResetPassword(instructor.id);
+                        }}
+                        title="Şifreyi Sıfırla"
+                      >
+                        <KeyRound size={16} />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -104,7 +147,7 @@ export default function AdminInstructors() {
               ))}
               {instructors.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="admin-empty">
+                  <td colSpan={4} className="admin-empty">
                     Henüz eğitmen yok.
                   </td>
                 </tr>
@@ -116,10 +159,26 @@ export default function AdminInstructors() {
         <form className="admin-form" onSubmit={handleSubmit}>
           <h2>{editingId ? 'Eğitmeni Düzenle' : 'Yeni Eğitmen'}</h2>
           {error && <div className="auth-error">{error}</div>}
+          {generatedPassword && (
+            <div className="card" style={{ padding: 12, fontSize: '0.85rem', background: '#fef6e4' }}>
+              Eğitmenin şifresi: <strong>{generatedPassword}</strong>
+              <br />
+              Bu şifre yalnızca bir kez gösterilir, eğitmenle paylaşmayı unutma.
+            </div>
+          )}
 
           <div className="admin-field">
             <label>Ad Soyad</label>
             <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          </div>
+          <div className="admin-field">
+            <label>E-posta (giriş için kullanılır)</label>
+            <input
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
           </div>
           <div className="admin-field">
             <label>Unvan</label>
@@ -141,6 +200,18 @@ export default function AdminInstructors() {
               value={form.avatarColor}
               onChange={(e) => setForm({ ...form, avatarColor: e.target.value })}
             />
+          </div>
+          <div className="admin-field">
+            <label>Fotoğraf</label>
+            {form.photoUrl && (
+              <img
+                src={form.photoUrl}
+                alt=""
+                style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', marginBottom: 8 }}
+              />
+            )}
+            <input type="file" accept="image/*" onChange={handlePhotoUpload} />
+            {uploading && <span style={{ fontSize: '0.8rem' }}>Yükleniyor...</span>}
           </div>
 
           <div className="admin-form__actions">
