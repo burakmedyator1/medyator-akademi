@@ -3,7 +3,7 @@ import { api } from '../api/client';
 
 const SettingsContext = createContext(null);
 
-const COLOR_KEYS = ['bg-cream', 'navy', 'orange', 'yellow', 'purple', 'blue'];
+const COLOR_KEYS = ['bg-cream', 'navy', 'orange', 'yellow', 'purple', 'blue', 'price-tag'];
 
 function applySettings(settings) {
   COLOR_KEYS.forEach((key) => {
