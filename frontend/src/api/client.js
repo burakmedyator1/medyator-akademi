@@ -211,5 +211,18 @@ export const api = {
       if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
       return data;
     },
+
+    uploadSplashImage: async (file) => {
+      const formData = new FormData();
+      formData.append('splashImage', file);
+      const res = await fetch('/api/admin/settings/splash-image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
   },
 };
