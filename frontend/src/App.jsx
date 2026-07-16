@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import InstructorProtectedRoute from './components/InstructorProtectedRoute';
@@ -68,9 +69,10 @@ function Layout({ children }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <Layout>
+    <ThemeProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <Layout>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/giris" element={<Login />} />
@@ -250,8 +252,9 @@ export default function App() {
               }
             />
           </Routes>
-        </Layout>
-      </SettingsProvider>
-    </AuthProvider>
+          </Layout>
+        </SettingsProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

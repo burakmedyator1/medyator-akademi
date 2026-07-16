@@ -82,7 +82,7 @@
 }
 
 .landing__delivery-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   padding: 28px;
   box-shadow: var(--shadow-card);
@@ -110,7 +110,7 @@
 }
 
 .landing__instructor-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-card);
@@ -156,7 +156,7 @@
 }
 
 .landing__testimonial-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   padding: 28px;
   box-shadow: var(--shadow-card);

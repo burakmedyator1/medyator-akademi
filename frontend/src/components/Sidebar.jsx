@@ -1,6 +1,18 @@
 import { Link } from 'react-router-dom';
-import { LayoutGrid, FolderOpen, PenLine, BookOpen, Headphones, MessageCircleQuestion, Settings, LogOut } from 'lucide-react';
+import {
+  LayoutGrid,
+  FolderOpen,
+  PenLine,
+  BookOpen,
+  Headphones,
+  MessageCircleQuestion,
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import './Sidebar.css';
 
 const ITEMS = [
@@ -14,6 +26,7 @@ const ITEMS = [
 
 export default function Sidebar() {
   const { logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="sidebar">
@@ -26,6 +39,10 @@ export default function Sidebar() {
         ))}
       </div>
       <div className="sidebar__bottom">
+        <button className="sidebar__item sidebar__item--button" onClick={toggleTheme}>
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          <span>{theme === 'dark' ? 'Aydınlık Mod' : 'Karanlık Mod'}</span>
+        </button>
         <Link to="/hesabim" className="sidebar__item">
           <Settings size={20} />
           <span>Ayarlar</span>

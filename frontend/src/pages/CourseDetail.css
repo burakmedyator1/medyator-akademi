@@ -47,7 +47,7 @@
 }
 
 .course-detail__lessons li {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-card);
   color: var(--text-secondary);

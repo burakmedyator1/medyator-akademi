@@ -45,6 +45,15 @@
   color: var(--white);
 }
 
+.admin-sidebar__theme-toggle {
+  width: 100%;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+
 .admin-sidebar__back {
   display: flex;
   align-items: center;

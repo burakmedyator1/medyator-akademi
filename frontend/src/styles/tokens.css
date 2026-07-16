@@ -9,6 +9,7 @@
   --blue: #a9d3e5;
   --price-tag: #f0653c;
   --white: #ffffff;
+  --surface: var(--white);
   --text-primary: #1b1e29;
   --text-secondary: #6b7280;
   --border: #e5e1d8;
@@ -22,6 +23,23 @@
   --shadow-card: 0 12px 24px -12px rgba(27, 30, 41, 0.12);
 }
 
+/* Structural surfaces flip for dark mode; brand/accent colors (orange,
+   yellow, purple, blue, navy-as-chrome) stay as configured since they read
+   fine on a dark background too. !important is required here because the
+   admin's customized bg-cream/navbar-bg/footer-bg values are applied as
+   inline styles on <html> by SettingsContext, which otherwise always beat
+   a plain stylesheet rule regardless of selector specificity. */
+:root[data-theme='dark'] {
+  --bg-cream: #14161b !important;
+  --navbar-bg: #14161b !important;
+  --footer-bg: #0d0f13 !important;
+  --surface: #1c1f26 !important;
+  --text-primary: #edece7 !important;
+  --text-secondary: #9aa0ae !important;
+  --border: #2c303a !important;
+  --shadow-card: 0 12px 24px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -33,6 +51,7 @@ body {
   background: var(--bg-cream);
   color: var(--text-primary);
   font-family: var(--font-body);
+  overflow-x: hidden;
 }
 
 #root {
@@ -96,6 +115,15 @@ select {
   border-color: var(--navy);
 }
 
+:root[data-theme='dark'] .btn-outline {
+  color: var(--text-primary);
+}
+
+:root[data-theme='dark'] .btn-outline:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -104,7 +132,7 @@ select {
   font-size: 0.85rem;
   font-weight: 600;
   border: 1.5px solid var(--border);
-  background: var(--white);
+  background: var(--surface);
   color: var(--text-primary);
   white-space: nowrap;
 }
@@ -116,7 +144,7 @@ select {
 }
 
 .card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }

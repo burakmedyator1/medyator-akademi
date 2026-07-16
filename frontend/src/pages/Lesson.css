@@ -33,6 +33,10 @@
   color: var(--navy);
 }
 
+:root[data-theme='dark'] .lesson-page__back:hover {
+  color: var(--orange);
+}
+
 .lesson-page__header h1 {
   margin: 0;
   font-size: 1.6rem;
@@ -76,7 +80,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--white);
+  background: var(--surface);
 }
 
 .lesson-page__head-row {
@@ -124,7 +128,7 @@
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
-  background: var(--white);
+  background: var(--surface);
   color: var(--text-primary);
   border: 1.5px solid var(--border);
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/ThemeContext';
 import { api } from '../api/client';
 import defaultLogo from '../assets/logo.png';
 import './Navbar.css';
@@ -10,6 +11,7 @@ import './Navbar.css';
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const { settings, loaded } = useSettings();
+  const { theme, toggleTheme } = useTheme();
   const [onlineCourses, setOnlineCourses] = useState([]);
 
   useEffect(() => {
@@ -47,6 +49,14 @@ export default function Navbar() {
         </nav>
 
         <div className="navbar__actions">
+          <button
+            className="navbar__theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç'}
+            title={theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           {isAuthenticated ? (
             <>
               {user.role === 'admin' && (

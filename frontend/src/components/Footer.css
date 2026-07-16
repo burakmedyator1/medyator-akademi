@@ -15,7 +15,7 @@
   height: 30px;
   width: auto;
   margin-bottom: 12px;
-  background: var(--white);
+  background: var(--surface);
   border-radius: 6px;
   padding: 4px 8px;
 }

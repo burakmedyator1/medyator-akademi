@@ -14,7 +14,10 @@ import {
   FileUser,
   Quote,
   ShoppingCart,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 import './AdminSidebar.css';
 
 const ITEMS = [
@@ -34,6 +37,8 @@ const ITEMS = [
 ];
 
 export default function AdminSidebar() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar__title">Admin Paneli</div>
@@ -45,6 +50,10 @@ export default function AdminSidebar() {
           </NavLink>
         ))}
       </nav>
+      <button type="button" className="admin-sidebar__item admin-sidebar__theme-toggle" onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        <span>{theme === 'dark' ? 'Aydınlık Mod' : 'Karanlık Mod'}</span>
+      </button>
       <NavLink to="/" className="admin-sidebar__back">
         <ArrowLeft size={18} />
         <span>Siteye Dön</span>
