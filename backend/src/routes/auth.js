@@ -12,7 +12,7 @@ const SOCIAL_FIELDS = ['instagram', 'tiktok', 'youtube', 'linkedin', 'twitter'];
 
 function issueToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name, role: user.role },
+    { id: user.id, email: user.email, name: user.name, role: user.role, instructorId: user.instructorId },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -67,12 +67,24 @@ router.post('/login', (req, res) => {
   }
 
   const row = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!row || !bcrypt.compareSync(password, row.password_hash)) {
-    return res.status(401).json({ error: 'E-posta veya şifre hatalı' });
+  if (row && bcrypt.compareSync(password, row.password_hash)) {
+    const user = { id: row.id, email: row.email, name: row.name, role: row.role };
+    return res.json({ token: issueToken(user), user });
   }
 
-  const user = { id: row.id, email: row.email, name: row.name, role: row.role };
-  res.json({ token: issueToken(user), user });
+  const instructor = db.prepare('SELECT * FROM instructors WHERE email = ?').get(email);
+  if (instructor?.password_hash && bcrypt.compareSync(password, instructor.password_hash)) {
+    const user = {
+      id: instructor.id,
+      email: instructor.email,
+      name: instructor.name,
+      role: 'instructor',
+      instructorId: instructor.id,
+    };
+    return res.json({ token: issueToken(user), user });
+  }
+
+  res.status(401).json({ error: 'E-posta veya şifre hatalı' });
 });
 
 export default router;
