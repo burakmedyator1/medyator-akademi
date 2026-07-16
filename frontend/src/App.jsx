@@ -36,6 +36,7 @@ import AdminCourses from './pages/admin/AdminCourses';
 import AdminCourseEdit from './pages/admin/AdminCourseEdit';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminInstructors from './pages/admin/AdminInstructors';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminStudents from './pages/admin/AdminStudents';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
@@ -164,6 +165,14 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminInstructors />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/yorumlar"
+              element={
+                <AdminProtectedRoute>
+                  <AdminTestimonials />
                 </AdminProtectedRoute>
               }
             />

@@ -149,10 +149,76 @@
   max-width: 520px;
 }
 
+.landing__testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.landing__testimonial-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.landing__testimonial-stars {
+  display: flex;
+  gap: 2px;
+  color: var(--yellow);
+}
+
+.landing__testimonial-quote {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.landing__testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing__testimonial-author div {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing__testimonial-author span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.landing__testimonial-photo,
+.landing__testimonial-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.landing__testimonial-photo {
+  object-fit: cover;
+}
+
+.landing__testimonial-avatar {
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .landing__delivery-grid,
   .landing__course-grid,
-  .landing__instructor-grid {
+  .landing__instructor-grid,
+  .landing__testimonial-grid {
     grid-template-columns: 1fr;
   }
 }

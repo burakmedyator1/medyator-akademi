@@ -18,6 +18,7 @@ db.exec(`
   DELETE FROM lessons;
   DELETE FROM courses;
   DELETE FROM instructors;
+  DELETE FROM testimonials;
   DELETE FROM contact_requests;
   DELETE FROM users;
   DELETE FROM site_settings;
@@ -111,6 +112,36 @@ const insertInstructor = db.prepare(
   'INSERT INTO instructors (name, title, bio, avatar_color) VALUES (@name, @title, @bio, @avatar_color)'
 );
 const instructorIds = instructors.map((i) => insertInstructor.run(i).lastInsertRowid);
+
+const testimonials = [
+  {
+    student_name: 'Deniz Yıldız',
+    student_title: 'Sosyal Medya Kursu Mezunu',
+    quote: 'Kursu bitirdikten sonra edindiğim bilgilerle ilk müşterimi kazandım. Anlatım çok akıcı ve uygulamalıydı.',
+    rating: 5,
+    avatar_color: '#F0653C',
+  },
+  {
+    student_name: 'Cem Aydın',
+    student_title: 'Yazılım Geliştirme Kursu Mezunu',
+    quote: 'Sıfırdan başlayıp kendi projemi geliştirebilecek seviyeye geldim. Eğitmenin geri bildirimleri çok değerliydi.',
+    rating: 5,
+    avatar_color: '#6C63B5',
+  },
+  {
+    student_name: 'Selin Koç',
+    student_title: 'Kurumsal Eğitim Katılımcısı',
+    quote: 'Ekibimizle katıldığımız atölye sonrası iletişimimiz ve iş birliğimiz gözle görülür şekilde iyileşti.',
+    rating: 5,
+    avatar_color: '#3B9AB4',
+  },
+];
+
+const insertTestimonial = db.prepare(
+  `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, display_order)
+   VALUES (@student_name, @student_title, @quote, @rating, @avatar_color, @display_order)`
+);
+testimonials.forEach((t, i) => insertTestimonial.run({ ...t, display_order: i }));
 
 const courses = [
   {

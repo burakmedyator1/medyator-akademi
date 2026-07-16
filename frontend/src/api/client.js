@@ -51,6 +51,8 @@ export const api = {
   getInstructors: () => request('/instructors'),
   getInstructor: (id) => request(`/instructors/${id}`),
 
+  getTestimonials: () => request('/testimonials'),
+
   getDashboard: () => request('/me/dashboard', { auth: true }),
   changePassword: (payload) => request('/me/password', { method: 'PUT', body: payload, auth: true }),
 
@@ -125,6 +127,25 @@ export const api = {
     updateCategory: (id, payload) =>
       request(`/admin/categories/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteCategory: (id) => request(`/admin/categories/${id}`, { method: 'DELETE', auth: true }),
+
+    getTestimonials: () => request('/admin/testimonials', { auth: true }),
+    createTestimonial: (payload) =>
+      request('/admin/testimonials', { method: 'POST', body: payload, auth: true }),
+    updateTestimonial: (id, payload) =>
+      request(`/admin/testimonials/${id}`, { method: 'PUT', body: payload, auth: true }),
+    deleteTestimonial: (id) => request(`/admin/testimonials/${id}`, { method: 'DELETE', auth: true }),
+    uploadTestimonialPhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await fetch('/api/admin/testimonials/photo', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
 
     getInstructors: () => request('/admin/instructors', { auth: true }),
     createInstructor: (payload) =>

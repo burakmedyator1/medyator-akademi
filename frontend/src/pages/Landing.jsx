@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, Building2, Users } from 'lucide-react';
+import { GraduationCap, Building2, Users, Star } from 'lucide-react';
 import { api } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
 import CourseCard from '../components/CourseCard';
@@ -12,10 +12,12 @@ export default function Landing() {
   const { settings } = useSettings();
   const [featured, setFeatured] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
 
   useEffect(() => {
     api.getCourses({ deliveryType: 'online' }).then((courses) => setFeatured(courses.slice(0, 3)));
     api.getInstructors().then((data) => setInstructors(data.slice(0, 4)));
+    api.getTestimonials().then(setTestimonials);
   }, []);
 
   const deliveryTypes = [
@@ -136,6 +138,46 @@ export default function Landing() {
           ))}
         </div>
       </section>
+
+      {testimonials.length > 0 && (
+        <section className="container landing__section">
+          <div className="landing__section-head">
+            <h2>Öğrencilerimiz ne diyor?</h2>
+          </div>
+          <div className="landing__testimonial-grid">
+            {testimonials.map((testimonial) => (
+              <div className="landing__testimonial-card" key={testimonial.id}>
+                <div className="landing__testimonial-stars">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} size={16} fill={i < testimonial.rating ? 'currentColor' : 'none'} />
+                  ))}
+                </div>
+                <p className="landing__testimonial-quote">“{testimonial.quote}”</p>
+                <div className="landing__testimonial-author">
+                  {testimonial.photoUrl ? (
+                    <img
+                      className="landing__testimonial-photo"
+                      src={testimonial.photoUrl}
+                      alt={testimonial.studentName}
+                    />
+                  ) : (
+                    <span className="landing__testimonial-avatar" style={{ background: testimonial.avatarColor }}>
+                      {testimonial.studentName
+                        .split(' ')
+                        .map((p) => p[0])
+                        .join('')}
+                    </span>
+                  )}
+                  <div>
+                    <strong>{testimonial.studentName}</strong>
+                    <span>{testimonial.studentTitle}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

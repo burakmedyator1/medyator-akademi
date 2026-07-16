@@ -92,6 +92,17 @@ db.exec(`
     name TEXT UNIQUE NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS testimonials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_name TEXT NOT NULL,
+    student_title TEXT NOT NULL DEFAULT '',
+    quote TEXT NOT NULL,
+    rating INTEGER NOT NULL DEFAULT 5,
+    avatar_color TEXT NOT NULL DEFAULT '#f0653c',
+    photo_url TEXT,
+    display_order INTEGER NOT NULL DEFAULT 0
+  );
+
   CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT NOT NULL CHECK (type IN ('intern', 'instructor')),

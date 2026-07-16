@@ -89,6 +89,78 @@ router.delete('/categories/:id', (req, res) => {
   res.json({ deleted: true });
 });
 
+// ---------- Testimonials ----------
+
+router.get('/testimonials', (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT id, student_name AS studentName, student_title AS studentTitle, quote, rating,
+              avatar_color AS avatarColor, photo_url AS photoUrl, display_order AS displayOrder
+       FROM testimonials ORDER BY display_order ASC, id ASC`
+    )
+    .all();
+  res.json(rows);
+});
+
+router.post('/testimonials', (req, res) => {
+  const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
+  if (!studentName || !quote) {
+    return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
+  }
+  const result = db
+    .prepare(
+      `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, photo_url, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      studentName,
+      studentTitle || '',
+      quote,
+      rating || 5,
+      avatarColor || '#f0653c',
+      photoUrl || null,
+      displayOrder || 0
+    );
+  res.status(201).json({ id: result.lastInsertRowid });
+});
+
+router.put('/testimonials/:id', (req, res) => {
+  const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
+  if (!studentName || !quote) {
+    return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
+  }
+  const existing = db.prepare('SELECT id FROM testimonials WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Yorum bulunamadı' });
+
+  db.prepare(
+    `UPDATE testimonials SET student_name = ?, student_title = ?, quote = ?, rating = ?,
+     avatar_color = ?, photo_url = ?, display_order = ? WHERE id = ?`
+  ).run(
+    studentName,
+    studentTitle || '',
+    quote,
+    rating || 5,
+    avatarColor || '#f0653c',
+    photoUrl || null,
+    displayOrder || 0,
+    req.params.id
+  );
+  res.json({ updated: true });
+});
+
+router.post('/testimonials/photo', (req, res) => {
+  upload.single('photo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
+});
+
+router.delete('/testimonials/:id', (req, res) => {
+  db.prepare('DELETE FROM testimonials WHERE id = ?').run(req.params.id);
+  res.json({ deleted: true });
+});
+
 // ---------- Courses ----------
 
 router.get('/courses', (req, res) => {
