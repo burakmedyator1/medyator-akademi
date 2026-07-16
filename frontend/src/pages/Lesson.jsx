@@ -134,7 +134,7 @@ export default function Lesson() {
   return (
     <div className="container lesson-page">
       <p className="lesson-page__breadcrumb">
-        <Link to={isAuthenticated ? '/panel' : '/kurslar'}>{isAuthenticated ? 'Kurslarım' : 'Kurslar'}</Link> /{' '}
+        <Link to={isAuthenticated ? '/panel' : '/kurslar'}>{isAuthenticated ? 'Kurslarım' : 'Online Eğitimler'}</Link> /{' '}
         {currentLesson?.title}
       </p>
 
