@@ -21,7 +21,7 @@
 }
 
 .navbar__logo img {
-  height: 34px;
+  height: var(--navbar-logo-height, 34px);
   width: auto;
   display: block;
 }
