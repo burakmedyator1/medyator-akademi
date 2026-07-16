@@ -9,7 +9,7 @@ import './Navbar.css';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
-  const { settings } = useSettings();
+  const { settings, loaded } = useSettings();
   const [onlineCourses, setOnlineCourses] = useState([]);
 
   useEffect(() => {
@@ -20,7 +20,9 @@ export default function Navbar() {
     <header className="navbar">
       <div className="container navbar__inner">
         <Link to="/" className="navbar__logo">
-          <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
+          {(settings.logo_url || loaded) && (
+            <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
+          )}
         </Link>
 
         <nav className="navbar__links">
