@@ -113,6 +113,16 @@
   color: var(--orange-dark);
 }
 
+.course-detail__cart-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--orange-dark) !important;
+  font-weight: 700;
+  font-size: 0.8rem !important;
+}
+
 .course-detail__enrolled {
   display: inline-flex;
   align-items: center;

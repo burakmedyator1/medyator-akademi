@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Lock, PlayCircle, CheckCircle2, Circle, Play } from 'lucide-react';
+import { Lock, PlayCircle, CheckCircle2, Circle, Play, ShoppingCart } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
 import './CourseDetail.css';
+
+// No real cart is tracked, so we derive a stable-looking pseudo count from
+// the course id purely for social-proof visual fidelity (same idea as
+// AvatarStack's fake classmate count).
+function cartCountFor(id) {
+  let s = ((id || 0) * 9301 + 49297) % 233280;
+  s = (s * 9301 + 49297) % 233280;
+  return 2 + (s % 10);
+}
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -131,6 +140,12 @@ export default function CourseDetail() {
                 <PlayCircle size={18} />
                 {enrolling ? 'Kayıt yapılıyor...' : isPaid ? `Şimdi Satın Al · ${course.price} TL` : 'Kayıt Ol ve Başla'}
               </button>
+            )}
+            {isPaid && !enrolled && (
+              <p className="course-detail__cart-count">
+                <ShoppingCart size={14} />
+                {cartCountFor(course.id)} kişinin sepetinde
+              </p>
             )}
             <p>
               {enrolled
