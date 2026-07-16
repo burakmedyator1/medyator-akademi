@@ -59,6 +59,7 @@ npm run seed    # (sadece ilk deploy'da) admin hesabı + örnek veriyi oluşturu
 | `ADMIN_EMAIL` | `npm run seed` çalıştırılırken oluşturulacak admin hesabının e-postası. **Prod'da mutlaka ayarla**, aksi halde varsayılan (herkese açık kaynak kodunda yazılı) değer kullanılır. |
 | `ADMIN_PASSWORD` | Aynı admin hesabının şifresi. **Prod'da mutlaka güçlü, rastgele bir değer ayarla** — seed'i çalıştırmadan önce. |
 | `DATA_DIR` | SQLite veritabanı + yüklenen dosyaların saklanacağı klasör. **Prod'da persistent disk'in mount edildiği yolu buraya yaz** (örn. `/var/data`). Ayarlanmazsa `backend/storage` kullanılır. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Kayıt olan öğrencilere gönderilen hoş geldin e-postası için SMTP ayarları. `SMTP_HOST` ayarlanmazsa e-posta gönderimi sessizce atlanır (log'da uyarı görünür). Mevcut Google Workspace adresini bir Uygulama Şifresi ile `smtp.gmail.com` üzerinden kullanabilirsin. |
 
 ### Kalıcı veri
 
