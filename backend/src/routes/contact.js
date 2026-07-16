@@ -9,8 +9,8 @@ router.post('/', (req, res) => {
   if (!type || !['corporate', 'in_person'].includes(type)) {
     return res.status(400).json({ error: 'Geçersiz talep tipi' });
   }
-  if (!name || !email) {
-    return res.status(400).json({ error: 'İsim ve e-posta zorunlu' });
+  if (!name || !email || !company) {
+    return res.status(400).json({ error: 'İsim, e-posta ve şirket/kurum adı zorunlu' });
   }
 
   db.prepare(
