@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   description: '',
   coverColor: 'yellow',
   price: 0,
+  displayOrder: 0,
   instructorId: '',
 };
 
@@ -69,6 +70,7 @@ export default function AdminCourses() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Sıra</th>
                 <th>Başlık</th>
                 <th>Tip</th>
                 <th>Fiyat</th>
@@ -78,6 +80,7 @@ export default function AdminCourses() {
             <tbody>
               {courses.map((course) => (
                 <tr key={course.id}>
+                  <td>{course.displayOrder}</td>
                   <td>{course.title}</td>
                   <td>{DELIVERY_LABELS[course.deliveryType]}</td>
                   <td>{course.price} TL</td>
@@ -95,7 +98,7 @@ export default function AdminCourses() {
               ))}
               {courses.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="admin-empty">
+                  <td colSpan={5} className="admin-empty">
                     Henüz kurs yok.
                   </td>
                 </tr>
@@ -173,6 +176,14 @@ export default function AdminCourses() {
               min="0"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+            />
+          </div>
+          <div className="admin-field">
+            <label>Sıra (kurs kataloğunda küçükten büyüğe sıralanır)</label>
+            <input
+              type="number"
+              value={form.displayOrder}
+              onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
             />
           </div>
           <div className="admin-field">
