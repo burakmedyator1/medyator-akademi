@@ -34,6 +34,11 @@ export default function Dashboard() {
 
       <main className="dashboard__main">
         <div className="dashboard__topbar">
+          {user.role === 'admin' && (
+            <Link to="/admin" className="btn btn-primary dashboard__admin-link">
+              Admin Paneli
+            </Link>
+          )}
           <span className="dashboard__welcome">
             Medyator Akademi'ye Hoş Geldin, <strong>{user.name}</strong>
           </span>
