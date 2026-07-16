@@ -7,6 +7,7 @@ import InstructorProtectedRoute from './components/InstructorProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
+import CursorGlow from './components/CursorGlow';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -53,6 +54,7 @@ function Layout({ children }) {
   const showSplash = location.pathname === '/';
   return (
     <>
+      <CursorGlow />
       {showSplash && <SplashScreen />}
       {!hideNavbar && <Navbar />}
       {children}
