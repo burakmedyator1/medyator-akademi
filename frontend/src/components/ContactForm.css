@@ -1,0 +1,32 @@
+.contact-form {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-form textarea {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
+.contact-form__success {
+  padding: 40px;
+  text-align: center;
+}
+
+.contact-form__success h3 {
+  margin: 0 0 8px;
+}
+
+.contact-form__success p {
+  color: var(--text-secondary);
+  margin: 0;
+}

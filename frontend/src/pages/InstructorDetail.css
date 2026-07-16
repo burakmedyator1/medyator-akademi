@@ -1,0 +1,52 @@
+.instructor-detail {
+  padding: 48px 24px 80px;
+}
+
+.instructor-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.instructor-detail__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.instructor-detail__header h1 {
+  margin: 0 0 4px;
+}
+
+.instructor-detail__title {
+  color: var(--orange);
+  font-weight: 700;
+  margin: 0;
+}
+
+.instructor-detail__bio {
+  color: var(--text-secondary);
+  max-width: 640px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.instructor-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .instructor-detail__grid {
+    grid-template-columns: 1fr;
+  }
+}

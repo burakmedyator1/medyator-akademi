@@ -1,0 +1,12 @@
+.admin-layout {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  align-items: flex-start;
+}
+
+.admin-layout__main {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 60px;
+}

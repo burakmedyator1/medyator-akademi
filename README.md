@@ -1,0 +1,73 @@
+# Medyator Akademi
+
+Online, kurumsal ve yüz yüze eğitim platformu. React + Vite frontend, Express + SQLite backend.
+
+## Yerel geliştirme
+
+Backend ve frontend ayrı süreçler olarak, iki terminalde çalıştırılır (Vite dev server `/api` ve `/uploads` isteklerini backend'e proxy'ler).
+
+```bash
+# 1. Backend
+cd backend
+npm install
+npm run seed   # örnek veri + admin hesabı oluşturur (sadece ilk kurulumda / sıfırlamak istediğinde)
+npm run dev    # http://localhost:4000
+
+# 2. Frontend (başka bir terminalde)
+cd frontend
+npm install
+npm run dev    # http://localhost:5173
+```
+
+Varsayılan admin girişi (seed sonrası, `ADMIN_EMAIL`/`ADMIN_PASSWORD` ortam değişkenleri ayarlanmazsa): `admin@medyatorakademi.com` / `Admin123!` — bu sadece yerel geliştirme içindir, canlıda kullanma.
+
+## Proje yapısı
+
+```
+backend/    Express API + SQLite (better-sqlite3)
+  src/routes/       auth, courses, instructors, me, contact, settings, admin
+  src/middleware/   requireAuth, requireAdmin, rate limiting
+  src/db.js         şema + otomatik migration/backfill
+  src/seed.js       örnek veri + admin hesabı
+  uploads/          yüklenen logo gibi dosyalar (git'e dahil değil)
+  data.db           SQLite veritabanı (git'e dahil değil)
+
+frontend/   React + Vite
+  src/pages/        genel sayfalar (Landing, Courses, Lesson, vb.)
+  src/pages/admin/  admin paneli sayfaları
+  src/components/   paylaşılan UI bileşenleri
+  src/context/      AuthContext, SettingsContext
+```
+
+## Production build (tek servis)
+
+Kökteki `package.json`, frontend'i derleyip backend'in aynı süreçte sunmasını sağlar — tek bir Node servisi deploy edilir:
+
+```bash
+npm run build   # frontend/dist oluşturur + backend bağımlılıklarını kurar
+npm start       # backend, API + derlenmiş frontend'i aynı porttan sunar
+npm run seed    # (sadece ilk deploy'da) admin hesabı + örnek veriyi oluşturur
+```
+
+### Gerekli ortam değişkenleri
+
+| Değişken | Açıklama |
+|---|---|
+| `JWT_SECRET` | Oturum token'larını imzalamak için rastgele, uzun bir metin. **Prod'da mutlaka ayarla** (`openssl rand -hex 32`). |
+| `NODE_ENV` | `production` olarak ayarla. |
+| `PORT` | Servisin dinleyeceği port (çoğu PaaS bunu otomatik sağlar). |
+| `ADMIN_EMAIL` | `npm run seed` çalıştırılırken oluşturulacak admin hesabının e-postası. **Prod'da mutlaka ayarla**, aksi halde varsayılan (herkese açık kaynak kodunda yazılı) değer kullanılır. |
+| `ADMIN_PASSWORD` | Aynı admin hesabının şifresi. **Prod'da mutlaka güçlü, rastgele bir değer ayarla** — seed'i çalıştırmadan önce. |
+
+### Kalıcı veri
+
+`backend/data.db` (SQLite) ve `backend/uploads/` (yüklenen logo vb.) git'e dahil değildir. Deploy platformunda bu klasörün kalıcı bir diske (persistent volume) bağlı olduğundan emin ol, yoksa her deploy'da veriler sıfırlanır.
+
+### Yedekleme
+
+Admin Panel → Genel Bakış → **Veritabanı Yedeği İndir** — SQLite dosyasının anlık bir kopyasını indirir. Düzenli aralıklarla indirip saklamanız önerilir (otomatik bulut yedeği kurulu değildir).
+
+## Güvenlik notları
+
+- Login/kayıt uçlarında IP başına 15 dakikada 20 deneme sınırı var (brute-force koruması).
+- Video koruması: ders videosunun ID'si yalnızca giriş yapmış + kursa **onaylı** kayıtlı kullanıcıya döner. Ama YouTube/Vimeo embed teknolojisinin doğası gereği, dersi izleyebilen bir kullanıcı tarayıcı geliştirici araçlarıyla video ID'sini görebilir. Tam domain kilidi için Vimeo'nun ücretli "domain-restricted" özelliği gerekir.

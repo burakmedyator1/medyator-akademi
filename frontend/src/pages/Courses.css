@@ -1,0 +1,31 @@
+.courses-page {
+  padding: 48px 24px 80px;
+}
+
+.courses-page h1 {
+  margin: 0 0 8px;
+}
+
+.courses-page__subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 28px;
+}
+
+.courses-page__filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.courses-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .courses-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

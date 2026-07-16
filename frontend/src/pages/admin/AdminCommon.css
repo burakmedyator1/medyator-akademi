@@ -1,0 +1,191 @@
+.admin-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.admin-page-head h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.admin-split {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-table-wrap {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-cream);
+}
+
+.admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tr.clickable {
+  cursor: pointer;
+}
+
+.admin-table tr.clickable:hover {
+  background: var(--bg-cream);
+}
+
+.admin-table .admin-table__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-table .admin-table__actions button {
+  background: transparent;
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.admin-table .admin-table__actions button:hover {
+  background: var(--bg-cream);
+  color: var(--navy);
+}
+
+.admin-form {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 24px;
+}
+
+.admin-form h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-field label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admin-field input,
+.admin-field select,
+.admin-field textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-field textarea:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
+.admin-form__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.admin-badge--approved {
+  background: rgba(59, 154, 84, 0.15);
+  color: #2f8a4e;
+}
+
+.admin-badge--pending {
+  background: rgba(245, 201, 79, 0.25);
+  color: #9a7514;
+}
+
+.admin-badge--rejected {
+  background: rgba(240, 101, 60, 0.15);
+  color: var(--orange-dark);
+}
+
+.admin-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.admin-stat-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+}
+
+.admin-stat-card span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+.admin-stat-card strong {
+  font-size: 1.6rem;
+}
+
+@media (max-width: 1000px) {
+  .admin-split {
+    grid-template-columns: 1fr;
+  }
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

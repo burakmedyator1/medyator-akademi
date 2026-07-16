@@ -1,0 +1,63 @@
+.instructors-page {
+  padding: 48px 24px 80px;
+}
+
+.instructors-page h1 {
+  margin: 0 0 8px;
+}
+
+.instructors-page__subtitle {
+  color: var(--text-secondary);
+  margin: 0 0 28px;
+}
+
+.instructors-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.instructor-card {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.instructor-card__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.instructor-card h3 {
+  margin: 0;
+}
+
+.instructor-card__title {
+  color: var(--orange);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.instructor-card__bio {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .instructors-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

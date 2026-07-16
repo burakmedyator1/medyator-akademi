@@ -1,0 +1,121 @@
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  animation: splashBackdrop 2.6s ease forwards;
+}
+
+.splash__glow {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 101, 60, 0.35) 0%, rgba(240, 101, 60, 0) 70%);
+  animation: splashGlowPulse 2.6s ease forwards;
+}
+
+.splash__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  animation: splashContent 2.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.splash__logo {
+  width: min(60vw, 380px);
+  height: auto;
+  border-radius: 16px;
+}
+
+.splash__tagline {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+@keyframes splashContent {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  28% {
+    transform: scale(1);
+  }
+  68% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.12);
+  }
+}
+
+@keyframes splashBackdrop {
+  0%,
+  72% {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes splashGlowPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  68% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash,
+  .splash__content,
+  .splash__glow {
+    animation-duration: 1.1s;
+  }
+  .splash__content {
+    animation-name: splashContentReduced;
+  }
+}
+
+@keyframes splashContentReduced {
+  0% {
+    opacity: 0;
+  }
+  30%,
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}

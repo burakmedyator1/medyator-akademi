@@ -1,0 +1,29 @@
+.avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-stack__item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--white);
+  border: 2px solid var(--white);
+  margin-left: -10px;
+}
+
+.avatar-stack__item:first-child {
+  margin-left: 0;
+}
+
+.avatar-stack__more {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
