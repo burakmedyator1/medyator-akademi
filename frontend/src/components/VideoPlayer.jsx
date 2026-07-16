@@ -32,10 +32,12 @@ function formatTime(seconds) {
 
 // Custom-controlled YouTube player: native controls are disabled so no
 // "Watch on YouTube" link or channel branding is ever shown in the UI.
-function YouTubePlayer({ videoId, title }) {
+function YouTubePlayer({ videoId, title, onEnded }) {
   const mountRef = useRef(null);
   const wrapperRef = useRef(null);
   const playerRef = useRef(null);
+  const onEndedRef = useRef(onEnded);
+  onEndedRef.current = onEnded;
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -74,6 +76,7 @@ function YouTubePlayer({ videoId, title }) {
           onStateChange: (e) => {
             if (destroyed) return;
             setPlaying(e.data === YT.PlayerState.PLAYING);
+            if (e.data === YT.PlayerState.ENDED) onEndedRef.current?.();
           },
         },
       });
@@ -165,9 +168,9 @@ function YouTubePlayer({ videoId, title }) {
   );
 }
 
-export default function VideoPlayer({ provider, videoId, title }) {
+export default function VideoPlayer({ provider, videoId, title, onEnded }) {
   if (provider === 'youtube') {
-    return <YouTubePlayer videoId={videoId} title={title} />;
+    return <YouTubePlayer videoId={videoId} title={title} onEnded={onEnded} />;
   }
 
   return (
