@@ -52,12 +52,44 @@ export const api = {
 
   getSettings: () => request('/settings'),
 
+  getBlogPosts: () => request('/blog'),
+  getBlogPost: (slug) => request(`/blog/${slug}`),
+
+  getMyQuestions: () => request('/questions/mine', { auth: true }),
+  askQuestion: (payload) => request('/questions', { method: 'POST', body: payload, auth: true }),
+
+  instructor: {
+    getQuestions: () => request('/instructor/questions', { auth: true }),
+    answerQuestion: (id, answerText) =>
+      request(`/instructor/questions/${id}`, { method: 'PATCH', body: { answerText }, auth: true }),
+  },
+
+  applyInstructor: (payload) => request('/applications/instructor', { method: 'POST', body: payload }),
+  applyIntern: async (formData) => {
+    const res = await fetch('/api/applications/intern', { method: 'POST', body: formData });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Başvuru gönderilemedi');
+    return data;
+  },
+
   admin: {
     getCourses: () => request('/admin/courses', { auth: true }),
     createCourse: (payload) => request('/admin/courses', { method: 'POST', body: payload, auth: true }),
     updateCourse: (id, payload) =>
       request(`/admin/courses/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteCourse: (id) => request(`/admin/courses/${id}`, { method: 'DELETE', auth: true }),
+    uploadCourseCover: async (file) => {
+      const formData = new FormData();
+      formData.append('cover', file);
+      const res = await fetch('/api/admin/courses/cover', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
 
     getLessons: (courseId) => request(`/admin/courses/${courseId}/lessons`, { auth: true }),
     createLesson: (courseId, payload) =>
@@ -79,6 +111,20 @@ export const api = {
     updateInstructor: (id, payload) =>
       request(`/admin/instructors/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteInstructor: (id) => request(`/admin/instructors/${id}`, { method: 'DELETE', auth: true }),
+    resetInstructorPassword: (id) =>
+      request(`/admin/instructors/${id}/reset-password`, { method: 'POST', auth: true }),
+    uploadInstructorPhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await fetch('/api/admin/instructors/photo', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
 
     getStudents: () => request('/admin/students', { auth: true }),
     getStudent: (id) => request(`/admin/students/${id}`, { auth: true }),
@@ -90,6 +136,27 @@ export const api = {
       request(`/admin/enrollments/${id}`, { method: 'PATCH', body: payload, auth: true }),
 
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
+
+    getApplications: () => request('/admin/applications', { auth: true }),
+    deleteApplication: (id) => request(`/admin/applications/${id}`, { method: 'DELETE', auth: true }),
+
+    getBlogPosts: () => request('/admin/blog', { auth: true }),
+    createBlogPost: (payload) => request('/admin/blog', { method: 'POST', body: payload, auth: true }),
+    updateBlogPost: (id, payload) =>
+      request(`/admin/blog/${id}`, { method: 'PUT', body: payload, auth: true }),
+    deleteBlogPost: (id) => request(`/admin/blog/${id}`, { method: 'DELETE', auth: true }),
+    uploadBlogCover: async (file) => {
+      const formData = new FormData();
+      formData.append('cover', file);
+      const res = await fetch('/api/admin/blog/cover', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
 
     getSettings: () => request('/admin/settings', { auth: true }),
     updateSettings: (payload) =>
