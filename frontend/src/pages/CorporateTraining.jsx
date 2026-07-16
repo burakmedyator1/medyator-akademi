@@ -61,7 +61,7 @@ export default function CorporateTraining() {
           <h2>Örnek Programlar</h2>
           <div className="delivery-page__course-grid">
             {courses.map((course) => (
-              <CourseCard key={course.id} course={course} mode="catalog" />
+              <CourseCard key={course.id} course={course} mode="catalog" tagOverride="Kurumsal" />
             ))}
           </div>
         </section>
