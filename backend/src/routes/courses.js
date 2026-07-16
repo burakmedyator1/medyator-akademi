@@ -9,7 +9,9 @@ const COURSE_FIELDS = `
   courses.id, courses.title, courses.category, courses.delivery_type AS deliveryType,
   courses.description, courses.cover_color AS coverColor, courses.cover_image_url AS coverImageUrl,
   courses.price AS price, courses.display_order AS displayOrder,
-  courses.instructor_id AS instructorId, instructors.name AS instructorName
+  courses.instructor_id AS instructorId, instructors.name AS instructorName,
+  instructors.title AS instructorTitle, instructors.photo_url AS instructorPhotoUrl,
+  instructors.avatar_color AS instructorAvatarColor
 `;
 
 router.get('/', (req, res) => {

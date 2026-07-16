@@ -224,6 +224,31 @@ export default function Lesson() {
               <p className="lesson-page__empty">Bu ders için henüz ödev eklenmedi.</p>
             )}
           </div>
+
+          <Link to={`/egitmenler/${course.instructorId}`} className="card lesson-page__instructor">
+            {course.instructorPhotoUrl ? (
+              <img
+                className="lesson-page__instructor-photo"
+                src={course.instructorPhotoUrl}
+                alt={course.instructorName}
+              />
+            ) : (
+              <span
+                className="lesson-page__instructor-avatar"
+                style={{ background: course.instructorAvatarColor }}
+              >
+                {course.instructorName
+                  .split(' ')
+                  .map((p) => p[0])
+                  .join('')}
+              </span>
+            )}
+            <div>
+              <p className="lesson-page__instructor-label">Eğitmen</p>
+              <h3>{course.instructorName}</h3>
+              <p className="lesson-page__instructor-title">{course.instructorTitle}</p>
+            </div>
+          </Link>
         </div>
 
         <aside className="card lesson-page__list">

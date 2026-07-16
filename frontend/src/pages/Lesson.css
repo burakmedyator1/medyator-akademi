@@ -161,6 +161,59 @@
   color: var(--text-secondary) !important;
 }
 
+.lesson-page__instructor {
+  margin-top: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lesson-page__instructor:hover {
+  background: var(--bg-cream);
+}
+
+.lesson-page__instructor-photo,
+.lesson-page__instructor-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lesson-page__instructor-photo {
+  object-fit: cover;
+}
+
+.lesson-page__instructor-avatar {
+  color: var(--white);
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lesson-page__instructor-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.lesson-page__instructor h3 {
+  margin: 2px 0;
+  font-size: 1rem;
+}
+
+.lesson-page__instructor-title {
+  margin: 0;
+  color: var(--orange);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
 .lesson-page__list {
   padding: 0;
   overflow: hidden;
