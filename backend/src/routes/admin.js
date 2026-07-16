@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import db from '../db.js';
@@ -16,7 +17,7 @@ const upload = multer({
     destination: uploadsDir,
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname) || '.png';
-      cb(null, `logo-${Date.now()}${ext}`);
+      cb(null, `${file.fieldname}-${Date.now()}${ext}`);
     },
   }),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -27,6 +28,10 @@ const upload = multer({
     cb(null, true);
   },
 });
+
+function generateRandomPassword() {
+  return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
+}
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -96,39 +101,71 @@ router.get('/courses', (req, res) => {
   const courses = db
     .prepare(
       `SELECT courses.id, courses.title, courses.category, courses.delivery_type AS deliveryType,
-              courses.description, courses.cover_color AS coverColor, courses.price AS price,
+              courses.description, courses.cover_color AS coverColor, courses.cover_image_url AS coverImageUrl,
+              courses.price AS price, courses.display_order AS displayOrder,
               courses.instructor_id AS instructorId, instructors.name AS instructorName
        FROM courses JOIN instructors ON instructors.id = courses.instructor_id
-       ORDER BY courses.id DESC`
+       ORDER BY courses.display_order ASC, courses.id ASC`
     )
     .all();
   res.json(courses);
 });
 
 router.post('/courses', (req, res) => {
-  const { title, category, deliveryType, description, coverColor, price, instructorId } = req.body;
+  const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
+    req.body;
   if (!title || !category || !deliveryType || !description || !instructorId) {
     return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
   }
   const result = db
     .prepare(
-      `INSERT INTO courses (title, category, delivery_type, description, cover_color, price, instructor_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO courses (title, category, delivery_type, description, cover_color, cover_image_url, price, display_order, instructor_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(title, category, deliveryType, description, coverColor || 'yellow', price || 0, instructorId);
+    .run(
+      title,
+      category,
+      deliveryType,
+      description,
+      coverColor || 'yellow',
+      coverImageUrl || null,
+      price || 0,
+      displayOrder || 0,
+      instructorId
+    );
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 router.put('/courses/:id', (req, res) => {
-  const { title, category, deliveryType, description, coverColor, price, instructorId } = req.body;
+  const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
+    req.body;
   const result = db
     .prepare(
       `UPDATE courses SET title = ?, category = ?, delivery_type = ?, description = ?,
-       cover_color = ?, price = ?, instructor_id = ? WHERE id = ?`
+       cover_color = ?, cover_image_url = ?, price = ?, display_order = ?, instructor_id = ? WHERE id = ?`
     )
-    .run(title, category, deliveryType, description, coverColor, price, instructorId, req.params.id);
+    .run(
+      title,
+      category,
+      deliveryType,
+      description,
+      coverColor,
+      coverImageUrl || null,
+      price,
+      displayOrder || 0,
+      instructorId,
+      req.params.id
+    );
   if (result.changes === 0) return res.status(404).json({ error: 'Kurs bulunamadı' });
   res.json({ updated: true });
+});
+
+router.post('/courses/cover', (req, res) => {
+  upload.single('cover')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
 });
 
 router.delete('/courses/:id', (req, res) => {
@@ -188,27 +225,86 @@ router.delete('/courses/:courseId/lessons/:id', (req, res) => {
 // ---------- Instructors ----------
 
 router.get('/instructors', (req, res) => {
-  res.json(db.prepare('SELECT * FROM instructors ORDER BY id DESC').all());
+  res.json(
+    db
+      .prepare(
+        'SELECT id, name, title, bio, avatar_color, photo_url, email FROM instructors ORDER BY id DESC'
+      )
+      .all()
+  );
 });
 
 router.post('/instructors', (req, res) => {
-  const { name, title, bio, avatarColor } = req.body;
-  if (!name || !title || !bio) {
-    return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
+  const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+  if (!name || !title || !bio || !email) {
+    return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun (e-posta dahil)' });
   }
+  const emailTaken =
+    db.prepare('SELECT id FROM instructors WHERE email = ?').get(email) ||
+    db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (emailTaken) {
+    return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
+  }
+
+  const password = generateRandomPassword();
+  const passwordHash = bcrypt.hashSync(password, 10);
   const result = db
-    .prepare('INSERT INTO instructors (name, title, bio, avatar_color) VALUES (?, ?, ?, ?)')
-    .run(name, title, bio, avatarColor || '#F0653C');
-  res.status(201).json({ id: result.lastInsertRowid });
+    .prepare(
+      'INSERT INTO instructors (name, title, bio, avatar_color, photo_url, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    )
+    .run(name, title, bio, avatarColor || '#F0653C', photoUrl || null, email, passwordHash);
+  res.status(201).json({ id: result.lastInsertRowid, email, password });
 });
 
 router.put('/instructors/:id', (req, res) => {
-  const { name, title, bio, avatarColor } = req.body;
-  const result = db
-    .prepare('UPDATE instructors SET name = ?, title = ?, bio = ?, avatar_color = ? WHERE id = ?')
-    .run(name, title, bio, avatarColor, req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
-  res.json({ updated: true });
+  const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+  if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
+
+  const existing = db.prepare('SELECT password_hash FROM instructors WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
+
+  const emailTaken =
+    db.prepare('SELECT id FROM instructors WHERE email = ? AND id != ?').get(email, req.params.id) ||
+    db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (emailTaken) {
+    return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
+  }
+
+  // Older instructors created before login accounts existed have no password yet;
+  // generate one the first time an email is attached so they gain access immediately.
+  let password;
+  if (!existing.password_hash) {
+    password = generateRandomPassword();
+    db.prepare('UPDATE instructors SET password_hash = ? WHERE id = ?').run(
+      bcrypt.hashSync(password, 10),
+      req.params.id
+    );
+  }
+
+  db.prepare(
+    'UPDATE instructors SET name = ?, title = ?, bio = ?, avatar_color = ?, photo_url = ?, email = ? WHERE id = ?'
+  ).run(name, title, bio, avatarColor, photoUrl || null, email, req.params.id);
+  res.json({ updated: true, password });
+});
+
+router.post('/instructors/photo', (req, res) => {
+  upload.single('photo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
+});
+
+router.post('/instructors/:id/reset-password', (req, res) => {
+  const instructor = db.prepare('SELECT id FROM instructors WHERE id = ?').get(req.params.id);
+  if (!instructor) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
+
+  const password = generateRandomPassword();
+  db.prepare('UPDATE instructors SET password_hash = ? WHERE id = ?').run(
+    bcrypt.hashSync(password, 10),
+    req.params.id
+  );
+  res.json({ password });
 });
 
 router.delete('/instructors/:id', (req, res) => {
@@ -315,6 +411,75 @@ router.patch('/enrollments/:id', (req, res) => {
 
 router.get('/contact-requests', (req, res) => {
   res.json(db.prepare('SELECT * FROM contact_requests ORDER BY id DESC').all());
+});
+
+router.get('/applications', (req, res) => {
+  res.json(db.prepare('SELECT * FROM applications ORDER BY id DESC').all());
+});
+
+router.delete('/applications/:id', (req, res) => {
+  db.prepare('DELETE FROM applications WHERE id = ?').run(req.params.id);
+  res.json({ deleted: true });
+});
+
+// ---------- Blog ----------
+
+function slugify(title) {
+  return title
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+router.get('/blog', (req, res) => {
+  res.json(db.prepare('SELECT * FROM blog_posts ORDER BY created_at DESC').all());
+});
+
+router.post('/blog/cover', (req, res) => {
+  upload.single('cover')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  });
+});
+
+router.post('/blog', (req, res) => {
+  const { title, excerpt, content, coverImageUrl, published } = req.body;
+  if (!title || !title.trim() || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+  }
+  let slug = slugify(title);
+  const existing = db.prepare('SELECT id FROM blog_posts WHERE slug = ?').get(slug);
+  if (existing) slug = `${slug}-${Date.now()}`;
+
+  const result = db
+    .prepare(
+      'INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, published) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    .run(title.trim(), slug, excerpt || '', content.trim(), coverImageUrl || null, published === false ? 0 : 1);
+  res.status(201).json({ id: result.lastInsertRowid, slug });
+});
+
+router.put('/blog/:id', (req, res) => {
+  const { title, excerpt, content, coverImageUrl, published } = req.body;
+  if (!title || !title.trim() || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+  }
+  db.prepare(
+    'UPDATE blog_posts SET title = ?, excerpt = ?, content = ?, cover_image_url = ?, published = ? WHERE id = ?'
+  ).run(title.trim(), excerpt || '', content.trim(), coverImageUrl || null, published === false ? 0 : 1, req.params.id);
+  res.json({ updated: true });
+});
+
+router.delete('/blog/:id', (req, res) => {
+  db.prepare('DELETE FROM blog_posts WHERE id = ?').run(req.params.id);
+  res.json({ deleted: true });
 });
 
 // ---------- Site settings ----------
