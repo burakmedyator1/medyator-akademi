@@ -9,6 +9,9 @@ function applySettings(settings) {
   COLOR_KEYS.forEach((key) => {
     if (settings[key]) document.documentElement.style.setProperty(`--${key}`, settings[key]);
   });
+  if (settings.navbar_logo_height) {
+    document.documentElement.style.setProperty('--navbar-logo-height', `${settings.navbar_logo_height}px`);
+  }
 }
 
 export function SettingsProvider({ children }) {
