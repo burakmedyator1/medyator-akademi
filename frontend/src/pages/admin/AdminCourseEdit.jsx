@@ -7,7 +7,7 @@ import { extractVideoId } from '../../utils/videoId';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_LESSON = { title: '', durationMinutes: 20, order: 1, videoProvider: 'youtube', videoId: '' };
+const EMPTY_LESSON = { title: '', description: '', durationMinutes: 20, order: 1, videoProvider: 'youtube', videoId: '' };
 
 export default function AdminCourseEdit() {
   const { id } = useParams();
@@ -84,6 +84,7 @@ export default function AdminCourseEdit() {
     setEditingLessonId(lesson.id);
     setLessonForm({
       title: lesson.title,
+      description: lesson.description || '',
       durationMinutes: lesson.durationMinutes,
       order: lesson.order_,
       videoProvider: lesson.videoProvider,
@@ -294,6 +295,15 @@ export default function AdminCourseEdit() {
             />
           </div>
           <div className="admin-field">
+            <label>Açıklama</label>
+            <textarea
+              rows={3}
+              placeholder="Bu derste neler anlatılıyor, öğrenci ne öğrenecek?"
+              value={lessonForm.description}
+              onChange={(e) => setLessonForm({ ...lessonForm, description: e.target.value })}
+            />
+          </div>
+          <div className="admin-field">
             <label>Süre (dk)</label>
             <input
               type="number"
@@ -329,8 +339,7 @@ export default function AdminCourseEdit() {
               required
               placeholder="örn. https://www.youtube.com/watch?v=..."
               value={lessonForm.videoId}
-              onChange={(e) => setLessonForm({ ...lessonForm, videoId: e.target.value })}
-              onBlur={(e) =>
+              onChange={(e) =>
                 setLessonForm({ ...lessonForm, videoId: extractVideoId(e.target.value, lessonForm.videoProvider) })
               }
             />
