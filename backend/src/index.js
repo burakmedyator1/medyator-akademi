@@ -14,6 +14,7 @@ import blogRoutes from './routes/blog.js';
 import applicationRoutes from './routes/applications.js';
 import questionRoutes from './routes/questions.js';
 import instructorPanelRoutes from './routes/instructorPanel.js';
+import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
 import { STORAGE_DIR } from './storagePath.js';
 
@@ -38,19 +39,33 @@ app.use(
           'https://www.youtube.com',
           'https://www.youtube-nocookie.com',
           'https://player.vimeo.com',
+          'https://sandbox-cpp.iyzipay.com',
+          'https://cpp.iyzipay.com',
         ],
-        // The YouTube IFrame Player API is loaded as an external script.
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.youtube.com'],
+        // The YouTube IFrame Player API and iyzico's checkout form are loaded as external scripts.
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://www.youtube.com',
+          'https://sandbox-api.iyzipay.com',
+          'https://api.iyzipay.com',
+        ],
         imgSrc: ["'self'", 'data:', 'https:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        connectSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          'https://sandbox-api.iyzipay.com',
+          'https://api.iyzipay.com',
+        ],
       },
     },
   })
 );
 app.use(cors());
 app.use(express.json());
+// iyzico's checkout form posts its callback as a standard HTML form submit.
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(STORAGE_DIR, 'uploads')));
 
 app.use('/api/auth', authRoutes);
@@ -63,6 +78,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/instructor', instructorPanelRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
