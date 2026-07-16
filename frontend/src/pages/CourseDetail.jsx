@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Lock, PlayCircle, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Lock, PlayCircle, CheckCircle2, Circle } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
@@ -14,6 +14,7 @@ export default function CourseDetail() {
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
   const [enrolled, setEnrolled] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     api.getCourse(id).then(setCourse);
@@ -26,7 +27,10 @@ export default function CourseDetail() {
     }
     api
       .getEnrollment(id)
-      .then(() => setEnrolled(true))
+      .then((data) => {
+        setEnrolled(true);
+        setProgress(data.progress);
+      })
       .catch(() => setEnrolled(false));
   }, [id, isAuthenticated]);
 
@@ -73,13 +77,27 @@ export default function CourseDetail() {
 
           <h2>Müfredat</h2>
           <ul className="course-detail__lessons">
-            {course.lessons.map((lesson) => (
-              <li key={lesson.id}>
-                <Lock size={16} />
-                <span>{lesson.title}</span>
-                <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
-              </li>
-            ))}
+            {course.lessons.map((lesson) =>
+              enrolled ? (
+                <li key={lesson.id}>
+                  <Link to={`/kurslar/${course.id}/ders/${lesson.id}`} className="course-detail__lesson-link">
+                    {progress >= lesson.order_ ? (
+                      <CheckCircle2 size={16} className="course-detail__done-icon" />
+                    ) : (
+                      <Circle size={16} />
+                    )}
+                    <span>{lesson.title}</span>
+                    <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
+                  </Link>
+                </li>
+              ) : (
+                <li key={lesson.id}>
+                  <Lock size={16} />
+                  <span>{lesson.title}</span>
+                  <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
+                </li>
+              )
+            )}
           </ul>
         </div>
 
