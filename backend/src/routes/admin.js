@@ -8,6 +8,7 @@ import { requireAdmin } from '../middleware/admin.js';
 import { STORAGE_DIR } from '../storagePath.js';
 import { imageUpload as upload } from '../imageUpload.js';
 import { slugify } from '../slugify.js';
+import { extractVideoId } from '../videoId.js';
 
 function generateRandomPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
@@ -176,7 +177,7 @@ router.delete('/courses/:id', (req, res) => {
 router.get('/courses/:courseId/lessons', (req, res) => {
   const lessons = db
     .prepare(
-      `SELECT id, title, duration_minutes AS durationMinutes, lesson_order AS order_,
+      `SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_,
               video_provider AS videoProvider, video_id AS videoId
        FROM lessons WHERE course_id = ? ORDER BY lesson_order`
     )
@@ -185,27 +186,44 @@ router.get('/courses/:courseId/lessons', (req, res) => {
 });
 
 router.post('/courses/:courseId/lessons', (req, res) => {
-  const { title, durationMinutes, order, videoProvider, videoId } = req.body;
+  const { title, description, durationMinutes, order, videoProvider, videoId } = req.body;
   if (!title || !durationMinutes || !order || !videoProvider || !videoId) {
     return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
   }
   const result = db
     .prepare(
-      `INSERT INTO lessons (course_id, title, duration_minutes, lesson_order, video_provider, video_id)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO lessons (course_id, title, description, duration_minutes, lesson_order, video_provider, video_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(req.params.courseId, title, durationMinutes, order, videoProvider, videoId);
+    .run(
+      req.params.courseId,
+      title,
+      description || '',
+      durationMinutes,
+      order,
+      videoProvider,
+      extractVideoId(videoId, videoProvider)
+    );
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 router.put('/courses/:courseId/lessons/:id', (req, res) => {
-  const { title, durationMinutes, order, videoProvider, videoId } = req.body;
+  const { title, description, durationMinutes, order, videoProvider, videoId } = req.body;
   const result = db
     .prepare(
-      `UPDATE lessons SET title = ?, duration_minutes = ?, lesson_order = ?, video_provider = ?, video_id = ?
+      `UPDATE lessons SET title = ?, description = ?, duration_minutes = ?, lesson_order = ?, video_provider = ?, video_id = ?
        WHERE id = ? AND course_id = ?`
     )
-    .run(title, durationMinutes, order, videoProvider, videoId, req.params.id, req.params.courseId);
+    .run(
+      title,
+      description || '',
+      durationMinutes,
+      order,
+      videoProvider,
+      extractVideoId(videoId, videoProvider),
+      req.params.id,
+      req.params.courseId
+    );
   if (result.changes === 0) return res.status(404).json({ error: 'Ders bulunamadı' });
   res.json({ updated: true });
 });
@@ -503,7 +521,12 @@ router.get('/settings', (req, res) => {
 });
 
 router.put('/settings', (req, res) => {
-  const entries = Object.entries(req.body || {});
+  const body = { ...req.body };
+  if (body.landing_hero_video_id) {
+    body.landing_hero_video_id = extractVideoId(body.landing_hero_video_id, body.landing_hero_video_provider);
+  }
+
+  const entries = Object.entries(body || {});
   const upsert = db.prepare(
     'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
   );
