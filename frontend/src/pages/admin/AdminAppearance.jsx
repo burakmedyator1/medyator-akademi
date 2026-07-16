@@ -206,6 +206,18 @@ export default function AdminAppearance() {
             Açılış ekranında bir görsel/logo göster
           </label>
         </div>
+        {form.splash_show_logo !== 'false' && (
+          <div className="admin-field">
+            <label>Açılış Ekranı Görsel Boyutu (px)</label>
+            <input
+              type="number"
+              min="60"
+              max="600"
+              value={form.splash_logo_width || 380}
+              onChange={(e) => setForm({ ...form, splash_logo_width: e.target.value })}
+            />
+          </div>
+        )}
 
         <button className="btn btn-primary" type="submit" disabled={saving}>
           {saving ? 'Kaydediliyor...' : 'Kaydet'}

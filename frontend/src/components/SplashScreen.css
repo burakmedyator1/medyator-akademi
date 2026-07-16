@@ -28,7 +28,7 @@
 }
 
 .splash__logo {
-  width: min(60vw, 380px);
+  width: min(60vw, var(--splash-logo-width, 380px));
   height: auto;
   border-radius: 16px;
 }
