@@ -7,8 +7,8 @@
   transition: opacity 0.4s ease;
   background: radial-gradient(
     600px circle at var(--glow-x, 50%) var(--glow-y, 50%),
-    rgba(240, 101, 60, 0.12),
-    rgba(240, 101, 60, 0.05) 35%,
+    rgba(var(--cursor-glow-rgb, 240, 101, 60), var(--cursor-glow-intensity, 0.12)),
+    rgba(var(--cursor-glow-rgb, 240, 101, 60), calc(var(--cursor-glow-intensity, 0.12) * 0.42)) 35%,
     transparent 70%
   );
 }

@@ -13,6 +13,7 @@ const COLOR_LABELS = {
   purple: 'Kategori - Mor',
   blue: 'Kategori - Mavi',
   'price-tag': 'Fiyat Etiketi Rengi',
+  'cursor-glow': 'Mouse Işığı Rengi',
 };
 
 export default function AdminAppearance() {
@@ -137,13 +138,30 @@ export default function AdminAppearance() {
         {Object.entries(COLOR_LABELS).map(([key, label]) => (
           <div className="admin-field" key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <label style={{ flex: 1 }}>{label}</label>
+            <span className="admin-color-hex">{(form[key] || '#000000').toUpperCase()}</span>
             <input
+              className="admin-color-swatch"
               type="color"
               value={form[key] || '#000000'}
               onChange={(e) => setForm({ ...form, [key]: e.target.value })}
             />
           </div>
         ))}
+
+        <div className="admin-field">
+          <label>Mouse Işığı Yoğunluğu ({form['cursor-glow-intensity'] ?? 12}%)</label>
+          <input
+            className="admin-range"
+            type="range"
+            min="0"
+            max="60"
+            value={form['cursor-glow-intensity'] ?? 12}
+            onChange={(e) => setForm({ ...form, 'cursor-glow-intensity': e.target.value })}
+          />
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Sayfalarda mouse'u takip eden ışık efektinin şiddeti. 0 yaparsan efekt görünmez.
+          </p>
+        </div>
 
         <div className="admin-field">
           <label>Navbar Logo Yüksekliği (px)</label>

@@ -29,6 +29,7 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import MyQuestions from './pages/MyQuestions';
 import Checkout from './pages/Checkout';
 import PaymentResult from './pages/PaymentResult';
+import DistanceSalesAgreement from './pages/DistanceSalesAgreement';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses';
@@ -124,6 +125,7 @@ export default function App() {
               }
             />
             <Route path="/odeme/sonuc" element={<PaymentResult />} />
+            <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSalesAgreement />} />
 
             <Route
               path="/admin"

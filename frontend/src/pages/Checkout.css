@@ -32,3 +32,30 @@
   color: var(--text-secondary);
   margin: 8px 0 20px;
 }
+
+.checkout-page__agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkout-page__agreement input {
+  margin-top: 2px;
+  width: auto;
+}
+
+.checkout-page__iyzico-badge {
+  height: 22px;
+  width: auto;
+  align-self: center;
+  margin-top: 4px;
+}
+
+.checkout-page__card-logos {
+  height: 22px;
+  width: auto;
+  align-self: center;
+}

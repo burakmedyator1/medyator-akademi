@@ -71,6 +71,18 @@ const GROUPS = [
     ],
   },
   {
+    title: 'Yasal Bilgiler (Sözleşme)',
+    fields: [
+      { key: 'company_legal_name', label: 'Şirket / Şahıs Ünvanı' },
+      { key: 'company_address', label: 'Açık Adres', textarea: true },
+      { key: 'company_tax_office', label: 'Vergi Dairesi' },
+      { key: 'company_tax_no', label: 'Vergi No / TC Kimlik No' },
+      { key: 'company_mersis', label: 'MERSİS No (varsa)' },
+      { key: 'company_phone', label: 'Telefon' },
+      { key: 'company_email', label: 'E-posta' },
+    ],
+  },
+  {
     title: 'E-posta',
     fields: [
       { key: 'welcome_email_subject', label: 'Hoş Geldin E-postası - Konu' },

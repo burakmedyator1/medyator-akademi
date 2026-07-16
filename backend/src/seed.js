@@ -36,6 +36,8 @@ const DEFAULT_SETTINGS = {
   purple: '#c9b7e4',
   blue: '#a9d3e5',
   'price-tag': '#f0653c',
+  'cursor-glow': '#f0653c',
+  'cursor-glow-intensity': '12',
   logo_url: '',
   navbar_logo_height: '34',
   splash_tagline: 'Öğrenmenin yeni adresi',
@@ -62,6 +64,14 @@ const DEFAULT_SETTINGS = {
   footer_youtube: '',
   footer_linkedin: '',
   footer_twitter: '',
+
+  company_legal_name: '',
+  company_address: '',
+  company_tax_office: '',
+  company_tax_no: '',
+  company_mersis: '',
+  company_phone: '',
+  company_email: '',
 
   corporate_hero_title: 'Kurumsal Eğitim',
   corporate_hero_subtitle:

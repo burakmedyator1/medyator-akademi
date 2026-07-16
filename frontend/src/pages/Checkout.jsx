@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import iyzicoIleOde from '../assets/payment/iyzico-ile-ode.svg';
+import logoBand from '../assets/payment/iyzico-logo-band.svg';
 import './Checkout.css';
 
 export default function Checkout() {
@@ -8,6 +10,7 @@ export default function Checkout() {
   const [course, setCourse] = useState(null);
   const [configured, setConfigured] = useState(true);
   const [form, setForm] = useState({ identityNumber: '', address: '', city: '', zipCode: '' });
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [checkoutHtml, setCheckoutHtml] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -109,9 +112,27 @@ export default function Checkout() {
               onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
             />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={submitting}>
+
+          <label className="checkout-page__agreement">
+            <input
+              type="checkbox"
+              checked={agreementAccepted}
+              onChange={(e) => setAgreementAccepted(e.target.checked)}
+            />
+            <span>
+              <Link to="/mesafeli-satis-sozlesmesi" target="_blank" rel="noopener noreferrer">
+                Mesafeli Satış Sözleşmesi
+              </Link>
+              'ni okudum ve kabul ediyorum.
+            </span>
+          </label>
+
+          <button className="btn btn-primary" type="submit" disabled={submitting || !agreementAccepted}>
             {submitting ? 'Yönlendiriliyor...' : 'Ödemeye Geç'}
           </button>
+
+          <img src={iyzicoIleOde} alt="iyzico ile Öde" className="checkout-page__iyzico-badge" />
+          <img src={logoBand} alt="Mastercard, Visa, American Express, Troy" className="checkout-page__card-logos" />
         </form>
       )}
     </div>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { InstagramIcon, TikTokIcon, YouTubeIcon, LinkedInIcon, XIcon } from './SocialIcons';
 import { useSettings } from '../context/SettingsContext';
 import defaultLogo from '../assets/logo.png';
+import logoBand from '../assets/payment/iyzico-logo-band-white.svg';
 import './Footer.css';
 
 const SOCIALS = [
@@ -45,6 +46,11 @@ export default function Footer() {
           <Link to="/egitmen-ol">Eğitmen Ol</Link>
         </div>
 
+        <div className="footer__links">
+          <strong>Yasal</strong>
+          <Link to="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
+        </div>
+
         {activeSocials.length > 0 && (
           <div className="footer__socials">
             <strong>Bizi Takip Et</strong>
@@ -61,6 +67,7 @@ export default function Footer() {
 
       <div className="footer__bottom container">
         <span>© {new Date().getFullYear()} Medyator Akademi. Tüm hakları saklıdır.</span>
+        <img src={logoBand} alt="iyzico ile Öde - Mastercard, Visa, American Express, Troy" className="footer__payment-band" />
       </div>
     </footer>
   );
