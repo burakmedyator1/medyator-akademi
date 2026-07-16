@@ -60,3 +60,34 @@ export async function sendWelcomeEmail({ name, email }) {
     console.error('Hoş geldin e-postası gönderilemedi:', err.message);
   }
 }
+
+// Unlike sendWelcomeEmail, failures here are surfaced to the caller (an
+// admin clicking "Hatırlatma Gönder") instead of swallowed, so the panel
+// can show whether it actually went out.
+export async function sendCartReminderEmail({ name, email, courseTitle, price, link }) {
+  const transport = getTransporter();
+  if (!transport) {
+    throw new Error('E-posta gönderimi yapılandırılmamış (SMTP ayarları eksik)');
+  }
+
+  const vars = { name, course: courseTitle, price, link };
+  const subject = fillTemplate(
+    getSetting('cart_reminder_email_subject', 'Sepetini tamamlamayı unutma, {{name}}!'),
+    vars
+  );
+  const body = fillTemplate(
+    getSetting(
+      'cart_reminder_email_body',
+      'Merhaba {{name}},\n\n{{course}} kursunu sepetine eklemiştin ama satın alma işlemini tamamlamamışsın. ' +
+        '{{price}} TL karşılığında hemen kaydını tamamlayabilirsin:\n{{link}}\n\nSeni aramızda görmek isteriz!'
+    ),
+    vars
+  );
+
+  await transport.sendMail({
+    from: process.env.MAIL_FROM || 'Medyator Akademi <no-reply@medyagency.co>',
+    to: email,
+    subject,
+    text: body,
+  });
+}

@@ -7,7 +7,7 @@ import './AdminCommon.css';
 
 const STATUS_LABELS = {
   approved: { label: 'Onaylandı', className: 'admin-badge--approved' },
-  pending: { label: 'Bekliyor', className: 'admin-badge--pending' },
+  pending: { label: 'Sepette', className: 'admin-badge--pending' },
   rejected: { label: 'Reddedildi', className: 'admin-badge--rejected' },
 };
 
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
       api.admin.getOrders(),
     ]).then(([students, courses, instructors, contactRequests, orders]) => {
       const approvedOrders = orders.filter((o) => o.paymentStatus === 'approved');
+      const cartOrders = orders.filter((o) => o.paymentStatus === 'pending');
       setStats({
         students: students.length,
         courses: courses.length,
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
         contactRequests: contactRequests.length,
         sales: approvedOrders.length,
         revenue: approvedOrders.reduce((sum, o) => sum + o.amount, 0),
+        cart: cartOrders.length,
       });
       setRecentOrders(orders.slice(0, 5));
     });
@@ -86,6 +88,10 @@ export default function AdminDashboard() {
           <div className="admin-stat-card">
             <span>Toplam Gelir</span>
             <strong>{stats.revenue} TL</strong>
+          </div>
+          <div className="admin-stat-card">
+            <span>Sepette Bekleyen</span>
+            <strong>{stats.cart}</strong>
           </div>
         </div>
       )}

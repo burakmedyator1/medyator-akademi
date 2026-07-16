@@ -98,6 +98,11 @@ const DEFAULT_SETTINGS = {
   welcome_email_subject: "Medyator Akademi'ye Hoş Geldin!",
   welcome_email_body:
     'Merhaba {{name}},\n\nMedyator Akademi ailesine hoş geldin! Kurslarını hemen keşfetmeye başlayabilirsin.',
+
+  cart_reminder_email_subject: 'Sepetini tamamlamayı unutma, {{name}}!',
+  cart_reminder_email_body:
+    'Merhaba {{name}},\n\n{{course}} kursunu sepetine eklemiştin ama satın alma işlemini tamamlamamışsın. ' +
+    '{{price}} TL karşılığında hemen kaydını tamamlayabilirsin:\n{{link}}\n\nSeni aramızda görmek isteriz!',
 };
 
 const insertSetting = db.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)');

@@ -9,6 +9,7 @@ import { STORAGE_DIR } from '../storagePath.js';
 import { imageUpload as upload } from '../imageUpload.js';
 import { slugify } from '../slugify.js';
 import { extractVideoId } from '../videoId.js';
+import { sendCartReminderEmail } from '../mailer.js';
 
 function generateRandomPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
@@ -495,6 +496,7 @@ router.get('/orders', (req, res) => {
     .prepare(
       `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
               enrollments.payment_provider AS paymentProvider, enrollments.created_at AS createdAt,
+              enrollments.reminder_sent_at AS reminderSentAt,
               users.id AS studentId, users.name AS studentName, users.email AS studentEmail,
               courses.id AS courseId, courses.title AS courseTitle
        FROM enrollments
@@ -505,6 +507,40 @@ router.get('/orders', (req, res) => {
     )
     .all();
   res.json(orders);
+});
+
+router.post('/orders/:id/remind', async (req, res) => {
+  const order = db
+    .prepare(
+      `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
+              enrollments.course_id AS courseId,
+              users.name AS studentName, users.email AS studentEmail,
+              courses.title AS courseTitle
+       FROM enrollments
+       JOIN users ON users.id = enrollments.user_id
+       JOIN courses ON courses.id = enrollments.course_id
+       WHERE enrollments.id = ?`
+    )
+    .get(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+  if (order.paymentStatus !== 'pending') {
+    return res.status(400).json({ error: 'Hatırlatma sadece sepette bekleyen siparişler için gönderilebilir' });
+  }
+
+  const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  try {
+    await sendCartReminderEmail({
+      name: order.studentName,
+      email: order.studentEmail,
+      courseTitle: order.courseTitle,
+      price: order.amount,
+      link: `${baseUrl}/odeme/${order.courseId}`,
+    });
+    db.prepare("UPDATE enrollments SET reminder_sent_at = datetime('now') WHERE id = ?").run(req.params.id);
+    res.json({ sent: true });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
 });
 
 // ---------- Contact requests ----------

@@ -159,6 +159,7 @@ addColumnIfMissing('courses', 'display_order', 'INTEGER NOT NULL DEFAULT 0');
 addColumnIfMissing('blog_posts', 'status', "TEXT NOT NULL DEFAULT 'published'");
 addColumnIfMissing('blog_posts', 'instructor_id', 'INTEGER REFERENCES instructors(id)');
 addColumnIfMissing('enrollments', 'payment_reference', 'TEXT');
+addColumnIfMissing('enrollments', 'reminder_sent_at', 'TEXT');
 addColumnIfMissing('lessons', 'description', "TEXT NOT NULL DEFAULT ''");
 addColumnIfMissing('lessons', 'is_preview', 'INTEGER NOT NULL DEFAULT 0');
 // Older rows used a published (0/1) flag; migrate any that were explicitly

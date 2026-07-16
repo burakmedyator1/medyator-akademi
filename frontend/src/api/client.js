@@ -178,6 +178,7 @@ export const api = {
       request(`/admin/enrollments/${id}`, { method: 'PATCH', body: payload, auth: true }),
 
     getOrders: () => request('/admin/orders', { auth: true }),
+    sendOrderReminder: (id) => request(`/admin/orders/${id}/remind`, { method: 'POST', auth: true }),
 
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
 

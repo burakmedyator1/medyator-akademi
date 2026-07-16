@@ -92,6 +92,14 @@ const GROUPS = [
         textarea: true,
         rows: 6,
       },
+      { key: 'cart_reminder_email_subject', label: 'Sepet Hatırlatma E-postası - Konu' },
+      {
+        key: 'cart_reminder_email_body',
+        label:
+          'Sepet Hatırlatma E-postası - İçerik ({{name}}, {{course}}, {{price}}, {{link}} kullanılabilir)',
+        textarea: true,
+        rows: 6,
+      },
     ],
   },
 ];
