@@ -60,6 +60,8 @@ npm run seed    # (sadece ilk deploy'da) admin hesabı + örnek veriyi oluşturu
 | `ADMIN_PASSWORD` | Aynı admin hesabının şifresi. **Prod'da mutlaka güçlü, rastgele bir değer ayarla** — seed'i çalıştırmadan önce. |
 | `DATA_DIR` | SQLite veritabanı + yüklenen dosyaların saklanacağı klasör. **Prod'da persistent disk'in mount edildiği yolu buraya yaz** (örn. `/var/data`). Ayarlanmazsa `backend/storage` kullanılır. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Kayıt olan öğrencilere gönderilen hoş geldin e-postası için SMTP ayarları. `SMTP_HOST` ayarlanmazsa e-posta gönderimi sessizce atlanır (log'da uyarı görünür). Mevcut Google Workspace adresini bir Uygulama Şifresi ile `smtp.gmail.com` üzerinden kullanabilirsin. |
+| `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL` | Ücretli kurs satın alma için iyzico ödeme anahtarları. Ayarlanmazsa satın alma sayfası "henüz hazır değil" mesajı gösterir, hataya düşmez. Sandbox (test) anahtarlarını ücretsiz olarak https://merchant.iyzipay.com adresinden alabilirsin; gerçek ödeme almak için merchant başvurunun onaylanması ve `IYZICO_BASE_URL=https://api.iyzipay.com` yapman gerekir. |
+| `APP_BASE_URL` | Sitenin canlı adresi (örn. `https://medyagency.co`). iyzico'nun ödeme sonrası geri döneceği callback linkini oluşturmak için kullanılır; genelde otomatik algılanır ama garantiye almak için ayarlaman önerilir. |
 
 ### Kalıcı veri
 
