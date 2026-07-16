@@ -30,9 +30,16 @@ export default function CourseDetail() {
       .catch(() => setEnrolled(false));
   }, [id, isAuthenticated]);
 
+  const isPaid = course?.price > 0;
+
   async function handleEnroll() {
     if (!isAuthenticated) {
-      navigate('/giris', { state: { from: { pathname: `/kurslar/${id}` } } });
+      const from = { pathname: isPaid ? `/odeme/${id}` : `/kurslar/${id}` };
+      navigate('/giris', { state: { from } });
+      return;
+    }
+    if (isPaid) {
+      navigate(`/odeme/${id}`);
       return;
     }
     setEnrolling(true);
@@ -79,11 +86,24 @@ export default function CourseDetail() {
         <aside className="course-detail__side">
           <div className="card course-detail__enroll">
             {error && <p className="course-detail__error">{error}</p>}
-            <button className="btn btn-primary" onClick={handleEnroll} disabled={enrolling}>
-              <PlayCircle size={18} />
-              {enrolling ? 'Kayıt yapılıyor...' : 'Kayıt Ol ve Başla'}
-            </button>
-            <p>Kayıt olduğunda tüm ders videolarına erişim kazanırsın.</p>
+            {enrolled ? (
+              <button className="btn btn-outline course-detail__enrolled" onClick={() => navigate('/panel')}>
+                <CheckCircle2 size={18} />
+                Kursa Katılındı
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={handleEnroll} disabled={enrolling}>
+                <PlayCircle size={18} />
+                {enrolling ? 'Kayıt yapılıyor...' : isPaid ? `Şimdi Satın Al · ${course.price} TL` : 'Kayıt Ol ve Başla'}
+              </button>
+            )}
+            <p>
+              {enrolled
+                ? 'Kurslarım sekmesinden derslerine devam edebilirsin.'
+                : isPaid
+                ? 'Satın aldığında tüm ders videolarına erişim kazanırsın.'
+                : 'Kayıt olduğunda tüm ders videolarına erişim kazanırsın.'}
+            </p>
           </div>
         </aside>
       </div>
