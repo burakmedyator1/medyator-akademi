@@ -1,9 +1,8 @@
 import Database from 'better-sqlite3';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { STORAGE_DIR } from './storagePath.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, '..', 'data.db'));
+const db = new Database(path.join(STORAGE_DIR, 'data.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');

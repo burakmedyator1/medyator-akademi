@@ -3,13 +3,12 @@ import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import path from 'node:path';
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
+import { STORAGE_DIR } from '../storagePath.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+const uploadsDir = path.join(STORAGE_DIR, 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
 const upload = multer({
@@ -50,7 +49,7 @@ router.post('/settings/logo', (req, res) => {
 // ---------- Database backup ----------
 
 router.get('/backup', (req, res) => {
-  const dbPath = path.join(__dirname, '..', '..', 'data.db');
+  const dbPath = path.join(STORAGE_DIR, 'data.db');
   const stamp = new Date().toISOString().slice(0, 10);
   res.download(dbPath, `medyator-akademi-yedek-${stamp}.db`);
 });

@@ -29,8 +29,8 @@ backend/    Express API + SQLite (better-sqlite3)
   src/middleware/   requireAuth, requireAdmin, rate limiting
   src/db.js         şema + otomatik migration/backfill
   src/seed.js       örnek veri + admin hesabı
-  uploads/          yüklenen logo gibi dosyalar (git'e dahil değil)
-  data.db           SQLite veritabanı (git'e dahil değil)
+  src/storagePath.js  kalıcı veri klasörünün konumu (DATA_DIR ile değiştirilebilir)
+  storage/          SQLite veritabanı + yüklenen dosyalar (git'e dahil değil)
 
 frontend/   React + Vite
   src/pages/        genel sayfalar (Landing, Courses, Lesson, vb.)
@@ -58,10 +58,11 @@ npm run seed    # (sadece ilk deploy'da) admin hesabı + örnek veriyi oluşturu
 | `PORT` | Servisin dinleyeceği port (çoğu PaaS bunu otomatik sağlar). |
 | `ADMIN_EMAIL` | `npm run seed` çalıştırılırken oluşturulacak admin hesabının e-postası. **Prod'da mutlaka ayarla**, aksi halde varsayılan (herkese açık kaynak kodunda yazılı) değer kullanılır. |
 | `ADMIN_PASSWORD` | Aynı admin hesabının şifresi. **Prod'da mutlaka güçlü, rastgele bir değer ayarla** — seed'i çalıştırmadan önce. |
+| `DATA_DIR` | SQLite veritabanı + yüklenen dosyaların saklanacağı klasör. **Prod'da persistent disk'in mount edildiği yolu buraya yaz** (örn. `/var/data`). Ayarlanmazsa `backend/storage` kullanılır. |
 
 ### Kalıcı veri
 
-`backend/data.db` (SQLite) ve `backend/uploads/` (yüklenen logo vb.) git'e dahil değildir. Deploy platformunda bu klasörün kalıcı bir diske (persistent volume) bağlı olduğundan emin ol, yoksa her deploy'da veriler sıfırlanır.
+`DATA_DIR` (varsayılan: `backend/storage/`) altında `data.db` ve `uploads/` tutulur, git'e dahil değildir. Deploy platformunda kalıcı diski **`DATA_DIR` neyse tam olarak o yola** bağla — projenin kod klasörlerinden birinin (örn. `backend/`) üzerine bağlarsan, disk o klasördeki kodu (package.json dahil) görünmez hale getirir ve uygulama başlamaz.
 
 ### Yedekleme
 

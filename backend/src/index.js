@@ -11,6 +11,7 @@ import meRoutes from './routes/me.js';
 import contactRoutes from './routes/contact.js';
 import settingsRoutes from './routes/settings.js';
 import adminRoutes from './routes/admin.js';
+import { STORAGE_DIR } from './storagePath.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -46,7 +47,7 @@ app.use(
 );
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(path.join(STORAGE_DIR, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
