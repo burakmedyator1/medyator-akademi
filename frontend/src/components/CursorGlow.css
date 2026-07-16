@@ -1,0 +1,24 @@
+.cursor-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    600px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(240, 101, 60, 0.12),
+    rgba(240, 101, 60, 0.05) 35%,
+    transparent 70%
+  );
+}
+
+.cursor-glow--visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glow {
+    display: none;
+  }
+}
