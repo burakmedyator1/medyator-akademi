@@ -87,6 +87,15 @@
   color: var(--orange-dark);
 }
 
+.course-detail__enrolled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: #2f8a4e;
+  color: #2f8a4e;
+}
+
 @media (max-width: 900px) {
   .course-detail__body {
     grid-template-columns: 1fr;
