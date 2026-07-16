@@ -28,7 +28,10 @@ db.exec(`
     name TEXT NOT NULL,
     title TEXT NOT NULL,
     bio TEXT NOT NULL,
-    avatar_color TEXT NOT NULL DEFAULT '#F0653C'
+    avatar_color TEXT NOT NULL DEFAULT '#F0653C',
+    photo_url TEXT,
+    email TEXT,
+    password_hash TEXT
   );
 
   CREATE TABLE IF NOT EXISTS courses (
@@ -38,7 +41,9 @@ db.exec(`
     delivery_type TEXT NOT NULL CHECK (delivery_type IN ('online', 'corporate', 'in_person')),
     description TEXT NOT NULL,
     cover_color TEXT NOT NULL DEFAULT 'yellow',
+    cover_image_url TEXT,
     price INTEGER NOT NULL DEFAULT 0,
+    display_order INTEGER NOT NULL DEFAULT 0,
     instructor_id INTEGER REFERENCES instructors(id)
   );
 
@@ -83,11 +88,58 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS applications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK (type IN ('intern', 'instructor')),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    cv_file_url TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER NOT NULL REFERENCES courses(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    instructor_id INTEGER NOT NULL REFERENCES instructors(id),
+    question_text TEXT NOT NULL,
+    answer_text TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    answered_at TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS blog_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL,
+    cover_image_url TEXT,
+    published INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Backfill categories from any course.category values that predate the
 // dedicated categories table, so nothing existing silently disappears.
 const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name) VALUES (?)');
 db.prepare('SELECT DISTINCT category FROM courses').all().forEach((row) => insertCategory.run(row.category));
+
+// CREATE TABLE IF NOT EXISTS only applies to brand-new databases, so columns
+// added to existing tables after initial release need an explicit migration.
+function addColumnIfMissing(table, column, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!columns.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+addColumnIfMissing('instructors', 'photo_url', 'TEXT');
+addColumnIfMissing('instructors', 'email', 'TEXT');
+addColumnIfMissing('instructors', 'password_hash', 'TEXT');
+addColumnIfMissing('courses', 'cover_image_url', 'TEXT');
+addColumnIfMissing('courses', 'display_order', 'INTEGER NOT NULL DEFAULT 0');
 
 export default db;
