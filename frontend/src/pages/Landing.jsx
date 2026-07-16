@@ -72,6 +72,7 @@ export default function Landing() {
           {settings.landing_hero_video_id ? (
             <div className="landing__hero-video">
               <VideoPlayer
+                key={settings.landing_hero_video_id}
                 provider={settings.landing_hero_video_provider || 'youtube'}
                 videoId={settings.landing_hero_video_id}
                 title="Medyator Akademi"
