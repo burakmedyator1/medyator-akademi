@@ -5,12 +5,57 @@
 .lesson-page__breadcrumb {
   color: var(--text-secondary);
   font-size: 0.85rem;
-  margin: 0 0 20px;
+  margin: 0 0 16px;
 }
 
 .lesson-page__breadcrumb a {
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.lesson-page__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.lesson-page__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.lesson-page__back:hover {
+  color: var(--navy);
+}
+
+.lesson-page__header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.lesson-page__badges {
+  display: flex;
+  gap: 10px;
+}
+
+.lesson-page__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .lesson-page__body {
@@ -20,26 +65,31 @@
   align-items: start;
 }
 
+.lesson-page__player-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
 .lesson-page__loading {
   aspect-ratio: 16 / 9;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--white);
-  border-radius: var(--radius-lg);
 }
 
 .lesson-page__head-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-top: 20px;
 }
 
-.lesson-page__head-row h1 {
-  margin: 0;
-  font-size: 1.4rem;
+.lesson-page__head-row h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
 }
 
 .lesson-page__head-row .btn {
@@ -51,39 +101,129 @@
 
 .lesson-page__meta {
   color: var(--text-secondary);
-  margin: 6px 0 0;
+  margin: 0;
+  font-size: 0.9rem;
 }
 
-.lesson-page__done-icon {
+.lesson-page__tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.lesson-page__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.lesson-page__tab {
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: var(--white);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+}
+
+.lesson-page__tab.active {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+}
+
+.lesson-page__share {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
   color: var(--orange);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.lesson-page__tab-content {
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.lesson-page__tab-content p {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+.lesson-page__empty {
+  color: var(--text-secondary) !important;
 }
 
 .lesson-page__list {
-  padding: 20px;
+  padding: 0;
+  overflow: hidden;
 }
 
-.lesson-page__list h2 {
+.lesson-page__list-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+}
+
+.lesson-page__list-toggle > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lesson-page__list-index {
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.lesson-page__list-title {
+  font-weight: 700;
   font-size: 1rem;
-  margin: 0 0 14px;
+  color: var(--text-primary);
+}
+
+.lesson-page__list-toggle-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-secondary);
 }
 
 .lesson-page__list ul {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .lesson-page__list li a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.lesson-page__list li a:hover {
+  background: var(--bg-cream);
 }
 
 .lesson-page__list li.active a {
@@ -98,6 +238,10 @@
 
 .lesson-page__duration {
   font-size: 0.75rem;
+}
+
+.lesson-page__done-icon {
+  color: var(--orange);
 }
 
 @media (max-width: 900px) {
