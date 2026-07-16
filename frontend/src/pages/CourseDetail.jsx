@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Lock, PlayCircle, CheckCircle2, Circle } from 'lucide-react';
+import { Lock, PlayCircle, CheckCircle2, Circle, Play } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
@@ -77,27 +77,44 @@ export default function CourseDetail() {
 
           <h2>Müfredat</h2>
           <ul className="course-detail__lessons">
-            {course.lessons.map((lesson) =>
-              enrolled ? (
-                <li key={lesson.id}>
-                  <Link to={`/kurslar/${course.id}/ders/${lesson.id}`} className="course-detail__lesson-link">
-                    {progress >= lesson.order_ ? (
-                      <CheckCircle2 size={16} className="course-detail__done-icon" />
-                    ) : (
-                      <Circle size={16} />
-                    )}
-                    <span>{lesson.title}</span>
-                    <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
-                  </Link>
-                </li>
-              ) : (
+            {course.lessons.map((lesson) => {
+              if (enrolled) {
+                return (
+                  <li key={lesson.id}>
+                    <Link to={`/kurslar/${course.id}/ders/${lesson.id}`} className="course-detail__lesson-link">
+                      {progress >= lesson.order_ ? (
+                        <CheckCircle2 size={16} className="course-detail__done-icon" />
+                      ) : (
+                        <Circle size={16} />
+                      )}
+                      <span>{lesson.title}</span>
+                      <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
+                    </Link>
+                  </li>
+                );
+              }
+
+              if (lesson.isPreview) {
+                return (
+                  <li key={lesson.id}>
+                    <Link to={`/kurslar/${course.id}/ders/${lesson.id}`} className="course-detail__lesson-link">
+                      <Play size={16} className="course-detail__preview-icon" />
+                      <span>{lesson.title}</span>
+                      <span className="course-detail__preview-badge">Ücretsiz İzle</span>
+                      <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
+                    </Link>
+                  </li>
+                );
+              }
+
+              return (
                 <li key={lesson.id}>
                   <Lock size={16} />
                   <span>{lesson.title}</span>
                   <span className="course-detail__duration">{lesson.durationMinutes} dk</span>
                 </li>
-              )
-            )}
+              );
+            })}
           </ul>
         </div>
 
