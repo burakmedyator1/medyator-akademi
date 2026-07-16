@@ -42,6 +42,8 @@ const DEFAULT_SETTINGS = {
   landing_hero_title: 'Öğrenmenin yeni adresi',
   landing_hero_subtitle:
     'Eğitmenlerinden video dersler al, ilerlemeni takip et. Online, kurumsal veya yüz yüze — sana uygun formatı seç.',
+  landing_hero_video_provider: '',
+  landing_hero_video_id: '',
   landing_delivery_online_title: 'Online Eğitim',
   landing_delivery_online_desc:
     'Dilediğin an, YouTube ve Vimeo üzerinden yayınlanan video derslerle kendi hızında öğren.',
@@ -50,8 +52,12 @@ const DEFAULT_SETTINGS = {
   landing_delivery_inperson_title: 'Yüz Yüze Eğitim',
   landing_delivery_inperson_desc:
     "Sınıf ortamında, mentörlük destekli uygulamalı atölyeler ve bootcamp'ler.",
-  landing_cta_title: 'Öğrenmeye bugün başla',
-  landing_cta_subtitle: 'Ücretsiz üye ol, kurs kataloğuna göz at ve sana uygun eğitimi seç.',
+
+  footer_instagram: '',
+  footer_tiktok: '',
+  footer_youtube: '',
+  footer_linkedin: '',
+  footer_twitter: '',
 
   corporate_hero_title: 'Kurumsal Eğitim',
   corporate_hero_subtitle:
