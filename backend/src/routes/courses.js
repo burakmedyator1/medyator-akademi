@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { rejectInstructor } from '../middleware/instructor.js';
 
 const router = Router();
 
 const COURSE_FIELDS = `
   courses.id, courses.title, courses.category, courses.delivery_type AS deliveryType,
-  courses.description, courses.cover_color AS coverColor, courses.price AS price,
+  courses.description, courses.cover_color AS coverColor, courses.cover_image_url AS coverImageUrl,
+  courses.price AS price, courses.display_order AS displayOrder,
   courses.instructor_id AS instructorId, instructors.name AS instructorName
 `;
 
@@ -23,6 +25,7 @@ router.get('/', (req, res) => {
     query += ' AND courses.category = ?';
     params.push(category);
   }
+  query += ' ORDER BY courses.display_order ASC, courses.id ASC';
 
   const courses = db.prepare(query).all(...params);
   const withLessonCount = courses.map((course) => ({
@@ -49,7 +52,7 @@ router.get('/:id', (req, res) => {
   res.json({ ...course, lessons });
 });
 
-router.post('/:id/enroll', requireAuth, (req, res) => {
+router.post('/:id/enroll', requireAuth, rejectInstructor, (req, res) => {
   const course = db.prepare('SELECT id FROM courses WHERE id = ?').get(req.params.id);
   if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
@@ -69,7 +72,7 @@ router.post('/:id/enroll', requireAuth, (req, res) => {
 
 // Protection point: video_id/provider only ever leave the server for an
 // authenticated user who holds an enrollment row for this course.
-router.get('/:id/lessons/:lessonId/video', requireAuth, (req, res) => {
+router.get('/:id/lessons/:lessonId/video', requireAuth, rejectInstructor, (req, res) => {
   const enrollment = db
     .prepare("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
     .get(req.user.id, req.params.id);
