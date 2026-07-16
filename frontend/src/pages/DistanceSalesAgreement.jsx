@@ -87,7 +87,7 @@ export default function DistanceSalesAgreement() {
           niteliğini ortadan kaldırmaz.
         </p>
 
-        <h2>Madde 5 — Cayma Hakkı</h2>
+        <h2>Madde 5 — Cayma Hakkı, İptal ve İade Koşulları</h2>
         <p>
           6502 sayılı Kanun'un 48. maddesi ve Mesafeli Sözleşmeler Yönetmeliği uyarınca, elektronik
           ortamda anında ifa edilen hizmetler ve tüketiciye anında teslim edilen gayrimaddi mallara

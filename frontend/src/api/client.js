@@ -177,6 +177,8 @@ export const api = {
     updateEnrollment: (id, payload) =>
       request(`/admin/enrollments/${id}`, { method: 'PATCH', body: payload, auth: true }),
 
+    getOrders: () => request('/admin/orders', { auth: true }),
+
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
 
     getApplications: () => request('/admin/applications', { auth: true }),

@@ -13,6 +13,7 @@ import {
   Newspaper,
   FileUser,
   Quote,
+  ShoppingCart,
 } from 'lucide-react';
 import './AdminSidebar.css';
 
@@ -22,6 +23,7 @@ const ITEMS = [
   { icon: Tag, href: '/admin/kategoriler', label: 'Kategoriler' },
   { icon: GraduationCap, href: '/admin/egitmenler', label: 'Eğitmenler' },
   { icon: Users, href: '/admin/ogrenciler', label: 'Öğrenciler' },
+  { icon: ShoppingCart, href: '/admin/siparisler', label: 'Siparişler' },
   { icon: Quote, href: '/admin/yorumlar', label: 'Öğrenci Yorumları' },
   { icon: Newspaper, href: '/admin/blog', label: 'Blog' },
   { icon: FileUser, href: '/admin/basvurular', label: 'Başvurular' },

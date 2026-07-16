@@ -38,6 +38,7 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminInstructors from './pages/admin/AdminInstructors';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminStudents from './pages/admin/AdminStudents';
+import AdminOrders from './pages/admin/AdminOrders';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
 import AdminSiteContent from './pages/admin/AdminSiteContent';
@@ -181,6 +182,14 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminStudents />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/siparisler"
+              element={
+                <AdminProtectedRoute>
+                  <AdminOrders />
                 </AdminProtectedRoute>
               }
             />

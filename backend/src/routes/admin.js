@@ -488,6 +488,25 @@ router.patch('/enrollments/:id', (req, res) => {
   res.json({ updated: true });
 });
 
+// ---------- Orders (read-only — no cancel/refund action by design) ----------
+
+router.get('/orders', (req, res) => {
+  const orders = db
+    .prepare(
+      `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
+              enrollments.payment_provider AS paymentProvider, enrollments.created_at AS createdAt,
+              users.id AS studentId, users.name AS studentName, users.email AS studentEmail,
+              courses.id AS courseId, courses.title AS courseTitle
+       FROM enrollments
+       JOIN users ON users.id = enrollments.user_id
+       JOIN courses ON courses.id = enrollments.course_id
+       WHERE enrollments.amount IS NOT NULL
+       ORDER BY enrollments.created_at DESC`
+    )
+    .all();
+  res.json(orders);
+});
+
 // ---------- Contact requests ----------
 
 router.get('/contact-requests', (req, res) => {
