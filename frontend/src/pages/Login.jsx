@@ -19,6 +19,8 @@ export default function Login() {
       const loggedInUser = await login(form.email, form.password);
       if (location.state?.from?.pathname) {
         navigate(location.state.from.pathname, { replace: true });
+      } else if (loggedInUser.role === 'admin') {
+        navigate('/admin', { replace: true });
       } else if (loggedInUser.role === 'instructor') {
         navigate('/egitmen-panel', { replace: true });
       } else {
