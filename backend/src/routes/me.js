@@ -43,6 +43,10 @@ router.get('/dashboard', (req, res) => {
       .prepare('SELECT id, title, duration_minutes AS durationMinutes, lesson_order AS order_ FROM lessons WHERE course_id = ? ORDER BY lesson_order')
       .all(row.id);
     const nextLesson = lessons.find((lesson) => lesson.order_ > row.progress) || null;
+    // Once every lesson is done there's nothing "next" — but the student still
+    // needs somewhere to land when they click back in, so fall back to the
+    // last lesson instead of leaving them with no way back into the player.
+    const resumeLesson = nextLesson || lessons[lessons.length - 1] || null;
 
     return {
       id: row.id,
@@ -53,6 +57,7 @@ router.get('/dashboard', (req, res) => {
       progress: row.progress,
       lessonCount: lessons.length,
       nextLesson,
+      resumeLesson,
     };
   });
 
