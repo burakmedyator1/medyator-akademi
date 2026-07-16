@@ -10,14 +10,23 @@ const GROUPS = [
     fields: [
       { key: 'landing_hero_title', label: 'Ana Başlık (marka adından önceki kısım)' },
       { key: 'landing_hero_subtitle', label: 'Alt Başlık', textarea: true },
+      {
+        key: 'landing_hero_video_provider',
+        label: 'Hero Video Platformu (video girersen kullanılır)',
+        select: true,
+        options: [
+          { value: '', label: 'Yok — mockup görsel göster' },
+          { value: 'youtube', label: 'YouTube' },
+          { value: 'vimeo', label: 'Vimeo' },
+        ],
+      },
+      { key: 'landing_hero_video_id', label: 'Hero Video ID (boş bırakılırsa mockup görsel gösterilir)' },
       { key: 'landing_delivery_online_title', label: 'Online Eğitim Kartı - Başlık' },
       { key: 'landing_delivery_online_desc', label: 'Online Eğitim Kartı - Açıklama', textarea: true },
       { key: 'landing_delivery_corporate_title', label: 'Kurumsal Eğitim Kartı - Başlık' },
       { key: 'landing_delivery_corporate_desc', label: 'Kurumsal Eğitim Kartı - Açıklama', textarea: true },
       { key: 'landing_delivery_inperson_title', label: 'Yüz Yüze Eğitim Kartı - Başlık' },
       { key: 'landing_delivery_inperson_desc', label: 'Yüz Yüze Eğitim Kartı - Açıklama', textarea: true },
-      { key: 'landing_cta_title', label: 'Alt CTA Başlığı' },
-      { key: 'landing_cta_subtitle', label: 'Alt CTA Açıklaması', textarea: true },
     ],
   },
   {
@@ -44,6 +53,16 @@ const GROUPS = [
       { key: 'inperson_highlight2_desc', label: 'Özellik 2 - Açıklama', textarea: true },
       { key: 'inperson_highlight3_title', label: 'Özellik 3 - Başlık' },
       { key: 'inperson_highlight3_desc', label: 'Özellik 3 - Açıklama', textarea: true },
+    ],
+  },
+  {
+    title: 'Footer / Sosyal Medya',
+    fields: [
+      { key: 'footer_instagram', label: 'Instagram Linki' },
+      { key: 'footer_tiktok', label: 'TikTok Linki' },
+      { key: 'footer_youtube', label: 'YouTube Linki' },
+      { key: 'footer_linkedin', label: 'LinkedIn Linki' },
+      { key: 'footer_twitter', label: 'X (Twitter) Linki' },
     ],
   },
 ];
@@ -95,10 +114,18 @@ export default function AdminSiteContent() {
         <h2>{GROUPS[activeGroup].title}</h2>
         {saved && <div style={{ color: '#2f8a4e', fontSize: '0.85rem' }}>Kaydedildi ve uygulandı.</div>}
 
-        {GROUPS[activeGroup].fields.map(({ key, label, textarea }) => (
+        {GROUPS[activeGroup].fields.map(({ key, label, textarea, select, options }) => (
           <div className="admin-field" key={key}>
             <label>{label}</label>
-            {textarea ? (
+            {select ? (
+              <select value={form[key] || ''} onChange={(e) => setForm({ ...form, [key]: e.target.value })}>
+                {options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : textarea ? (
               <textarea
                 rows={2}
                 value={form[key] || ''}
