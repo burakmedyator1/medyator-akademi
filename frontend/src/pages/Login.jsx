@@ -16,8 +16,14 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate(location.state?.from?.pathname || '/panel', { replace: true });
+      const loggedInUser = await login(form.email, form.password);
+      if (location.state?.from?.pathname) {
+        navigate(location.state.from.pathname, { replace: true });
+      } else if (loggedInUser.role === 'instructor') {
+        navigate('/egitmen-panel', { replace: true });
+      } else {
+        navigate('/panel', { replace: true });
+      }
     } catch (err) {
       setError(err.message);
     } finally {
