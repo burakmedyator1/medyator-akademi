@@ -96,6 +96,13 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* Sticking only makes sense when the form is the aside panel next to a
+   scrollable list inside .admin-split — applied globally, sibling forms
+   stacked on their own page (e.g. Görünüm) all stick to the same offset
+   and pile up on top of each other while scrolling. */
+.admin-split .admin-form {
   position: sticky;
   top: 24px;
 }

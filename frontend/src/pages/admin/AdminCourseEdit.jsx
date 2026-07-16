@@ -139,7 +139,7 @@ export default function AdminCourseEdit() {
         </button>
       </div>
 
-      <form className="admin-form" style={{ marginBottom: 24, position: 'static' }} onSubmit={handleCourseSubmit}>
+      <form className="admin-form" style={{ marginBottom: 24 }} onSubmit={handleCourseSubmit}>
         <h2>Kurs Bilgileri</h2>
         {error && <div className="auth-error">{error}</div>}
 
