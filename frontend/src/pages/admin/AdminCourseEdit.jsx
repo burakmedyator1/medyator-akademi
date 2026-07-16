@@ -7,7 +7,15 @@ import { extractVideoId } from '../../utils/videoId';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_LESSON = { title: '', description: '', durationMinutes: 20, order: 1, videoProvider: 'youtube', videoId: '' };
+const EMPTY_LESSON = {
+  title: '',
+  description: '',
+  durationMinutes: 20,
+  order: 1,
+  videoProvider: 'youtube',
+  videoId: '',
+  isPreview: false,
+};
 
 export default function AdminCourseEdit() {
   const { id } = useParams();
@@ -89,6 +97,7 @@ export default function AdminCourseEdit() {
       order: lesson.order_,
       videoProvider: lesson.videoProvider,
       videoId: lesson.videoId,
+      isPreview: Boolean(lesson.isPreview),
     });
   }
 
@@ -255,7 +264,10 @@ export default function AdminCourseEdit() {
               {lessons.map((lesson) => (
                 <tr key={lesson.id}>
                   <td>{lesson.order_}</td>
-                  <td>{lesson.title}</td>
+                  <td>
+                    {lesson.title}
+                    {lesson.isPreview && <span className="admin-lesson-preview-badge">Herkese Açık</span>}
+                  </td>
                   <td>{lesson.durationMinutes} dk</td>
                   <td>
                     {lesson.videoProvider} · {lesson.videoId}
@@ -343,6 +355,17 @@ export default function AdminCourseEdit() {
                 setLessonForm({ ...lessonForm, videoId: extractVideoId(e.target.value, lessonForm.videoProvider) })
               }
             />
+          </div>
+          <div className="admin-field">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                style={{ width: 'auto', padding: 0 }}
+                checked={lessonForm.isPreview}
+                onChange={(e) => setLessonForm({ ...lessonForm, isPreview: e.target.checked })}
+              />
+              Ücretsiz önizleme (kayıt olmadan/satın almadan herkes izleyebilir)
+            </label>
           </div>
 
           <div className="admin-form__actions">
