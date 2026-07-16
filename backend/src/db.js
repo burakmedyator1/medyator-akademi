@@ -118,7 +118,8 @@ db.exec(`
     excerpt TEXT NOT NULL DEFAULT '',
     content TEXT NOT NULL,
     cover_image_url TEXT,
-    published INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('pending', 'published', 'rejected')),
+    instructor_id INTEGER REFERENCES instructors(id),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
@@ -141,5 +142,12 @@ addColumnIfMissing('instructors', 'email', 'TEXT');
 addColumnIfMissing('instructors', 'password_hash', 'TEXT');
 addColumnIfMissing('courses', 'cover_image_url', 'TEXT');
 addColumnIfMissing('courses', 'display_order', 'INTEGER NOT NULL DEFAULT 0');
+addColumnIfMissing('blog_posts', 'status', "TEXT NOT NULL DEFAULT 'published'");
+addColumnIfMissing('blog_posts', 'instructor_id', 'INTEGER REFERENCES instructors(id)');
+// Older rows used a published (0/1) flag; migrate any that were explicitly
+// unpublished so they don't suddenly appear as 'published' under the new column.
+if (db.prepare("PRAGMA table_info(blog_posts)").all().some((c) => c.name === 'published')) {
+  db.prepare("UPDATE blog_posts SET status = 'pending' WHERE published = 0 AND status = 'published'").run();
+}
 
 export default db;
