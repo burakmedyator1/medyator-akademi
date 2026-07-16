@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Lock, PlayCircle } from 'lucide-react';
+import { Lock, PlayCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
@@ -13,10 +13,22 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
+  const [enrolled, setEnrolled] = useState(false);
 
   useEffect(() => {
     api.getCourse(id).then(setCourse);
   }, [id]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setEnrolled(false);
+      return;
+    }
+    api
+      .getEnrollment(id)
+      .then(() => setEnrolled(true))
+      .catch(() => setEnrolled(false));
+  }, [id, isAuthenticated]);
 
   async function handleEnroll() {
     if (!isAuthenticated) {
