@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2, Pencil } from 'lucide-react';
 import { api } from '../../api/client';
 import { COVER_COLOR_LABELS } from '../../components/colors';
+import { extractVideoId } from '../../utils/videoId';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
@@ -323,12 +324,15 @@ export default function AdminCourseEdit() {
             </select>
           </div>
           <div className="admin-field">
-            <label>Video ID</label>
+            <label>Video Linki (YouTube/Vimeo linkini olduğu gibi yapıştırabilirsin)</label>
             <input
               required
-              placeholder="örn. Yt5abc12XYZ"
+              placeholder="örn. https://www.youtube.com/watch?v=..."
               value={lessonForm.videoId}
               onChange={(e) => setLessonForm({ ...lessonForm, videoId: e.target.value })}
+              onBlur={(e) =>
+                setLessonForm({ ...lessonForm, videoId: extractVideoId(e.target.value, lessonForm.videoProvider) })
+              }
             />
           </div>
 
