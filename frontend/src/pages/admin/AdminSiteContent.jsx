@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { useSettings } from '../../context/SettingsContext';
+import { extractVideoId } from '../../utils/videoId';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
@@ -20,7 +21,11 @@ const GROUPS = [
           { value: 'vimeo', label: 'Vimeo' },
         ],
       },
-      { key: 'landing_hero_video_id', label: 'Hero Video ID (boş bırakılırsa mockup görsel gösterilir)' },
+      {
+        key: 'landing_hero_video_id',
+        label: 'Hero Video Linki (YouTube/Vimeo linkini olduğu gibi yapıştırabilirsin — boş bırakılırsa mockup görsel gösterilir)',
+        videoIdProviderKey: 'landing_hero_video_provider',
+      },
       { key: 'landing_delivery_online_title', label: 'Online Eğitim Kartı - Başlık' },
       { key: 'landing_delivery_online_desc', label: 'Online Eğitim Kartı - Açıklama', textarea: true },
       { key: 'landing_delivery_corporate_title', label: 'Kurumsal Eğitim Kartı - Başlık' },
@@ -63,6 +68,18 @@ const GROUPS = [
       { key: 'footer_youtube', label: 'YouTube Linki' },
       { key: 'footer_linkedin', label: 'LinkedIn Linki' },
       { key: 'footer_twitter', label: 'X (Twitter) Linki' },
+    ],
+  },
+  {
+    title: 'E-posta',
+    fields: [
+      { key: 'welcome_email_subject', label: 'Hoş Geldin E-postası - Konu' },
+      {
+        key: 'welcome_email_body',
+        label: 'Hoş Geldin E-postası - İçerik ({{name}} yazarsan kayıt olanın adıyla değişir)',
+        textarea: true,
+        rows: 6,
+      },
     ],
   },
 ];
@@ -114,7 +131,7 @@ export default function AdminSiteContent() {
         <h2>{GROUPS[activeGroup].title}</h2>
         {saved && <div style={{ color: '#2f8a4e', fontSize: '0.85rem' }}>Kaydedildi ve uygulandı.</div>}
 
-        {GROUPS[activeGroup].fields.map(({ key, label, textarea, select, options }) => (
+        {GROUPS[activeGroup].fields.map(({ key, label, textarea, rows, select, options, videoIdProviderKey }) => (
           <div className="admin-field" key={key}>
             <label>{label}</label>
             {select ? (
@@ -127,9 +144,17 @@ export default function AdminSiteContent() {
               </select>
             ) : textarea ? (
               <textarea
-                rows={2}
+                rows={rows || 2}
                 value={form[key] || ''}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+              />
+            ) : videoIdProviderKey ? (
+              <input
+                value={form[key] || ''}
+                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                onBlur={(e) =>
+                  setForm({ ...form, [key]: extractVideoId(e.target.value, form[videoIdProviderKey]) })
+                }
               />
             ) : (
               <input value={form[key] || ''} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
