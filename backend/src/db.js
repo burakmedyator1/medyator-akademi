@@ -55,7 +55,8 @@ db.exec(`
     duration_minutes INTEGER NOT NULL,
     lesson_order INTEGER NOT NULL,
     video_provider TEXT NOT NULL CHECK (video_provider IN ('youtube', 'vimeo')),
-    video_id TEXT NOT NULL
+    video_id TEXT NOT NULL,
+    is_preview INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS enrollments (
@@ -148,6 +149,7 @@ addColumnIfMissing('blog_posts', 'status', "TEXT NOT NULL DEFAULT 'published'");
 addColumnIfMissing('blog_posts', 'instructor_id', 'INTEGER REFERENCES instructors(id)');
 addColumnIfMissing('enrollments', 'payment_reference', 'TEXT');
 addColumnIfMissing('lessons', 'description', "TEXT NOT NULL DEFAULT ''");
+addColumnIfMissing('lessons', 'is_preview', 'INTEGER NOT NULL DEFAULT 0');
 // Older rows used a published (0/1) flag; migrate any that were explicitly
 // unpublished so they don't suddenly appear as 'published' under the new column.
 if (db.prepare("PRAGMA table_info(blog_posts)").all().some((c) => c.name === 'published')) {
