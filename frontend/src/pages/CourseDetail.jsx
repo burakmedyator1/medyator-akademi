@@ -136,8 +136,8 @@ export default function CourseDetail() {
               {enrolled
                 ? 'Kurslarım sekmesinden derslerine devam edebilirsin.'
                 : isPaid
-                ? 'Satın aldığında tüm ders videolarına erişim kazanırsın.'
-                : 'Kayıt olduğunda tüm ders videolarına erişim kazanırsın.'}
+                ? 'Satın aldığında bu kursun tüm ders videolarına erişim kazanırsın.'
+                : 'Kayıt olduğunda bu kursun tüm ders videolarına erişim kazanırsın.'}
             </p>
           </div>
         </aside>
