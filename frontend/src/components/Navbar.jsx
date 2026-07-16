@@ -20,6 +20,7 @@ export default function Navbar() {
           <NavLink to="/egitmenler">Eğitmenler</NavLink>
           <NavLink to="/kurumsal-egitim">Kurumsal Eğitim</NavLink>
           <NavLink to="/yuz-yuze-egitim">Yüz Yüze Eğitim</NavLink>
+          <NavLink to="/blog">Blog</NavLink>
         </nav>
 
         <div className="navbar__actions">
@@ -30,7 +31,7 @@ export default function Navbar() {
                   Admin Paneli
                 </Link>
               )}
-              <Link to="/panel" className="btn btn-outline">
+              <Link to={user.role === 'instructor' ? '/egitmen-panel' : '/panel'} className="btn btn-outline">
                 Panelim
               </Link>
               <button className="btn btn-dark" onClick={logout}>
