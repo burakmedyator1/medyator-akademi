@@ -37,6 +37,8 @@ const DEFAULT_SETTINGS = {
   purple: '#c9b7e4',
   blue: '#a9d3e5',
   'price-tag': '#f0653c',
+  'navbar-bg': '#f5f1e8',
+  'footer-bg': '#1b1e29',
   'cursor-glow': '#f0653c',
   'cursor-glow-intensity': '12',
   logo_url: '',

@@ -1,5 +1,5 @@
 .footer {
-  background: var(--navy);
+  background: var(--footer-bg, var(--navy));
   color: rgba(255, 255, 255, 0.7);
   margin-top: 40px;
 }

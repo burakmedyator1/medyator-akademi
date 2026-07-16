@@ -3,7 +3,18 @@ import { api } from '../api/client';
 
 const SettingsContext = createContext(null);
 
-const COLOR_KEYS = ['bg-cream', 'navy', 'orange', 'yellow', 'purple', 'blue', 'price-tag', 'cursor-glow'];
+const COLOR_KEYS = [
+  'bg-cream',
+  'navy',
+  'orange',
+  'yellow',
+  'purple',
+  'blue',
+  'price-tag',
+  'cursor-glow',
+  'navbar-bg',
+  'footer-bg',
+];
 
 function hexToRgbString(hex) {
   const clean = hex.replace('#', '');

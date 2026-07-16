@@ -6,6 +6,8 @@ import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
 const COLOR_LABELS = {
+  'navbar-bg': 'Üst Menü (Navbar) Rengi',
+  'footer-bg': 'Alt Bilgi (Footer) Rengi',
   'bg-cream': 'Arkaplan (Krem)',
   navy: 'Lacivert (Sidebar / Metin)',
   orange: 'Vurgu Rengi (Turuncu)',

@@ -1,5 +1,5 @@
 .navbar {
-  background: var(--bg-cream);
+  background: var(--navbar-bg, var(--bg-cream));
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
