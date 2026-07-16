@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LayoutGrid, FolderOpen, PenLine, BookOpen, Headphones, Settings, LogOut } from 'lucide-react';
+import { LayoutGrid, FolderOpen, PenLine, BookOpen, Headphones, MessageCircleQuestion, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -9,6 +9,7 @@ const ITEMS = [
   { icon: PenLine, href: '/kurslar', label: 'Kurs Kataloğu' },
   { icon: BookOpen, href: '/egitmenler', label: 'Eğitmenler' },
   { icon: Headphones, href: '/yuz-yuze-egitim', label: 'Yüz Yüze Eğitim' },
+  { icon: MessageCircleQuestion, href: '/sorularim', label: 'Sorularım' },
 ];
 
 export default function Sidebar() {
