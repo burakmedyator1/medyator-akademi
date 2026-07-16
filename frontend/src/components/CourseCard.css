@@ -81,3 +81,21 @@
   font-size: 0.85rem;
   white-space: nowrap;
 }
+
+.course-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-card__price {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--price-tag);
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
