@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { rejectInstructor } from '../middleware/instructor.js';
 
 const router = Router();
@@ -46,10 +46,12 @@ router.get('/:id', (req, res) => {
   if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
   const lessons = db
-    .prepare('SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_ FROM lessons WHERE course_id = ? ORDER BY lesson_order')
+    .prepare(
+      'SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_, is_preview AS isPreview FROM lessons WHERE course_id = ? ORDER BY lesson_order'
+    )
     .all(req.params.id);
 
-  res.json({ ...course, lessons });
+  res.json({ ...course, lessons: lessons.map((l) => ({ ...l, isPreview: Boolean(l.isPreview) })) });
 });
 
 router.post('/:id/enroll', requireAuth, rejectInstructor, (req, res) => {
@@ -70,9 +72,31 @@ router.post('/:id/enroll', requireAuth, rejectInstructor, (req, res) => {
   res.status(201).json({ enrolled: true });
 });
 
-// Protection point: video_id/provider only ever leave the server for an
-// authenticated user who holds an enrollment row for this course.
-router.get('/:id/lessons/:lessonId/video', requireAuth, rejectInstructor, (req, res) => {
+// Protection point: video_id/provider only ever leave the server for either
+// (a) a lesson the admin has explicitly marked as a free preview — anyone can
+// watch, no account needed — or (b) an authenticated user who holds an
+// approved enrollment row for this course.
+router.get('/:id/lessons/:lessonId/video', optionalAuth, (req, res) => {
+  const lesson = db
+    .prepare(
+      'SELECT video_provider AS provider, video_id AS videoId, title, is_preview AS isPreview FROM lessons WHERE id = ? AND course_id = ?'
+    )
+    .get(req.params.lessonId, req.params.id);
+
+  if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
+
+  if (lesson.isPreview) {
+    const { isPreview, ...videoInfo } = lesson;
+    return res.json(videoInfo);
+  }
+
+  if (!req.user) {
+    return res.status(403).json({ error: 'Bu derse erişmek için giriş yapmalısınız' });
+  }
+  if (req.user.role === 'instructor') {
+    return res.status(403).json({ error: 'Bu işlem eğitmen hesapları için kullanılamaz' });
+  }
+
   const enrollment = db
     .prepare("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
     .get(req.user.id, req.params.id);
@@ -81,13 +105,8 @@ router.get('/:id/lessons/:lessonId/video', requireAuth, rejectInstructor, (req, 
     return res.status(403).json({ error: 'Bu derse erişmek için kursa kayıtlı ve onaylı olmalısınız' });
   }
 
-  const lesson = db
-    .prepare('SELECT video_provider AS provider, video_id AS videoId, title FROM lessons WHERE id = ? AND course_id = ?')
-    .get(req.params.lessonId, req.params.id);
-
-  if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
-
-  res.json(lesson);
+  const { isPreview, ...videoInfo } = lesson;
+  res.json(videoInfo);
 });
 
 router.get('/:id/enrollment', requireAuth, rejectInstructor, (req, res) => {
