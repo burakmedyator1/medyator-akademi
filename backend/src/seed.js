@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
   yellow: '#f5c94f',
   purple: '#c9b7e4',
   blue: '#a9d3e5',
+  'price-tag': '#f0653c',
   logo_url: '',
   navbar_logo_height: '34',
   splash_tagline: 'Öğrenmenin yeni adresi',
