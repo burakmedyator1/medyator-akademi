@@ -132,27 +132,21 @@
   font-weight: 700;
 }
 
+.landing__instructor-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .landing__instructor-card span:last-child {
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
-.landing__cta {
-  text-align: center;
-  background: var(--navy);
-  color: var(--white);
-  border-radius: var(--radius-lg);
-  margin: 40px 24px;
-  padding: 56px 24px;
-}
-
-.landing__cta h2 {
-  margin: 0 0 12px;
-}
-
-.landing__cta p {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0 0 24px;
+.landing__hero-video {
+  width: 100%;
+  max-width: 520px;
 }
 
 @media (max-width: 900px) {
