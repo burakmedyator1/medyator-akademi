@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import db from '../db.js';
 import { JWT_SECRET } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
+import { sendWelcomeEmail } from '../mailer.js';
 
 const router = Router();
 router.use(authLimiter);
@@ -58,6 +59,9 @@ router.post('/register', (req, res) => {
 
   const user = { id: result.lastInsertRowid, email, name, role: 'student' };
   res.status(201).json({ token: issueToken(user), user });
+
+  // Fire-and-forget: email delivery should never delay or break registration.
+  sendWelcomeEmail({ name, email }).catch(() => {});
 });
 
 router.post('/login', (req, res) => {
