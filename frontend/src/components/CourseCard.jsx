@@ -5,15 +5,21 @@ import ProgressBar from './ProgressBar';
 import { coverColorValue } from './colors';
 import './CourseCard.css';
 
-export default function CourseCard({ course, mode = 'catalog' }) {
+export default function CourseCard({ course, mode = 'catalog', tagOverride }) {
   const continueHref = course.nextLesson
     ? `/kurslar/${course.id}/ders/${course.nextLesson.id}`
     : `/kurslar/${course.id}`;
 
   return (
-    <div className="course-card" style={{ background: coverColorValue(course.coverColor) }}>
+    <div
+      className="course-card"
+      style={{
+        background: coverColorValue(course.coverColor),
+        backgroundImage: course.coverImageUrl ? `url(${course.coverImageUrl})` : undefined,
+      }}
+    >
       <div className="course-card__top">
-        <span className="course-card__tag">{course.category}</span>
+        <span className="course-card__tag">{tagOverride || course.category}</span>
         <Bookmark size={18} />
       </div>
 
@@ -38,7 +44,11 @@ export default function CourseCard({ course, mode = 'catalog' }) {
       ) : (
         <>
           <p className="course-card__meta">
-            {[course.instructorName, course.lessonCount != null ? `${course.lessonCount} ders` : null]
+            {[
+              course.instructorName,
+              course.lessonCount != null ? `${course.lessonCount} ders` : null,
+              course.price != null ? `${course.price} TL` : null,
+            ]
               .filter(Boolean)
               .join(' · ')}
           </p>
