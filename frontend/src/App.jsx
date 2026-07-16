@@ -72,14 +72,7 @@ export default function App() {
             <Route path="/kayit" element={<Register />} />
             <Route path="/kurslar" element={<Courses />} />
             <Route path="/kurslar/:id" element={<CourseDetail />} />
-            <Route
-              path="/kurslar/:courseId/ders/:lessonId"
-              element={
-                <ProtectedRoute>
-                  <Lesson />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/kurslar/:courseId/ders/:lessonId" element={<Lesson />} />
             <Route
               path="/panel"
               element={
