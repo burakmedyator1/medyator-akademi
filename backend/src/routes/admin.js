@@ -1,33 +1,13 @@
 import { Router } from 'express';
-import multer from 'multer';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import path from 'node:path';
-import fs from 'node:fs';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
 import { STORAGE_DIR } from '../storagePath.js';
-
-const uploadsDir = path.join(STORAGE_DIR, 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: uploadsDir,
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname) || '.png';
-      cb(null, `${file.fieldname}-${Date.now()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Sadece görsel dosyaları yüklenebilir'));
-    }
-    cb(null, true);
-  },
-});
+import { imageUpload as upload } from '../imageUpload.js';
+import { slugify } from '../slugify.js';
 
 function generateRandomPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
@@ -424,21 +404,17 @@ router.delete('/applications/:id', (req, res) => {
 
 // ---------- Blog ----------
 
-function slugify(title) {
-  return title
-    .toLocaleLowerCase('tr-TR')
-    .replace(/ğ/g, 'g')
-    .replace(/ü/g, 'u')
-    .replace(/ş/g, 's')
-    .replace(/ı/g, 'i')
-    .replace(/ö/g, 'o')
-    .replace(/ç/g, 'c')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 router.get('/blog', (req, res) => {
-  res.json(db.prepare('SELECT * FROM blog_posts ORDER BY created_at DESC').all());
+  res.json(
+    db
+      .prepare(
+        `SELECT blog_posts.*, instructors.name AS instructorName
+         FROM blog_posts
+         LEFT JOIN instructors ON instructors.id = blog_posts.instructor_id
+         ORDER BY (blog_posts.status = 'pending') DESC, blog_posts.created_at DESC`
+      )
+      .all()
+  );
 });
 
 router.post('/blog/cover', (req, res) => {
@@ -450,7 +426,7 @@ router.post('/blog/cover', (req, res) => {
 });
 
 router.post('/blog', (req, res) => {
-  const { title, excerpt, content, coverImageUrl, published } = req.body;
+  const { title, excerpt, content, coverImageUrl, status } = req.body;
   if (!title || !title.trim() || !content || !content.trim()) {
     return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
   }
@@ -460,20 +436,44 @@ router.post('/blog', (req, res) => {
 
   const result = db
     .prepare(
-      'INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, published) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, status) VALUES (?, ?, ?, ?, ?, ?)'
     )
-    .run(title.trim(), slug, excerpt || '', content.trim(), coverImageUrl || null, published === false ? 0 : 1);
+    .run(
+      title.trim(),
+      slug,
+      excerpt || '',
+      content.trim(),
+      coverImageUrl || null,
+      status === 'pending' ? 'pending' : 'published'
+    );
   res.status(201).json({ id: result.lastInsertRowid, slug });
 });
 
 router.put('/blog/:id', (req, res) => {
-  const { title, excerpt, content, coverImageUrl, published } = req.body;
+  const { title, excerpt, content, coverImageUrl, status } = req.body;
   if (!title || !title.trim() || !content || !content.trim()) {
     return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
   }
   db.prepare(
-    'UPDATE blog_posts SET title = ?, excerpt = ?, content = ?, cover_image_url = ?, published = ? WHERE id = ?'
-  ).run(title.trim(), excerpt || '', content.trim(), coverImageUrl || null, published === false ? 0 : 1, req.params.id);
+    'UPDATE blog_posts SET title = ?, excerpt = ?, content = ?, cover_image_url = ?, status = ? WHERE id = ?'
+  ).run(
+    title.trim(),
+    excerpt || '',
+    content.trim(),
+    coverImageUrl || null,
+    status === 'pending' || status === 'rejected' ? status : 'published',
+    req.params.id
+  );
+  res.json({ updated: true });
+});
+
+router.patch('/blog/:id/status', (req, res) => {
+  const { status } = req.body;
+  if (!['published', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: "Durum 'published' veya 'rejected' olmalı" });
+  }
+  const result = db.prepare('UPDATE blog_posts SET status = ? WHERE id = ?').run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Yazı bulunamadı' });
   res.json({ updated: true });
 });
 
