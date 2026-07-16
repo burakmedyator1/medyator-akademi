@@ -10,6 +10,10 @@ import instructorRoutes from './routes/instructors.js';
 import meRoutes from './routes/me.js';
 import contactRoutes from './routes/contact.js';
 import settingsRoutes from './routes/settings.js';
+import blogRoutes from './routes/blog.js';
+import applicationRoutes from './routes/applications.js';
+import questionRoutes from './routes/questions.js';
+import instructorPanelRoutes from './routes/instructorPanel.js';
 import adminRoutes from './routes/admin.js';
 import { STORAGE_DIR } from './storagePath.js';
 
@@ -55,6 +59,10 @@ app.use('/api/instructors', instructorRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/blog', blogRoutes);
+app.use('/api/applications', applicationRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/instructor', instructorPanelRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
