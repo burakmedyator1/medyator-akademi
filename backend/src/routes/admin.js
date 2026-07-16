@@ -31,6 +31,19 @@ router.post('/settings/logo', (req, res) => {
   });
 });
 
+router.post('/settings/splash-image', (req, res) => {
+  upload.single('splashImage')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+
+    const url = `/uploads/${req.file.filename}`;
+    db.prepare(
+      'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+    ).run('splash_image_url', url);
+    res.status(201).json({ url });
+  });
+});
+
 // ---------- Database backup ----------
 
 router.get('/backup', (req, res) => {
