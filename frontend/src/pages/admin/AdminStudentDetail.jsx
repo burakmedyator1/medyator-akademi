@@ -11,9 +11,8 @@ export default function AdminStudentDetail() {
   const [allCourses, setAllCourses] = useState([]);
   const [assignForm, setAssignForm] = useState({ courseId: '', paymentStatus: 'approved' });
   const [error, setError] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState(null);
   const [resettingPassword, setResettingPassword] = useState(false);
 
   function load() {
@@ -44,15 +43,12 @@ export default function AdminStudentDetail() {
     load();
   }
 
-  async function handleResetPassword(e) {
-    e.preventDefault();
+  async function handleResetPassword() {
     setPasswordError('');
-    setPasswordSuccess(false);
     setResettingPassword(true);
     try {
-      await api.admin.resetStudentPassword(id, newPassword);
-      setNewPassword('');
-      setPasswordSuccess(true);
+      const { password } = await api.admin.resetStudentPassword(id);
+      setGeneratedPassword(password);
     } catch (err) {
       setPasswordError(err.message);
     } finally {
@@ -172,28 +168,30 @@ export default function AdminStudentDetail() {
         </form>
       </div>
 
-      <form className="admin-form" style={{ maxWidth: 420, marginTop: 20 }} onSubmit={handleResetPassword}>
-        <h2>Şifreyi Sıfırla</h2>
+      <div className="admin-form" style={{ maxWidth: 420, marginTop: 20 }}>
+        <h2>Şifre</h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+          Güvenlik nedeniyle mevcut şifre şifrelenmiş halde saklanır ve tekrar gösterilemez. Öğrenciye
+          yeni bir şifre oluşturup iletebilirsin.
+        </p>
         {passwordError && <div className="auth-error">{passwordError}</div>}
-        {passwordSuccess && (
-          <div style={{ color: '#2f8a4e', fontSize: '0.85rem' }}>Şifre güncellendi.</div>
+        {generatedPassword && (
+          <div className="card" style={{ padding: 12, fontSize: '0.85rem', background: '#fef6e4' }}>
+            Öğrencinin yeni şifresi: <strong>{generatedPassword}</strong>
+            <br />
+            Bu şifre yalnızca bir kez gösterilir, öğrenciyle paylaşmayı unutma.
+          </div>
         )}
 
-        <div className="admin-field">
-          <label>Yeni Şifre</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-        </div>
-
-        <button className="btn btn-primary" type="submit" disabled={resettingPassword}>
-          {resettingPassword ? 'Kaydediliyor...' : 'Şifreyi Sıfırla'}
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={handleResetPassword}
+          disabled={resettingPassword}
+        >
+          {resettingPassword ? 'Oluşturuluyor...' : 'Yeni Şifre Oluştur'}
         </button>
-      </form>
+      </div>
     </AdminLayout>
   );
 }
