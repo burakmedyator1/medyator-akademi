@@ -59,7 +59,7 @@
   }
   100% {
     opacity: 0;
-    transform: scale(0.12);
+    transform: scale(1);
   }
 }
 
