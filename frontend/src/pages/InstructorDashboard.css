@@ -18,9 +18,30 @@
   margin: 0;
 }
 
+.instructor-dashboard__tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
 .instructor-dashboard h2 {
   font-size: 1.1rem;
   margin: 32px 0 16px;
+}
+
+.instructor-dashboard__hint {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 16px;
+}
+
+.instructor-dashboard__blog-form {
+  padding: 24px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .instructor-dashboard__list {
