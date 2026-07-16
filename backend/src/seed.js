@@ -77,6 +77,10 @@ const DEFAULT_SETTINGS = {
   inperson_highlight2_desc: "Hafta sonu bootcamp'leri ve haftalık kamp formatları.",
   inperson_highlight3_title: 'Mentörlük Desteği',
   inperson_highlight3_desc: 'Eğitim boyunca birebir mentörlük ve geri bildirim.',
+
+  welcome_email_subject: "Medyator Akademi'ye Hoş Geldin!",
+  welcome_email_body:
+    'Merhaba {{name}},\n\nMedyator Akademi ailesine hoş geldin! Kurslarını hemen keşfetmeye başlayabilirsin.',
 };
 
 const insertSetting = db.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)');
