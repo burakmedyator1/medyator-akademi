@@ -21,7 +21,7 @@ export default function Courses() {
 
   return (
     <div className="container courses-page">
-      <h1>Online Kurs Kataloğu</h1>
+      <h1>Online Eğitimler</h1>
       <p className="courses-page__subtitle">Kendi hızında ilerleyebileceğin video derslerden oluşan kurslar.</p>
 
       <div className="courses-page__filters">
