@@ -28,6 +28,13 @@ app.set('trust proxy', 1);
 
 app.use(
   helmet({
+    // Helmet's own default is `no-referrer`, which strips the Referer header
+    // entirely on cross-origin requests. YouTube's IFrame Player API relies on
+    // that header (alongside the `origin` playerVars param) to validate the
+    // embed, and Safari enforces the policy strictly — with no-referrer it
+    // rejects the embed outright ("Hata 153"), regardless of which video is
+    // loaded. This is the browser's own out-of-the-box default anyway.
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
