@@ -29,14 +29,33 @@
   border-radius: var(--radius-lg);
 }
 
-.lesson-page__main h1 {
-  margin: 20px 0 6px;
+.lesson-page__head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.lesson-page__head-row h1 {
+  margin: 0;
   font-size: 1.4rem;
+}
+
+.lesson-page__head-row .btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .lesson-page__meta {
   color: var(--text-secondary);
-  margin: 0;
+  margin: 6px 0 0;
+}
+
+.lesson-page__done-icon {
+  color: var(--orange);
 }
 
 .lesson-page__list {
