@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2, Pencil } from 'lucide-react';
 import { api } from '../../api/client';
+import { COVER_COLOR_LABELS } from '../../components/colors';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
@@ -185,9 +186,11 @@ export default function AdminCourseEdit() {
             value={courseForm.coverColor}
             onChange={(e) => setCourseForm({ ...courseForm, coverColor: e.target.value })}
           >
-            <option value="yellow">Sarı</option>
-            <option value="purple">Mor</option>
-            <option value="blue">Mavi</option>
+            {Object.entries(COVER_COLOR_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
         <div className="admin-field">
