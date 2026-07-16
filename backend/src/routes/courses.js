@@ -46,7 +46,7 @@ router.get('/:id', (req, res) => {
   if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
   const lessons = db
-    .prepare('SELECT id, title, duration_minutes AS durationMinutes, lesson_order AS order_ FROM lessons WHERE course_id = ? ORDER BY lesson_order')
+    .prepare('SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_ FROM lessons WHERE course_id = ? ORDER BY lesson_order')
     .all(req.params.id);
 
   res.json({ ...course, lessons });
