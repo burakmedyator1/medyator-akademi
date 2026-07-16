@@ -48,8 +48,13 @@ export default function ContactForm({ type, submitLabel = 'Gönder' }) {
         />
       </div>
       <div className="auth-field">
-        <label htmlFor="company">Şirket / Kurum (opsiyonel)</label>
-        <input id="company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+        <label htmlFor="company">Şirket / Kurum</label>
+        <input
+          id="company"
+          required
+          value={form.company}
+          onChange={(e) => setForm({ ...form, company: e.target.value })}
+        />
       </div>
       <div className="auth-field">
         <label htmlFor="message">Mesajın</label>
