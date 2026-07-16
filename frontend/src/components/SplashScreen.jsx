@@ -16,11 +16,14 @@ export default function SplashScreen() {
 
   if (phase === 'done' || settings.splash_enabled === 'false') return null;
 
+  const showImage = settings.splash_show_logo !== 'false';
+  const splashImage = settings.splash_image_url || settings.logo_url || defaultLogo;
+
   return (
     <div className="splash" aria-hidden="true">
       <div className="splash__glow" />
       <div className="splash__content">
-        <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" className="splash__logo" />
+        {showImage && <img src={splashImage} alt="Medyator Akademi" className="splash__logo" />}
         <p className="splash__tagline">{settings.splash_tagline || 'Öğrenmenin yeni adresi'}</p>
       </div>
     </div>
