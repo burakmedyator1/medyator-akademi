@@ -2,10 +2,12 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { rejectInstructor } from '../middleware/instructor.js';
 
 const router = Router();
+router.use(requireAuth, rejectInstructor);
 
-router.put('/password', requireAuth, (req, res) => {
+router.put('/password', (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) {
     return res.status(400).json({ error: 'Mevcut ve yeni şifre zorunlu' });
@@ -24,7 +26,7 @@ router.put('/password', requireAuth, (req, res) => {
   res.json({ updated: true });
 });
 
-router.get('/dashboard', requireAuth, (req, res) => {
+router.get('/dashboard', (req, res) => {
   const enrollments = db
     .prepare(
       `SELECT enrollments.progress AS progress, courses.id, courses.title, courses.category,
