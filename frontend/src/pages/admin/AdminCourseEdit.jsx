@@ -222,13 +222,23 @@ export default function AdminCourseEdit() {
           />
         </div>
         <div className="admin-field">
-          <label>Kapak Görseli</label>
+          <label>Kapak Görseli (opsiyonel — seçilmezse kapak rengi kullanılır)</label>
           {courseForm.coverImageUrl && (
-            <img
-              src={courseForm.coverImageUrl}
-              alt=""
-              style={{ width: '100%', maxWidth: 240, borderRadius: 8, marginBottom: 8 }}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+              <img
+                src={courseForm.coverImageUrl}
+                alt=""
+                style={{ width: '100%', maxWidth: 240, borderRadius: 8 }}
+              />
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ alignSelf: 'flex-start' }}
+                onClick={() => setCourseForm((f) => ({ ...f, coverImageUrl: '' }))}
+              >
+                Görseli Kaldır
+              </button>
+            </div>
           )}
           <input type="file" accept="image/*" onChange={handleCoverUpload} />
           {uploading && <span style={{ fontSize: '0.8rem' }}>Yükleniyor...</span>}
