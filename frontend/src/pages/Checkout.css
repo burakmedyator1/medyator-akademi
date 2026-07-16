@@ -1,0 +1,34 @@
+.checkout-page {
+  padding: 48px 24px 80px;
+  max-width: 560px;
+}
+
+.checkout-page h1 {
+  margin: 0 0 8px;
+}
+
+.checkout-page__course {
+  color: var(--text-secondary);
+  margin: 0 0 28px;
+}
+
+.checkout-page__form {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkout-page__form-frame {
+  min-height: 480px;
+}
+
+.checkout-page__notice {
+  padding: 32px;
+  text-align: center;
+}
+
+.checkout-page__notice p {
+  color: var(--text-secondary);
+  margin: 8px 0 20px;
+}
