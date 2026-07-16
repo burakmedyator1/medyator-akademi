@@ -62,6 +62,21 @@ export const api = {
     getQuestions: () => request('/instructor/questions', { auth: true }),
     answerQuestion: (id, answerText) =>
       request(`/instructor/questions/${id}`, { method: 'PATCH', body: { answerText }, auth: true }),
+
+    getBlogPosts: () => request('/instructor/blog', { auth: true }),
+    createBlogPost: (payload) => request('/instructor/blog', { method: 'POST', body: payload, auth: true }),
+    uploadBlogCover: async (file) => {
+      const formData = new FormData();
+      formData.append('cover', file);
+      const res = await fetch('/api/instructor/blog/cover', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
+      return data;
+    },
   },
 
   applyInstructor: (payload) => request('/applications/instructor', { method: 'POST', body: payload }),
@@ -145,6 +160,8 @@ export const api = {
     updateBlogPost: (id, payload) =>
       request(`/admin/blog/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteBlogPost: (id) => request(`/admin/blog/${id}`, { method: 'DELETE', auth: true }),
+    setBlogPostStatus: (id, status) =>
+      request(`/admin/blog/${id}/status`, { method: 'PATCH', body: { status }, auth: true }),
     uploadBlogCover: async (file) => {
       const formData = new FormData();
       formData.append('cover', file);
