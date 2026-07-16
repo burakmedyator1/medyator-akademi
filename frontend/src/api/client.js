@@ -39,8 +39,11 @@ export const api = {
   },
   getCourse: (id) => request(`/courses/${id}`),
   enroll: (id) => request(`/courses/${id}/enroll`, { method: 'POST', auth: true }),
+  getEnrollment: (id) => request(`/courses/${id}/enrollment`, { auth: true }),
   getLessonVideo: (courseId, lessonId) =>
     request(`/courses/${courseId}/lessons/${lessonId}/video`, { auth: true }),
+  completeLesson: (courseId, lessonId) =>
+    request(`/courses/${courseId}/lessons/${lessonId}/complete`, { method: 'POST', auth: true }),
 
   getInstructors: () => request('/instructors'),
   getInstructor: (id) => request(`/instructors/${id}`),
