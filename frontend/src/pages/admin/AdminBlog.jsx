@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2, Plus, Upload } from 'lucide-react';
+import { Trash2, Plus, Check, X } from 'lucide-react';
 import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_FORM = { title: '', excerpt: '', content: '', coverImageUrl: '', published: true };
+const EMPTY_FORM = { title: '', excerpt: '', content: '', coverImageUrl: '', status: 'published' };
+
+const STATUS_LABELS = {
+  published: 'Yayında',
+  pending: 'Onay Bekliyor',
+  rejected: 'Reddedildi',
+};
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([]);
@@ -28,7 +34,7 @@ export default function AdminBlog() {
       excerpt: post.excerpt,
       content: post.content,
       coverImageUrl: post.cover_image_url || '',
-      published: !!post.published,
+      status: post.status,
     });
   }
 
@@ -67,6 +73,15 @@ export default function AdminBlog() {
     }
   }
 
+  async function handleStatusChange(id, status) {
+    try {
+      await api.admin.setBlogPostStatus(id, status);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function handleCoverUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -96,6 +111,7 @@ export default function AdminBlog() {
             <thead>
               <tr>
                 <th>Başlık</th>
+                <th>Yazar</th>
                 <th>Durum</th>
                 <th></th>
               </tr>
@@ -104,9 +120,32 @@ export default function AdminBlog() {
               {posts.map((post) => (
                 <tr key={post.id} className="clickable" onClick={() => startEdit(post)}>
                   <td>{post.title}</td>
-                  <td>{post.published ? 'Yayında' : 'Taslak'}</td>
+                  <td>{post.instructorName || 'Admin'}</td>
+                  <td>{STATUS_LABELS[post.status] || post.status}</td>
                   <td>
                     <div className="admin-table__actions">
+                      {post.status === 'pending' && (
+                        <>
+                          <button
+                            title="Onayla"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(post.id, 'published');
+                            }}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            title="Reddet"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(post.id, 'rejected');
+                            }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -121,7 +160,7 @@ export default function AdminBlog() {
               ))}
               {posts.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="admin-empty">
+                  <td colSpan={4} className="admin-empty">
                     Henüz blog yazısı yok.
                   </td>
                 </tr>
@@ -162,15 +201,12 @@ export default function AdminBlog() {
             {uploading && <span style={{ fontSize: '0.8rem' }}>Yükleniyor...</span>}
           </div>
           <div className="admin-field">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="checkbox"
-                style={{ width: 'auto', padding: 0 }}
-                checked={form.published}
-                onChange={(e) => setForm({ ...form, published: e.target.checked })}
-              />
-              Yayında
-            </label>
+            <label>Durum</label>
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="published">Yayında</option>
+              <option value="pending">Onay Bekliyor</option>
+              <option value="rejected">Reddedildi</option>
+            </select>
           </div>
 
           <div className="admin-form__actions">
