@@ -1,6 +1,18 @@
 import bcrypt from 'bcryptjs';
 import db from './db.js';
 
+// Fail fast, before touching the database, if production is about to seed
+// with the publicly-known default admin password.
+if (!process.env.ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'ADMIN_PASSWORD ortam değişkeni ayarlanmadan production modunda seed çalıştırılamaz. ' +
+      'Güçlü bir şifre belirleyip ortam değişkenlerine ekleyin.'
+  );
+}
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medyatorakademi.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123!';
+
 db.exec(`
   DELETE FROM enrollments;
   DELETE FROM lessons;
@@ -10,18 +22,6 @@ db.exec(`
   DELETE FROM users;
   DELETE FROM site_settings;
 `);
-
-// Override via ADMIN_EMAIL/ADMIN_PASSWORD env vars in production — never
-// ship the real admin password in source control.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medyatorakademi.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123!';
-
-if (!process.env.ADMIN_PASSWORD) {
-  console.warn(
-    'UYARI: ADMIN_PASSWORD ortam değişkeni ayarlanmamış, güvensiz varsayılan şifre kullanılıyor. ' +
-      'Prod ortamında seed çalıştırmadan önce mutlaka ayarlayın.'
-  );
-}
 
 db.prepare(
   `INSERT INTO users (email, password_hash, name, role, phone, instagram)
