@@ -10,6 +10,8 @@ import {
   Palette,
   UserCog,
   ArrowLeft,
+  Newspaper,
+  FileUser,
 } from 'lucide-react';
 import './AdminSidebar.css';
 
@@ -19,6 +21,8 @@ const ITEMS = [
   { icon: Tag, href: '/admin/kategoriler', label: 'Kategoriler' },
   { icon: GraduationCap, href: '/admin/egitmenler', label: 'Eğitmenler' },
   { icon: Users, href: '/admin/ogrenciler', label: 'Öğrenciler' },
+  { icon: Newspaper, href: '/admin/blog', label: 'Blog' },
+  { icon: FileUser, href: '/admin/basvurular', label: 'Başvurular' },
   { icon: Mail, href: '/admin/iletisim-talepleri', label: 'İletişim Talepleri' },
   { icon: FileText, href: '/admin/site-icerigi', label: 'Site İçeriği' },
   { icon: Palette, href: '/admin/gorunum', label: 'Görünüm' },
