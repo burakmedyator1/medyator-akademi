@@ -3,7 +3,9 @@ import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import InstructorProtectedRoute from './components/InstructorProtectedRoute';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import SplashScreen from './components/SplashScreen';
 
 import Landing from './pages/Landing';
@@ -18,6 +20,12 @@ import InstructorDetail from './pages/InstructorDetail';
 import CorporateTraining from './pages/CorporateTraining';
 import InPersonTraining from './pages/InPersonTraining';
 import AccountSettings from './pages/AccountSettings';
+import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
+import InternApplication from './pages/InternApplication';
+import InstructorApplication from './pages/InstructorApplication';
+import InstructorDashboard from './pages/InstructorDashboard';
+import MyQuestions from './pages/MyQuestions';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCourses from './pages/admin/AdminCourses';
@@ -28,18 +36,25 @@ import AdminStudents from './pages/admin/AdminStudents';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
 import AdminSiteContent from './pages/admin/AdminSiteContent';
+import AdminBlog from './pages/admin/AdminBlog';
+import AdminApplications from './pages/admin/AdminApplications';
 import AdminAppearance from './pages/admin/AdminAppearance';
 import AdminAccount from './pages/admin/AdminAccount';
 
 function Layout({ children }) {
   const location = useLocation();
-  const hideNavbar = location.pathname === '/panel' || location.pathname.startsWith('/admin');
+  const hideNavbar =
+    location.pathname === '/panel' ||
+    location.pathname === '/sorularim' ||
+    location.pathname === '/egitmen-panel' ||
+    location.pathname.startsWith('/admin');
   const showSplash = location.pathname === '/';
   return (
     <>
       {showSplash && <SplashScreen />}
       {!hideNavbar && <Navbar />}
       {children}
+      {!hideNavbar && <Footer />}
     </>
   );
 }
@@ -73,6 +88,18 @@ export default function App() {
             />
             <Route path="/egitmenler" element={<Instructors />} />
             <Route path="/egitmenler/:id" element={<InstructorDetail />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
+            <Route path="/stajyer-ol" element={<InternApplication />} />
+            <Route path="/egitmen-ol" element={<InstructorApplication />} />
+            <Route
+              path="/egitmen-panel"
+              element={
+                <InstructorProtectedRoute>
+                  <InstructorDashboard />
+                </InstructorProtectedRoute>
+              }
+            />
             <Route path="/kurumsal-egitim" element={<CorporateTraining />} />
             <Route path="/yuz-yuze-egitim" element={<InPersonTraining />} />
             <Route
@@ -80,6 +107,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <AccountSettings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sorularim"
+              element={
+                <ProtectedRoute>
+                  <MyQuestions />
                 </ProtectedRoute>
               }
             />
@@ -153,6 +188,22 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminSiteContent />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/blog"
+              element={
+                <AdminProtectedRoute>
+                  <AdminBlog />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/basvurular"
+              element={
+                <AdminProtectedRoute>
+                  <AdminApplications />
                 </AdminProtectedRoute>
               }
             />
