@@ -12,6 +12,7 @@ const COLOR_LABELS = {
   yellow: 'Kategori - Sarı',
   purple: 'Kategori - Mor',
   blue: 'Kategori - Mavi',
+  'price-tag': 'Fiyat Etiketi Rengi',
 };
 
 export default function AdminAppearance() {
