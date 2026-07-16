@@ -13,14 +13,16 @@ const SOCIALS = [
 ];
 
 export default function Footer() {
-  const { settings } = useSettings();
+  const { settings, loaded } = useSettings();
   const activeSocials = SOCIALS.filter(({ key }) => settings[key]);
 
   return (
     <footer className="footer">
       <div className="container footer__inner">
         <div className="footer__brand">
-          <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
+          {(settings.logo_url || loaded) && (
+            <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
+          )}
           <p>Online, kurumsal ve yüz yüze eğitim kursları.</p>
         </div>
 
