@@ -31,6 +31,12 @@ export default function AdminAppearance() {
   const [uploading, setUploading] = useState(false);
   const [logoError, setLogoError] = useState('');
 
+  const darkLogoInputRef = useRef(null);
+  const [darkLogoFile, setDarkLogoFile] = useState(null);
+  const [darkLogoPreview, setDarkLogoPreview] = useState(null);
+  const [darkLogoUploading, setDarkLogoUploading] = useState(false);
+  const [darkLogoError, setDarkLogoError] = useState('');
+
   const splashFileInputRef = useRef(null);
   const [splashFile, setSplashFile] = useState(null);
   const [splashPreview, setSplashPreview] = useState(null);
@@ -76,6 +82,31 @@ export default function AdminAppearance() {
       setLogoError(err.message);
     } finally {
       setUploading(false);
+    }
+  }
+
+  function handleDarkLogoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDarkLogoFile(file);
+    setDarkLogoPreview(URL.createObjectURL(file));
+    setDarkLogoError('');
+  }
+
+  async function handleDarkLogoUpload() {
+    if (!darkLogoFile) return;
+    setDarkLogoUploading(true);
+    setDarkLogoError('');
+    try {
+      await api.admin.uploadLogoDark(darkLogoFile);
+      await reload();
+      setDarkLogoFile(null);
+      setDarkLogoPreview(null);
+      if (darkLogoInputRef.current) darkLogoInputRef.current.value = '';
+    } catch (err) {
+      setDarkLogoError(err.message);
+    } finally {
+      setDarkLogoUploading(false);
     }
   }
 
@@ -130,6 +161,34 @@ export default function AdminAppearance() {
         </button>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
           Navbar'daki logoyu değiştirir. Açılış ekranında ayrı bir görsel belirlemezsen bu logo orada da kullanılır.
+        </p>
+      </div>
+
+      <div className="admin-form" style={{ maxWidth: 480, marginBottom: 24 }}>
+        <h2>Karanlık Mod Logosu</h2>
+        {darkLogoError && <div className="auth-error">{darkLogoError}</div>}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img
+            src={darkLogoPreview || settings.logo_url_dark || settings.logo_url || defaultLogo}
+            alt="Karanlık mod logosu"
+            style={{ height: 44, background: '#1b1e29', borderRadius: 8, padding: 6 }}
+          />
+          <input ref={darkLogoInputRef} type="file" accept="image/*" onChange={handleDarkLogoChange} />
+        </div>
+
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={handleDarkLogoUpload}
+          disabled={!darkLogoFile || darkLogoUploading}
+        >
+          {darkLogoUploading ? 'Yükleniyor...' : 'Logoyu Yükle'}
+        </button>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+          Ziyaretçi karanlık moda geçtiğinde navbar ve footer'da normal logo yerine bunu gösterir — koyu
+          arkaplanda okunaklı kalması için genelde açık renkli bir logo yüklemen gerekir. Yüklemezsen normal
+          logo kullanılmaya devam eder.
         </p>
       </div>
 

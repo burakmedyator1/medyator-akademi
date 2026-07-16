@@ -18,13 +18,13 @@ export default function Navbar() {
     api.getCourses({ deliveryType: 'online' }).then(setOnlineCourses);
   }, []);
 
+  const logoSrc = theme === 'dark' && settings.logo_url_dark ? settings.logo_url_dark : settings.logo_url;
+
   return (
     <header className="navbar">
       <div className="container navbar__inner">
         <Link to="/" className="navbar__logo">
-          {(settings.logo_url || loaded) && (
-            <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
-          )}
+          {(logoSrc || loaded) && <img src={logoSrc || defaultLogo} alt="Medyator Akademi" />}
         </Link>
 
         <nav className="navbar__links">

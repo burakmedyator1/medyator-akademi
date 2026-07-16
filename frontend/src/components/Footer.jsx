@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { InstagramIcon, TikTokIcon, YouTubeIcon, LinkedInIcon, XIcon } from './SocialIcons';
 import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/ThemeContext';
 import defaultLogo from '../assets/logo.png';
 import logoBand from '../assets/payment/iyzico-logo-band-white.svg';
 import './Footer.css';
@@ -15,15 +16,15 @@ const SOCIALS = [
 
 export default function Footer() {
   const { settings, loaded } = useSettings();
+  const { theme } = useTheme();
   const activeSocials = SOCIALS.filter(({ key }) => settings[key]);
+  const logoSrc = theme === 'dark' && settings.logo_url_dark ? settings.logo_url_dark : settings.logo_url;
 
   return (
     <footer className="footer">
       <div className="container footer__inner">
         <div className="footer__brand">
-          {(settings.logo_url || loaded) && (
-            <img src={settings.logo_url || defaultLogo} alt="Medyator Akademi" />
-          )}
+          {(logoSrc || loaded) && <img src={logoSrc || defaultLogo} alt="Medyator Akademi" />}
           <p>Online, kurumsal ve yüz yüze eğitim kursları.</p>
         </div>
 
