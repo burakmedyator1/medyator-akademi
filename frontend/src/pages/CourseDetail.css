@@ -47,20 +47,32 @@
 }
 
 .course-detail__lessons li {
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  color: var(--text-secondary);
+}
+
+.course-detail__lessons li,
+.course-detail__lesson-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--white);
-  border-radius: var(--radius-sm);
   padding: 14px 16px;
-  box-shadow: var(--shadow-card);
-  color: var(--text-secondary);
+}
+
+.course-detail__lesson-link:hover {
+  background: var(--bg-cream);
 }
 
 .course-detail__lessons li span:first-of-type {
   flex: 1;
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.course-detail__done-icon {
+  color: var(--orange);
 }
 
 .course-detail__duration {
