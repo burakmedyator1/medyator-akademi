@@ -27,6 +27,12 @@ export default function AdminAppearance() {
   const [uploading, setUploading] = useState(false);
   const [logoError, setLogoError] = useState('');
 
+  const splashFileInputRef = useRef(null);
+  const [splashFile, setSplashFile] = useState(null);
+  const [splashPreview, setSplashPreview] = useState(null);
+  const [splashUploading, setSplashUploading] = useState(false);
+  const [splashError, setSplashError] = useState('');
+
   useEffect(() => {
     api.admin.getSettings().then(setForm);
   }, []);
@@ -69,6 +75,33 @@ export default function AdminAppearance() {
     }
   }
 
+  function handleSplashFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSplashFile(file);
+    setSplashPreview(URL.createObjectURL(file));
+    setSplashError('');
+  }
+
+  async function handleSplashUpload() {
+    if (!splashFile) return;
+    setSplashUploading(true);
+    setSplashError('');
+    try {
+      await api.admin.uploadSplashImage(splashFile);
+      await reload();
+      const updated = await api.admin.getSettings();
+      setForm(updated);
+      setSplashFile(null);
+      setSplashPreview(null);
+      if (splashFileInputRef.current) splashFileInputRef.current.value = '';
+    } catch (err) {
+      setSplashError(err.message);
+    } finally {
+      setSplashUploading(false);
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="admin-page-head">
@@ -92,7 +125,7 @@ export default function AdminAppearance() {
           {uploading ? 'Yükleniyor...' : 'Logoyu Yükle'}
         </button>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-          Navbar ve açılış ekranındaki logoyu değiştirir.
+          Navbar'daki logoyu değiştirir. Açılış ekranında ayrı bir görsel belirlemezsen bu logo orada da kullanılır.
         </p>
       </div>
 
@@ -110,6 +143,17 @@ export default function AdminAppearance() {
             />
           </div>
         ))}
+
+        <div className="admin-field">
+          <label>Navbar Logo Yüksekliği (px)</label>
+          <input
+            type="number"
+            min="16"
+            max="120"
+            value={form.navbar_logo_height || 34}
+            onChange={(e) => setForm({ ...form, navbar_logo_height: e.target.value })}
+          />
+        </div>
 
         <h2 style={{ marginTop: 12 }}>Açılış Ekranı</h2>
         <div className="admin-field">
@@ -130,11 +174,51 @@ export default function AdminAppearance() {
             Site açılırken animasyonlu ekranı göster
           </label>
         </div>
+        <div className="admin-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <input
+            type="checkbox"
+            id="splash_show_logo"
+            checked={form.splash_show_logo !== 'false'}
+            onChange={(e) => setForm({ ...form, splash_show_logo: e.target.checked ? 'true' : 'false' })}
+          />
+          <label htmlFor="splash_show_logo" style={{ margin: 0 }}>
+            Açılış ekranında bir görsel/logo göster
+          </label>
+        </div>
 
         <button className="btn btn-primary" type="submit" disabled={saving}>
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </button>
       </form>
+
+      {form.splash_show_logo !== 'false' && (
+        <div className="admin-form" style={{ maxWidth: 480, marginTop: 24 }}>
+          <h2>Açılış Ekranı Görseli</h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Site logosundan farklı, sadece açılış ekranında görünecek bir görsel yükleyebilirsin. Yüklemezsen
+            navbar'daki site logosu kullanılır.
+          </p>
+          {splashError && <div className="auth-error">{splashError}</div>}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <img
+              src={splashPreview || settings.splash_image_url || settings.logo_url || defaultLogo}
+              alt="Açılış ekranı görseli"
+              style={{ height: 44, background: '#1b1e29', borderRadius: 8, padding: 6 }}
+            />
+            <input ref={splashFileInputRef} type="file" accept="image/*" onChange={handleSplashFileChange} />
+          </div>
+
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={handleSplashUpload}
+            disabled={!splashFile || splashUploading}
+          >
+            {splashUploading ? 'Yükleniyor...' : 'Görseli Yükle'}
+          </button>
+        </div>
+      )}
     </AdminLayout>
   );
 }
