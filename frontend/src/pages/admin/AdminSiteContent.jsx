@@ -151,8 +151,7 @@ export default function AdminSiteContent() {
             ) : videoIdProviderKey ? (
               <input
                 value={form[key] || ''}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                onBlur={(e) =>
+                onChange={(e) =>
                   setForm({ ...form, [key]: extractVideoId(e.target.value, form[videoIdProviderKey]) })
                 }
               />
