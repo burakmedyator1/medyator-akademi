@@ -45,6 +45,9 @@ export const api = {
   completeLesson: (courseId, lessonId) =>
     request(`/courses/${courseId}/lessons/${lessonId}/complete`, { method: 'POST', auth: true }),
 
+  getPaymentStatus: () => request('/payments/status'),
+  startCheckout: (payload) => request('/payments/checkout-form', { method: 'POST', body: payload, auth: true }),
+
   getInstructors: () => request('/instructors'),
   getInstructor: (id) => request(`/instructors/${id}`),
 
