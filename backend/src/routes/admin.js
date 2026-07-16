@@ -178,22 +178,22 @@ router.get('/courses/:courseId/lessons', (req, res) => {
   const lessons = db
     .prepare(
       `SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_,
-              video_provider AS videoProvider, video_id AS videoId
+              video_provider AS videoProvider, video_id AS videoId, is_preview AS isPreview
        FROM lessons WHERE course_id = ? ORDER BY lesson_order`
     )
     .all(req.params.courseId);
-  res.json(lessons);
+  res.json(lessons.map((l) => ({ ...l, isPreview: Boolean(l.isPreview) })));
 });
 
 router.post('/courses/:courseId/lessons', (req, res) => {
-  const { title, description, durationMinutes, order, videoProvider, videoId } = req.body;
+  const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
   if (!title || !durationMinutes || !order || !videoProvider || !videoId) {
     return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
   }
   const result = db
     .prepare(
-      `INSERT INTO lessons (course_id, title, description, duration_minutes, lesson_order, video_provider, video_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO lessons (course_id, title, description, duration_minutes, lesson_order, video_provider, video_id, is_preview)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       req.params.courseId,
@@ -202,16 +202,17 @@ router.post('/courses/:courseId/lessons', (req, res) => {
       durationMinutes,
       order,
       videoProvider,
-      extractVideoId(videoId, videoProvider)
+      extractVideoId(videoId, videoProvider),
+      isPreview ? 1 : 0
     );
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 router.put('/courses/:courseId/lessons/:id', (req, res) => {
-  const { title, description, durationMinutes, order, videoProvider, videoId } = req.body;
+  const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
   const result = db
     .prepare(
-      `UPDATE lessons SET title = ?, description = ?, duration_minutes = ?, lesson_order = ?, video_provider = ?, video_id = ?
+      `UPDATE lessons SET title = ?, description = ?, duration_minutes = ?, lesson_order = ?, video_provider = ?, video_id = ?, is_preview = ?
        WHERE id = ? AND course_id = ?`
     )
     .run(
@@ -221,6 +222,7 @@ router.put('/courses/:courseId/lessons/:id', (req, res) => {
       order,
       videoProvider,
       extractVideoId(videoId, videoProvider),
+      isPreview ? 1 : 0,
       req.params.id,
       req.params.courseId
     );
@@ -366,16 +368,12 @@ router.get('/students/:id', (req, res) => {
 });
 
 router.post('/students/:id/reset-password', (req, res) => {
-  const { newPassword } = req.body;
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ error: 'Yeni şifre en az 6 karakter olmalı' });
-  }
   const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
   if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
 
-  const passwordHash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, req.params.id);
-  res.json({ updated: true });
+  const password = generateRandomPassword();
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), req.params.id);
+  res.json({ password });
 });
 
 router.post('/students/:id/enroll', (req, res) => {
