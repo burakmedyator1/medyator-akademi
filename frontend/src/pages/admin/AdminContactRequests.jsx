@@ -3,7 +3,12 @@ import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const TYPE_LABELS = { corporate: 'Kurumsal Eğitim', in_person: 'Yüz Yüze Eğitim' };
+const TYPE_LABELS = {
+  corporate: 'Kurumsal Eğitim',
+  in_person: 'Yüz Yüze Eğitim',
+  support: 'Yardım & Destek',
+  general: 'İletişim',
+};
 
 export default function AdminContactRequests() {
   const [requests, setRequests] = useState([]);
@@ -26,7 +31,8 @@ export default function AdminContactRequests() {
               <th>Tip</th>
               <th>Ad</th>
               <th>E-posta</th>
-              <th>Şirket</th>
+              <th>Telefon</th>
+              <th>Şirket / Konu</th>
               <th>Mesaj</th>
             </tr>
           </thead>
@@ -34,16 +40,17 @@ export default function AdminContactRequests() {
             {requests.map((req) => (
               <tr key={req.id}>
                 <td>{new Date(req.created_at).toLocaleString('tr-TR')}</td>
-                <td>{TYPE_LABELS[req.type]}</td>
+                <td>{TYPE_LABELS[req.type] || req.type}</td>
                 <td>{req.name}</td>
                 <td>{req.email}</td>
-                <td>{req.company || '—'}</td>
+                <td>{req.phone || '—'}</td>
+                <td>{req.company || [req.category, req.subject].filter(Boolean).join(' — ') || '—'}</td>
                 <td>{req.message || '—'}</td>
               </tr>
             ))}
             {requests.length === 0 && (
               <tr>
-                <td colSpan={6} className="admin-empty">
+                <td colSpan={7} className="admin-empty">
                   Henüz talep yok.
                 </td>
               </tr>

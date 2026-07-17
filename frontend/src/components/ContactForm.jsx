@@ -2,8 +2,23 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import './ContactForm.css';
 
-export default function ContactForm({ type, submitLabel = 'Gönder' }) {
-  const [form, setForm] = useState({ name: '', email: '', company: '', message: '' });
+export default function ContactForm({
+  type,
+  submitLabel = 'Gönder',
+  showCompany = true,
+  showPhone = false,
+  showSubject = false,
+  categories = null,
+}) {
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    category: categories?.[0] || '',
+    subject: '',
+    message: '',
+  });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
@@ -47,15 +62,55 @@ export default function ContactForm({ type, submitLabel = 'Gönder' }) {
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
       </div>
-      <div className="auth-field">
-        <label htmlFor="company">Şirket / Kurum</label>
-        <input
-          id="company"
-          required
-          value={form.company}
-          onChange={(e) => setForm({ ...form, company: e.target.value })}
-        />
-      </div>
+      {showPhone && (
+        <div className="auth-field">
+          <label htmlFor="phone">Telefon</label>
+          <input
+            id="phone"
+            type="tel"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+        </div>
+      )}
+      {showCompany && (
+        <div className="auth-field">
+          <label htmlFor="company">Şirket / Kurum</label>
+          <input
+            id="company"
+            required
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+          />
+        </div>
+      )}
+      {categories && (
+        <div className="auth-field">
+          <label htmlFor="category">Konu Kategorisi</label>
+          <select
+            id="category"
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+          >
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {showSubject && (
+        <div className="auth-field">
+          <label htmlFor="subject">Konu Başlığı</label>
+          <input
+            id="subject"
+            required
+            value={form.subject}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+          />
+        </div>
+      )}
       <div className="auth-field">
         <label htmlFor="message">Mesajın</label>
         <textarea

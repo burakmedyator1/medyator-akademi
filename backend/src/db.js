@@ -75,10 +75,13 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS contact_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL CHECK (type IN ('corporate', 'in_person')),
+    type TEXT NOT NULL CHECK (type IN ('corporate', 'in_person', 'support', 'general')),
     name TEXT NOT NULL,
     email TEXT NOT NULL,
+    phone TEXT,
     company TEXT,
+    category TEXT,
+    subject TEXT,
     message TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -172,6 +175,33 @@ function addColumnIfMissing(table, column, definition) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
+// contact_requests' type CHECK constraint predates the 'support'/'general'
+// request types, and SQLite can't ALTER a CHECK constraint in place, so an
+// existing table with the old constraint has to be rebuilt.
+const contactRequestsTable = db
+  .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'contact_requests'")
+  .get();
+if (contactRequestsTable && !contactRequestsTable.sql.includes('support')) {
+  db.exec(`
+    ALTER TABLE contact_requests RENAME TO contact_requests_old;
+    CREATE TABLE contact_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL CHECK (type IN ('corporate', 'in_person', 'support', 'general')),
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT,
+      company TEXT,
+      category TEXT,
+      subject TEXT,
+      message TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    INSERT INTO contact_requests (id, type, name, email, company, message, created_at)
+      SELECT id, type, name, email, company, message, created_at FROM contact_requests_old;
+    DROP TABLE contact_requests_old;
+  `);
+}
+
 addColumnIfMissing('users', 'birth_date', 'TEXT');
 addColumnIfMissing('users', 'expo_push_token', 'TEXT');
 addColumnIfMissing('testimonials', 'user_id', 'INTEGER REFERENCES users(id)');

@@ -63,9 +63,9 @@ export default function Footer() {
         <div className="footer__links">
           <strong>Destek</strong>
           <Link to="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
-          <a href="https://medyatorakademi.com/sss">Sıkça Sorulan Sorular</a>
-          <a href="https://medyatorakademi.com/yardim-destek">Yardım &amp; Destek</a>
-          <a href="https://medyatorakademi.com/iletisim">İletişim</a>
+          <Link to="/sss">Sıkça Sorulan Sorular</Link>
+          <Link to="/yardim-destek">Yardım &amp; Destek</Link>
+          <Link to="/iletisim">İletişim</Link>
         </div>
 
         {(settings.company_address || settings.company_email) && (
