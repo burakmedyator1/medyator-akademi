@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   fsRoot: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
   block: { position: 'absolute' },
   bar: {
-    position: 'absolute', left: 0, right: 0, bottom: 0,
+    position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20, elevation: 20,
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 12, paddingVertical: 8, backgroundColor: 'rgba(0,0,0,0.55)',
   },
