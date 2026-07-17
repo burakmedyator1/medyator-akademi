@@ -435,7 +435,8 @@ router.get('/students', (req, res) => {
 router.get('/students/:id', (req, res) => {
   const student = db
     .prepare(
-      `SELECT id, name, email, phone, instagram, tiktok, youtube, linkedin, twitter, created_at AS createdAt
+      `SELECT id, name, email, phone, birth_date AS birthDate, instagram, tiktok, youtube, linkedin, twitter,
+              created_at AS createdAt
        FROM users WHERE id = ? AND role = 'student'`
     )
     .get(req.params.id);

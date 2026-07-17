@@ -20,10 +20,10 @@ function issueToken(user) {
 }
 
 router.post('/register', (req, res) => {
-  const { email, password, name, phone, instagram, tiktok, youtube, linkedin, twitter } = req.body;
+  const { email, password, name, phone, birthDate, instagram, tiktok, youtube, linkedin, twitter } = req.body;
 
-  if (!email || !password || !name || !phone) {
-    return res.status(400).json({ error: 'İsim, e-posta, telefon ve şifre zorunlu' });
+  if (!email || !password || !name || !phone || !birthDate) {
+    return res.status(400).json({ error: 'İsim, e-posta, telefon, doğum tarihi ve şifre zorunlu' });
   }
   if (password.length < 6) {
     return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
@@ -42,14 +42,15 @@ router.post('/register', (req, res) => {
   const passwordHash = bcrypt.hashSync(password, 10);
   const result = db
     .prepare(
-      `INSERT INTO users (email, password_hash, name, phone, instagram, tiktok, youtube, linkedin, twitter)
-       VALUES (@email, @passwordHash, @name, @phone, @instagram, @tiktok, @youtube, @linkedin, @twitter)`
+      `INSERT INTO users (email, password_hash, name, phone, birth_date, instagram, tiktok, youtube, linkedin, twitter)
+       VALUES (@email, @passwordHash, @name, @phone, @birthDate, @instagram, @tiktok, @youtube, @linkedin, @twitter)`
     )
     .run({
       email,
       passwordHash,
       name,
       phone,
+      birthDate,
       instagram: instagram || null,
       tiktok: tiktok || null,
       youtube: youtube || null,

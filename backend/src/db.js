@@ -15,6 +15,7 @@ db.exec(`
     name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
     phone TEXT NOT NULL DEFAULT '',
+    birth_date TEXT,
     instagram TEXT,
     tiktok TEXT,
     youtube TEXT,
@@ -151,6 +152,7 @@ function addColumnIfMissing(table, column, definition) {
     db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
+addColumnIfMissing('users', 'birth_date', 'TEXT');
 addColumnIfMissing('instructors', 'photo_url', 'TEXT');
 addColumnIfMissing('instructors', 'email', 'TEXT');
 addColumnIfMissing('instructors', 'password_hash', 'TEXT');

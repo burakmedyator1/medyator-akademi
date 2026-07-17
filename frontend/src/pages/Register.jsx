@@ -16,6 +16,7 @@ const INITIAL_FORM = {
   email: '',
   password: '',
   phone: '',
+  birthDate: '',
   instagram: '',
   tiktok: '',
   youtube: '',
@@ -87,6 +88,16 @@ export default function Register() {
               placeholder="+90 5xx xxx xx xx"
               value={form.phone}
               onChange={(e) => updateField('phone', e.target.value)}
+            />
+          </div>
+          <div className="auth-field">
+            <label htmlFor="birthDate">Doğum Tarihi</label>
+            <input
+              id="birthDate"
+              type="date"
+              required
+              value={form.birthDate}
+              onChange={(e) => updateField('birthDate', e.target.value)}
             />
           </div>
           <div className="auth-field">

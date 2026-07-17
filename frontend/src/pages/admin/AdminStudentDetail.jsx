@@ -79,6 +79,10 @@ export default function AdminStudentDetail() {
           <strong>Telefon:</strong> {student.phone}
         </p>
         <p style={{ margin: '4px 0' }}>
+          <strong>Doğum Tarihi:</strong>{' '}
+          {student.birthDate ? new Date(student.birthDate).toLocaleDateString('tr-TR') : '—'}
+        </p>
+        <p style={{ margin: '4px 0' }}>
           <strong>Sosyal Medya:</strong>{' '}
           {['instagram', 'tiktok', 'youtube', 'linkedin', 'twitter']
             .map((key) => student[key] && `${key}: ${student[key]}`)
