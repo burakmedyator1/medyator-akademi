@@ -195,18 +195,12 @@ export default function Lesson() {
                       ]}
                     >
                       <View style={[styles.numCircle, { backgroundColor: active ? 'rgba(255,255,255,0.25)' : c.accentSoft }]}>
-                        {active ? (
-                          videoLoading ? (
-                            <ActivityIndicator color={c.onAccent} size="small" />
-                          ) : done ? (
-                            <Ionicons name="checkmark" size={16} color={c.onAccent} />
-                          ) : (
-                            <Ionicons name="play" size={14} color={c.onAccent} />
-                          )
-                        ) : done ? (
-                          <Ionicons name="checkmark" size={16} color={c.accent} />
+                        {active && videoLoading ? (
+                          <ActivityIndicator color={c.onAccent} size="small" />
                         ) : (
-                          <Text style={{ color: c.accent, fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
+                          <Text style={{ color: active ? c.onAccent : c.accent, fontWeight: '800', fontSize: 13 }}>
+                            {i + 1}
+                          </Text>
                         )}
                       </View>
                       <Text
@@ -215,6 +209,9 @@ export default function Lesson() {
                       >
                         {l.title}
                       </Text>
+                      {done ? (
+                        <Ionicons name="checkmark-circle" size={20} color={active ? c.onAccent : c.accent} />
+                      ) : null}
                       {l.durationMinutes ? (
                         <Text style={{ color: active ? c.onAccent : c.textMuted, fontSize: 12.5 }}>
                           {l.durationMinutes} dk
