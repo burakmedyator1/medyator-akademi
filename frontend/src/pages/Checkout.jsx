@@ -12,6 +12,7 @@ export default function Checkout() {
   const [form, setForm] = useState({ identityNumber: '', address: '', city: '', zipCode: '' });
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [checkoutHtml, setCheckoutHtml] = useState(null);
+  const [widgetLoading, setWidgetLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const formContainerRef = useRef(null);
@@ -31,6 +32,27 @@ export default function Checkout() {
         newScript.textContent = oldScript.textContent;
         oldScript.replaceWith(newScript);
       });
+
+      // iyzico's widget script renders its own modal directly onto document.body
+      // (not inside our container), so "loaded" means a new node showed up there.
+      setWidgetLoading(true);
+      const bodyChildCountBefore = document.body.children.length;
+      const observer = new MutationObserver(() => {
+        if (document.body.children.length > bodyChildCountBefore) {
+          setWidgetLoading(false);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true });
+      const fallback = setTimeout(() => {
+        setWidgetLoading(false);
+        observer.disconnect();
+      }, 15000);
+
+      return () => {
+        observer.disconnect();
+        clearTimeout(fallback);
+      };
     }
   }, [checkoutHtml]);
 
@@ -72,7 +94,15 @@ export default function Checkout() {
       </p>
 
       {checkoutHtml ? (
-        <div className="checkout-page__form-frame" ref={formContainerRef} />
+        <>
+          {widgetLoading && (
+            <div className="card checkout-page__widget-loading">
+              <span className="checkout-page__spinner" />
+              <p>Ödeme formu yükleniyor...</p>
+            </div>
+          )}
+          <div className="checkout-page__form-frame" ref={formContainerRef} />
+        </>
       ) : (
         <form className="card checkout-page__form" onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
