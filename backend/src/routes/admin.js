@@ -431,8 +431,19 @@ router.delete('/instructors/:id', (req, res) => {
   if (inUse.count > 0) {
     return res.status(400).json({ error: 'Bu eğitmene bağlı kurslar var, önce onları başka eğitmene atayın' });
   }
-  db.prepare('UPDATE blog_posts SET instructor_id = NULL WHERE instructor_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM instructors WHERE id = ?').run(req.params.id);
+
+  const tx = db.transaction((id) => {
+    // Stale Q&A threads can outlive a course reassignment (question rows keep
+    // their original instructor_id even after the course moves to someone else).
+    const questionIds = db.prepare('SELECT id FROM questions WHERE instructor_id = ?').all(id).map((q) => q.id);
+    for (const questionId of questionIds) {
+      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
+    }
+    db.prepare('DELETE FROM questions WHERE instructor_id = ?').run(id);
+    db.prepare('UPDATE blog_posts SET instructor_id = NULL WHERE instructor_id = ?').run(id);
+    db.prepare('DELETE FROM instructors WHERE id = ?').run(id);
+  });
+  tx(req.params.id);
   res.json({ deleted: true });
 });
 
