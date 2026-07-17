@@ -98,3 +98,118 @@
 .instructor-dashboard__empty {
   color: var(--text-secondary);
 }
+
+.instructor-dashboard__students {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.instructor-dashboard__student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instructor-dashboard__student-card {
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  border: 1.5px solid transparent;
+  padding: 14px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instructor-dashboard__student-card.active {
+  border-color: var(--orange);
+}
+
+.instructor-dashboard__student-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.instructor-dashboard__badge {
+  background: var(--orange);
+  color: var(--white);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.instructor-dashboard__student-progress {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.instructor-dashboard__student-detail h2 {
+  margin: 0 0 2px;
+}
+
+.instructor-dashboard__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.instructor-dashboard__bubble {
+  max-width: 80%;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.instructor-dashboard__bubble p {
+  margin: 2px 0 0;
+}
+
+.instructor-dashboard__bubble-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.instructor-dashboard__bubble--student {
+  align-self: flex-start;
+  background: var(--bg-cream);
+}
+
+.instructor-dashboard__bubble--instructor {
+  align-self: flex-end;
+  background: var(--orange);
+  color: var(--white);
+}
+
+.instructor-dashboard__bubble--instructor .instructor-dashboard__bubble-label {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.instructor-dashboard__reply {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.instructor-dashboard__reply textarea {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 800px) {
+  .instructor-dashboard__students {
+    grid-template-columns: 1fr;
+  }
+}

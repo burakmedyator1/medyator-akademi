@@ -65,11 +65,14 @@ export const api = {
 
   getMyQuestions: () => request('/questions/mine', { auth: true }),
   askQuestion: (payload) => request('/questions', { method: 'POST', body: payload, auth: true }),
+  sendQuestionMessage: (id, messageText) =>
+    request(`/questions/${id}/messages`, { method: 'POST', body: { messageText }, auth: true }),
 
   instructor: {
     getQuestions: () => request('/instructor/questions', { auth: true }),
-    answerQuestion: (id, answerText) =>
-      request(`/instructor/questions/${id}`, { method: 'PATCH', body: { answerText }, auth: true }),
+    sendQuestionMessage: (id, messageText) =>
+      request(`/instructor/questions/${id}/messages`, { method: 'POST', body: { messageText }, auth: true }),
+    getStudents: () => request('/instructor/students', { auth: true }),
 
     getBlogPosts: () => request('/instructor/blog', { auth: true }),
     createBlogPost: (payload) => request('/instructor/blog', { method: 'POST', body: payload, auth: true }),

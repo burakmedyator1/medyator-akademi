@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import './MyQuestions.css';
 
 export default function MyQuestions() {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [courseId, setCourseId] = useState('');
   const [questionText, setQuestionText] = useState('');
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replying, setReplying] = useState(null);
 
   function load() {
     api.getDashboard().then((data) => setCourses(data.enrolledCourses));
@@ -37,6 +41,22 @@ export default function MyQuestions() {
     }
   }
 
+  async function handleReply(questionId) {
+    const messageText = replyDrafts[questionId];
+    if (!messageText || !messageText.trim()) return;
+    setReplying(questionId);
+    setError('');
+    try {
+      await api.sendQuestionMessage(questionId, messageText);
+      setReplyDrafts((d) => ({ ...d, [questionId]: '' }));
+      load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setReplying(null);
+    }
+  }
+
   return (
     <div className="dashboard container">
       <Sidebar />
@@ -44,7 +64,7 @@ export default function MyQuestions() {
       <main className="dashboard__main my-questions">
         <h1>Sorularım</h1>
         <p className="my-questions__subtitle">
-          Kayıtlı olduğun kursların eğitmenlerine soru sor, cevapları burada takip et.
+          Kayıtlı olduğun kursların eğitmenlerine soru sor, sohbete devam et.
         </p>
 
         <form className="card my-questions__form" onSubmit={handleSubmit}>
@@ -61,7 +81,7 @@ export default function MyQuestions() {
             </select>
           </div>
           <div className="auth-field">
-            <label htmlFor="question">Sorun</label>
+            <label htmlFor="question">Yeni Soru</label>
             <textarea
               id="question"
               rows={3}
@@ -82,15 +102,36 @@ export default function MyQuestions() {
                 <strong>{q.courseTitle}</strong>
                 <span>{q.instructorName}</span>
               </div>
-              <p className="my-questions__question">{q.questionText}</p>
-              {q.answerText ? (
-                <div className="my-questions__answer">
-                  <span className="my-questions__answer-label">Eğitmen cevabı</span>
-                  <p>{q.answerText}</p>
-                </div>
-              ) : (
-                <span className="my-questions__pending">Henüz cevaplanmadı</span>
-              )}
+
+              <div className="my-questions__thread">
+                {q.messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`my-questions__bubble my-questions__bubble--${m.senderRole}`}
+                  >
+                    <span className="my-questions__bubble-label">
+                      {m.senderRole === 'student' ? user.name : q.instructorName}
+                    </span>
+                    <p>{m.messageText}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="my-questions__reply">
+                <textarea
+                  rows={2}
+                  placeholder="Devam et..."
+                  value={replyDrafts[q.id] || ''}
+                  onChange={(e) => setReplyDrafts((d) => ({ ...d, [q.id]: e.target.value }))}
+                />
+                <button
+                  className="btn btn-outline"
+                  onClick={() => handleReply(q.id)}
+                  disabled={replying === q.id}
+                >
+                  {replying === q.id ? 'Gönderiliyor...' : 'Gönder'}
+                </button>
+              </div>
             </div>
           ))}
           {questions.length === 0 && <p className="my-questions__empty">Henüz bir soru sormadın.</p>}

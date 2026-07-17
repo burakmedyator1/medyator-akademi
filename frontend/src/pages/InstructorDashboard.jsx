@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './InstructorDashboard.css';
@@ -14,14 +14,24 @@ const EMPTY_BLOG_FORM = { title: '', excerpt: '', content: '', coverImageUrl: ''
 
 export default function InstructorDashboard() {
   const { user, logout } = useAuth();
-  const [view, setView] = useState('questions');
+  const [view, setView] = useState('students');
+  const [students, setStudents] = useState([]);
   const [questions, setQuestions] = useState([]);
-  const [drafts, setDrafts] = useState({});
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [replying, setReplying] = useState(null);
   const [posts, setPosts] = useState([]);
   const [blogForm, setBlogForm] = useState(EMPTY_BLOG_FORM);
   const [blogSaving, setBlogSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+
+  function loadStudents() {
+    api.instructor.getStudents().then((data) => {
+      setStudents(data);
+      setSelectedStudentId((current) => current ?? data[0]?.id ?? null);
+    });
+  }
 
   function loadQuestions() {
     api.instructor.getQuestions().then(setQuestions);
@@ -32,20 +42,25 @@ export default function InstructorDashboard() {
   }
 
   useEffect(() => {
+    loadStudents();
     loadQuestions();
     loadPosts();
   }, []);
 
-  async function handleAnswer(id) {
-    const answerText = drafts[id];
-    if (!answerText || !answerText.trim()) return;
+  async function handleReply(questionId) {
+    const messageText = replyDrafts[questionId];
+    if (!messageText || !messageText.trim()) return;
+    setReplying(questionId);
     setError('');
     try {
-      await api.instructor.answerQuestion(id, answerText);
-      setDrafts((d) => ({ ...d, [id]: '' }));
+      await api.instructor.sendQuestionMessage(questionId, messageText);
+      setReplyDrafts((d) => ({ ...d, [questionId]: '' }));
       loadQuestions();
+      loadStudents();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setReplying(null);
     }
   }
 
@@ -78,8 +93,11 @@ export default function InstructorDashboard() {
     }
   }
 
-  const unanswered = questions.filter((q) => !q.answerText);
-  const answered = questions.filter((q) => q.answerText);
+  const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
+  const selectedQuestions = useMemo(
+    () => questions.filter((q) => q.studentId === selectedStudentId),
+    [questions, selectedStudentId]
+  );
 
   return (
     <div className="container instructor-dashboard">
@@ -94,11 +112,8 @@ export default function InstructorDashboard() {
       </div>
 
       <div className="instructor-dashboard__tabs">
-        <button
-          className={`pill${view === 'questions' ? ' active' : ''}`}
-          onClick={() => setView('questions')}
-        >
-          Sorular
+        <button className={`pill${view === 'students' ? ' active' : ''}`} onClick={() => setView('students')}>
+          Öğrencilerim
         </button>
         <button className={`pill${view === 'blog' ? ' active' : ''}`} onClick={() => setView('blog')}>
           Blog
@@ -107,49 +122,89 @@ export default function InstructorDashboard() {
 
       {error && <div className="auth-error">{error}</div>}
 
-      {view === 'questions' && (
-        <>
-          <h2>Cevap Bekleyen Sorular ({unanswered.length})</h2>
-          <div className="instructor-dashboard__list">
-            {unanswered.map((q) => (
-              <div className="card instructor-dashboard__item" key={q.id}>
-                <div className="instructor-dashboard__meta">
-                  <strong>{q.studentName}</strong>
-                  <span>{q.courseTitle}</span>
+      {view === 'students' && (
+        <div className="instructor-dashboard__students">
+          <div className="instructor-dashboard__student-list">
+            {students.map((student) => (
+              <button
+                key={student.id}
+                className={`instructor-dashboard__student-card${
+                  student.id === selectedStudentId ? ' active' : ''
+                }`}
+                onClick={() => setSelectedStudentId(student.id)}
+              >
+                <div className="instructor-dashboard__student-name">
+                  <strong>{student.name}</strong>
+                  {student.unansweredCount > 0 && (
+                    <span className="instructor-dashboard__badge">{student.unansweredCount}</span>
+                  )}
                 </div>
-                <p className="instructor-dashboard__question">{q.questionText}</p>
-                <textarea
-                  rows={2}
-                  placeholder="Cevabını yaz..."
-                  value={drafts[q.id] || ''}
-                  onChange={(e) => setDrafts((d) => ({ ...d, [q.id]: e.target.value }))}
-                />
-                <button className="btn btn-primary" onClick={() => handleAnswer(q.id)}>
-                  Cevapla
-                </button>
-              </div>
+                {student.courses.map((c) => (
+                  <div key={c.courseId} className="instructor-dashboard__student-progress">
+                    <span>{c.courseTitle}</span>
+                    <span>
+                      {c.progress}/{c.lessonCount} ders
+                    </span>
+                  </div>
+                ))}
+              </button>
             ))}
-            {unanswered.length === 0 && <p className="instructor-dashboard__empty">Bekleyen soru yok.</p>}
+            {students.length === 0 && (
+              <p className="instructor-dashboard__empty">Henüz kayıtlı öğrencin yok.</p>
+            )}
           </div>
 
-          <h2>Cevaplanan Sorular ({answered.length})</h2>
-          <div className="instructor-dashboard__list">
-            {answered.map((q) => (
-              <div className="card instructor-dashboard__item" key={q.id}>
-                <div className="instructor-dashboard__meta">
-                  <strong>{q.studentName}</strong>
-                  <span>{q.courseTitle}</span>
-                </div>
-                <p className="instructor-dashboard__question">{q.questionText}</p>
-                <div className="instructor-dashboard__answer">
-                  <span className="instructor-dashboard__answer-label">Cevabın</span>
-                  <p>{q.answerText}</p>
-                </div>
-              </div>
-            ))}
-            {answered.length === 0 && <p className="instructor-dashboard__empty">Henüz cevaplanan soru yok.</p>}
+          <div className="instructor-dashboard__student-detail">
+            {selectedStudent ? (
+              <>
+                <h2>{selectedStudent.name}</h2>
+                <p className="instructor-dashboard__hint">{selectedStudent.email}</p>
+
+                {selectedQuestions.length === 0 && (
+                  <p className="instructor-dashboard__empty">Henüz soru sormamış.</p>
+                )}
+
+                {selectedQuestions.map((q) => (
+                  <div className="card instructor-dashboard__item" key={q.id}>
+                    <div className="instructor-dashboard__meta">
+                      <strong>{q.courseTitle}</strong>
+                    </div>
+                    <div className="instructor-dashboard__thread">
+                      {q.messages.map((m, i) => (
+                        <div
+                          key={i}
+                          className={`instructor-dashboard__bubble instructor-dashboard__bubble--${m.senderRole}`}
+                        >
+                          <span className="instructor-dashboard__bubble-label">
+                            {m.senderRole === 'student' ? selectedStudent.name : 'Sen'}
+                          </span>
+                          <p>{m.messageText}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="instructor-dashboard__reply">
+                      <textarea
+                        rows={2}
+                        placeholder="Cevap yaz..."
+                        value={replyDrafts[q.id] || ''}
+                        onChange={(e) => setReplyDrafts((d) => ({ ...d, [q.id]: e.target.value }))}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleReply(q.id)}
+                        disabled={replying === q.id}
+                      >
+                        {replying === q.id ? 'Gönderiliyor...' : 'Gönder'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <p className="instructor-dashboard__empty">Soldan bir öğrenci seç.</p>
+            )}
           </div>
-        </>
+        </div>
       )}
 
       {view === 'blog' && (

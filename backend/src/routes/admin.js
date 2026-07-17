@@ -682,14 +682,29 @@ router.get('/questions', (req, res) => {
   res.json(
     db
       .prepare(
-        `SELECT questions.id, questions.question_text AS questionText, questions.answer_text AS answerText,
-                questions.created_at AS createdAt, questions.answered_at AS answeredAt,
+        `SELECT questions.id, questions.question_text AS questionText,
+                COALESCE(
+                  (SELECT qm.message_text FROM question_messages qm
+                   WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor'
+                   ORDER BY qm.created_at DESC LIMIT 1),
+                  questions.answer_text
+                ) AS answerText,
+                questions.created_at AS createdAt,
+                COALESCE(
+                  (SELECT qm.created_at FROM question_messages qm
+                   WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor'
+                   ORDER BY qm.created_at DESC LIMIT 1),
+                  questions.answered_at
+                ) AS answeredAt,
                 courses.title AS courseTitle, users.name AS studentName, instructors.name AS instructorName
          FROM questions
          JOIN courses ON courses.id = questions.course_id
          JOIN users ON users.id = questions.user_id
          JOIN instructors ON instructors.id = questions.instructor_id
-         ORDER BY (questions.answer_text IS NOT NULL), questions.created_at DESC`
+         ORDER BY (
+           EXISTS (SELECT 1 FROM question_messages qm WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor')
+           OR questions.answer_text IS NOT NULL
+         ), questions.created_at DESC`
       )
       .all()
   );
@@ -706,7 +721,11 @@ router.get('/overview', (req, res) => {
     contactRequests: c('SELECT COUNT(*) AS c FROM contact_requests'),
     applications: c('SELECT COUNT(*) AS c FROM applications'),
     pendingBlog: c("SELECT COUNT(*) AS c FROM blog_posts WHERE status = 'pending'"),
-    unansweredQuestions: c('SELECT COUNT(*) AS c FROM questions WHERE answer_text IS NULL'),
+    unansweredQuestions: c(
+      `SELECT COUNT(*) AS c FROM questions
+       WHERE NOT EXISTS (SELECT 1 FROM question_messages qm WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor')
+         AND answer_text IS NULL`
+    ),
     sales: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'approved'"),
     cart: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'pending'"),
     revenue: db

@@ -126,6 +126,14 @@ db.exec(`
     answered_at TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS question_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL REFERENCES questions(id),
+    sender_role TEXT NOT NULL CHECK (sender_role IN ('student', 'instructor')),
+    message_text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS blog_posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -169,5 +177,17 @@ addColumnIfMissing('lessons', 'is_preview', 'INTEGER NOT NULL DEFAULT 0');
 if (db.prepare("PRAGMA table_info(blog_posts)").all().some((c) => c.name === 'published')) {
   db.prepare("UPDATE blog_posts SET status = 'pending' WHERE published = 0 AND status = 'published'").run();
 }
+
+// The Q&A thread used to store a single answer directly on the question row;
+// it's now a running message log. Backfill each legacy answer as the first
+// instructor message so old threads still show up in the new chat view. Safe
+// to re-run: skipped once a question already has any message.
+db.prepare(
+  `INSERT INTO question_messages (question_id, sender_role, message_text, created_at)
+   SELECT id, 'instructor', answer_text, COALESCE(answered_at, created_at)
+   FROM questions
+   WHERE answer_text IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM question_messages WHERE question_messages.question_id = questions.id)`
+).run();
 
 export default db;

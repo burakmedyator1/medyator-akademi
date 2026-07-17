@@ -30,29 +30,57 @@
   color: var(--text-secondary);
 }
 
-.my-questions__question {
-  margin: 0 0 12px;
+.my-questions__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.my-questions__answer {
-  background: var(--bg-cream);
+.my-questions__bubble {
+  max-width: 80%;
   border-radius: var(--radius-sm);
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
-.my-questions__answer-label {
-  font-size: 0.75rem;
+.my-questions__bubble p {
+  margin: 2px 0 0;
+}
+
+.my-questions__bubble-label {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--orange);
-}
-
-.my-questions__answer p {
-  margin: 4px 0 0;
-}
-
-.my-questions__pending {
-  font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+.my-questions__bubble--student {
+  align-self: flex-end;
+  background: var(--orange);
+  color: var(--white);
+}
+
+.my-questions__bubble--student .my-questions__bubble-label {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.my-questions__bubble--instructor {
+  align-self: flex-start;
+  background: var(--bg-cream);
+}
+
+.my-questions__reply {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.my-questions__reply textarea {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: inherit;
+  font-size: 0.9rem;
 }
 
 .my-questions__empty {
