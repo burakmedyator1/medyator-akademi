@@ -1,13 +1,34 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { WebView, WebViewNavigation } from 'react-native-webview';
 
 const PLACEHOLDER_IDS = ['', 'REPLACE_WITH_REAL_VIDEO_ID'];
 
+// Videonun kaynağına gidişi engelle (koruma): YouTube'da izle / youtu.be /
+// mobil YouTube / harici gezinmeler bloklanır. Yalnız embed sayfası ve
+// oynatıcının kendi kaynakları yüklenir.
+function isBlocked(url: string): boolean {
+  return (
+    /\/watch\b/.test(url) ||
+    url.includes('youtu.be/') ||
+    url.includes('m.youtube.com') ||
+    url.includes('accounts.google.com')
+  );
+}
+
+// Uzun basma/menü, seçim ve sağ tık kapatılır (link kopyalama/"YouTube'da aç"ı önler).
+const INJECTED = `
+  (function(){
+    var css = '*{ -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }';
+    var s = document.createElement('style'); s.innerHTML = css; document.head.appendChild(s);
+    document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
+  })();
+  true;
+`;
+
 /**
- * Web VideoPlayer.jsx'in mobil karşılığı. YouTube/Vimeo videosunu WebView'de
- * oynatır. ÖNEMLİ: embed sayfası doğrudan URL olarak yüklenir (source.uri) —
- * böylece YouTube geçerli bir origin (youtube.com) görür ve oynatır. HTML
- * içine iframe gömmek (source.html) origin'siz kaldığından oynatmayı engeller.
+ * Web VideoPlayer.jsx'in korumalı mobil karşılığı. Embed doğrudan URL olarak
+ * yüklenir (oynatma için geçerli origin), ama kullanıcı videonun YouTube/Vimeo
+ * kaynağına gidemez — gezinme engellenir.
  */
 export function VideoPlayer({
   provider,
@@ -30,8 +51,13 @@ export function VideoPlayer({
 
   const uri =
     provider === 'youtube'
-      ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&fs=1`
-      : `https://player.vimeo.com/video/${videoId}`;
+      ? `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&fs=1`
+      : `https://player.vimeo.com/video/${videoId}?title=0&byline=0&portrait=0`;
+
+  function onShouldStart(req: WebViewNavigation): boolean {
+    // İlk embed yüklemesine ve oynatıcı kaynaklarına izin ver; kaynağa gidişi engelle.
+    return !isBlocked(req.url);
+  }
 
   return (
     <View style={styles.frame}>
@@ -44,8 +70,11 @@ export function VideoPlayer({
         allowsFullscreenVideo
         javaScriptEnabled
         domStorageEnabled
-        // iOS'ta gömülü YouTube/Vimeo oynatıcısının tam çalışması için:
+        // Koruma: kaynağa gidişi engelle, yeni pencere/menü/önizleme kapalı.
+        onShouldStartLoadWithRequest={onShouldStart}
         setSupportMultipleWindows={false}
+        allowsLinkPreview={false}
+        injectedJavaScript={INJECTED}
         allowsProtectedMedia
       />
     </View>
