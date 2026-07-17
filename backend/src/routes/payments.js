@@ -12,6 +12,28 @@ function formatDate(value) {
   return d.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+// iyzico's live fraud checks reject an obviously fake gsmNumber, so the
+// user's own registration phone (free-form input) needs normalizing to
+// the +90XXXXXXXXXX format it expects.
+function formatGsmNumber(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  const local = digits.replace(/^90/, '').replace(/^0/, '');
+  return local ? `+90${local}` : '+905000000000';
+}
+
+// Sandbox accepts any 11 digits; iyzico's live environment validates the
+// real TC Kimlik No checksum and silently declines otherwise, so check it
+// ourselves first and give a clear error instead of iyzico's generic one.
+function isValidTcKimlikNo(value) {
+  if (!/^\d{11}$/.test(value) || value[0] === '0') return false;
+  const digits = value.split('').map(Number);
+  const oddSum = digits[0] + digits[2] + digits[4] + digits[6] + digits[8];
+  const evenSum = digits[1] + digits[3] + digits[5] + digits[7];
+  const d10 = ((oddSum * 7 - evenSum) % 10 + 10) % 10;
+  const d11 = (digits.slice(0, 10).reduce((a, b) => a + b, 0)) % 10;
+  return d10 === digits[9] && d11 === digits[10];
+}
+
 router.get('/status', (req, res) => {
   res.json({ configured: isPaymentConfigured() });
 });
@@ -25,8 +47,8 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
   if (!courseId || !identityNumber || !address || !city) {
     return res.status(400).json({ error: 'Tüm alanları doldurun' });
   }
-  if (!/^\d{11}$/.test(identityNumber)) {
-    return res.status(400).json({ error: 'TC Kimlik No 11 haneli olmalı' });
+  if (!isValidTcKimlikNo(identityNumber)) {
+    return res.status(400).json({ error: 'Geçerli bir TC Kimlik No girmelisin' });
   }
 
   const course = db.prepare('SELECT id, title, category, price FROM courses WHERE id = ?').get(courseId);
@@ -40,7 +62,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     .get(req.user.id, courseId);
   if (existing) return res.status(409).json({ error: 'Bu kursa zaten kayıtlısınız' });
 
-  const user = db.prepare('SELECT name, email, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT name, email, phone, created_at FROM users WHERE id = ?').get(req.user.id);
   const conversationId = crypto.randomUUID();
   const price = Number(course.price).toFixed(2);
   const [name, ...rest] = user.name.split(' ');
@@ -61,7 +83,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
       id: String(req.user.id),
       name,
       surname,
-      gsmNumber: '+905000000000',
+      gsmNumber: formatGsmNumber(user.phone),
       email: user.email,
       identityNumber,
       lastLoginDate: formatDate(),
