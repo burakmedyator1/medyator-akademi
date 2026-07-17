@@ -64,9 +64,16 @@ export default function Navbar() {
                   Admin Paneli
                 </Link>
               )}
-              <Link to={user.role === 'instructor' ? '/egitmen-panel' : '/panel'} className="btn btn-outline">
-                Panelim
-              </Link>
+              {user.role === 'instructor' && (
+                <Link to="/egitmen-panel" className="btn btn-outline">
+                  Eğitmen Paneli
+                </Link>
+              )}
+              {user.role !== 'instructor' && (
+                <Link to="/panel" className="btn btn-outline">
+                  Panelim
+                </Link>
+              )}
               <button className="btn btn-dark" onClick={logout}>
                 Çıkış ({user.name})
               </button>
