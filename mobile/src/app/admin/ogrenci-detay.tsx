@@ -11,7 +11,11 @@ import { useTheme } from '@/theme/theme';
 type Enrollment = { id: number; progress: number; paymentStatus: string; courseId: number; courseTitle: string };
 type Student = { id: number; name: string; email: string; phone?: string; enrollments: Enrollment[] };
 
-const STATUS_LABEL: Record<string, string> = { approved: 'Onaylı', pending: 'Bekliyor', rejected: 'Reddedildi' };
+const STATUS_LABEL: Record<string, string> = {
+  approved: 'Erişim açık',
+  pending: 'Ödeme bekliyor',
+  rejected: 'Erişim kapalı',
+};
 
 export default function AdminOgrenciDetay() {
   return (
@@ -70,26 +74,42 @@ function Content() {
         <Button title="Şifre Sıfırla" variant="outline" onPress={resetPassword} style={{ marginTop: 8 }} />
       </View>
 
-      <Text style={[styles.section, { color: colors.textPrimary }]}>Kayıtlar</Text>
+      <Text style={[styles.section, { color: colors.textPrimary }]}>Kayıtlı kurslar</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 12.5 }}>
+        Satın alan/kayıt olan öğrenci kursa doğrudan erişir; ayrıca onay gerekmez.
+      </Text>
       {student.enrollments.length === 0 ? (
         <Text style={{ color: colors.textSecondary }}>Kayıt yok.</Text>
       ) : (
-        student.enrollments.map((e) => (
-          <View key={e.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>{e.courseTitle}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Durum: {STATUS_LABEL[e.paymentStatus] || e.paymentStatus} · İlerleme {e.progress}</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-              <Button title="Onayla" onPress={() => setStatus(e.id, 'approved')} style={{ flex: 1 }} />
-              <Button title="Reddet" variant="outline" onPress={() => setStatus(e.id, 'rejected')} style={{ flex: 1 }} />
+        student.enrollments.map((e) => {
+          const open = e.paymentStatus === 'approved';
+          return (
+            <View key={e.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: colors.textPrimary, fontWeight: '700', flex: 1, marginRight: 8 }} numberOfLines={1}>
+                  {e.courseTitle}
+                </Text>
+                <View style={[styles.badge, { backgroundColor: open ? colors.accentSoft : colors.border }]}>
+                  <Text style={{ color: open ? colors.orange : colors.textSecondary, fontSize: 11.5, fontWeight: '800' }}>
+                    {STATUS_LABEL[e.paymentStatus] || e.paymentStatus}
+                  </Text>
+                </View>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>İlerleme: {e.progress}</Text>
+              {open ? (
+                <Button title="Erişimi kaldır" variant="outline" onPress={() => setStatus(e.id, 'rejected')} style={{ marginTop: 8 }} />
+              ) : (
+                <Button title="Erişim ver" onPress={() => setStatus(e.id, 'approved')} style={{ marginTop: 8 }} />
+              )}
             </View>
-          </View>
-        ))
+          );
+        })
       )}
 
       <Text style={[styles.section, { color: colors.textPrimary }]}>Manuel kayıt ekle</Text>
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <ChipSelect options={courses.map((c) => ({ label: c.title, value: c.id }))} value={enrollCourse} onChange={(v) => setEnrollCourse(Number(v))} />
-        <Button title="Kursa Kaydet (onaylı)" onPress={manualEnroll} style={{ marginTop: 8 }} />
+        <Button title="Kursa Kaydet (erişim açık)" onPress={manualEnroll} style={{ marginTop: 8 }} />
       </View>
     </PanelScreen>
   );
@@ -98,4 +118,5 @@ function Content() {
 const styles = StyleSheet.create({
   card: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 4 },
   section: { fontSize: 17, fontWeight: '800', marginTop: 8 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
 });

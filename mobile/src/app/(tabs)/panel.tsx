@@ -50,10 +50,19 @@ function StaffNotice() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgCream }]} edges={['top']}>
       <View style={{ padding: 16, gap: 14 }}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Panelim</Text>
-        <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={40} color={colors.textSecondary} />
-          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
-            Bu bölüm öğrenci hesapları içindir. Yönetim ekranların Hesabım sekmesinde.
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, gap: 12 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={[styles.panelIcon, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={24} color={colors.orange} />
+            </View>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 0 }]}>
+              {isAdmin ? 'Yönetim' : 'Eğitmen alanı'}
+            </Text>
+          </View>
+          <Text style={{ color: colors.textSecondary }}>
+            {isAdmin
+              ? 'Kurslar, öğrenciler, siparişler, sorular ve tüm site içeriğini buradan yönet.'
+              : 'Öğrenci sorularını yanıtla ve blog yazılarını yönet.'}
           </Text>
           <Button
             title={isAdmin ? 'Admin Paneli' : 'Eğitmen Paneli'}
@@ -253,4 +262,5 @@ const styles = StyleSheet.create({
   askCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 18, borderWidth: 1, marginTop: 6 },
   recCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, borderWidth: 1 },
   recThumb: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  panelIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

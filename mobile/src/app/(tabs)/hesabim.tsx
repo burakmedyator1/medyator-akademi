@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Card } from '@/components/ui/Card';
@@ -64,23 +63,9 @@ function StaffAccount() {
         <Field label="Rol" value={isAdmin ? 'Yönetici' : 'Eğitmen'} colors={colors} />
       </Card>
 
-      <Card style={{ gap: 12 }}>
-        <View style={styles.panelHead}>
-          <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={22} color={colors.orange} />
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-            {isAdmin ? 'Yönetim' : 'Eğitmen alanı'}
-          </Text>
-        </View>
-        <Text style={{ color: colors.textSecondary }}>
-          {isAdmin
-            ? 'Kurslar, öğrenciler, siparişler ve tüm site içeriğini buradan yönet.'
-            : 'Öğrenci sorularını yanıtla ve blog yazılarını yönet.'}
-        </Text>
-        <Button
-          title={isAdmin ? 'Admin Paneli' : 'Eğitmen Paneli'}
-          onPress={() => router.push(isAdmin ? '/admin' : '/egitmen')}
-        />
-      </Card>
+      <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+        {isAdmin ? 'Yönetim paneline' : 'Eğitmen paneline'} Panelim sekmesinden ulaşabilirsin.
+      </Text>
 
       <Button
         title="Çıkış Yap"
@@ -228,5 +213,4 @@ function Field({ label, value, colors }: { label: string; value?: string; colors
 const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800' },
   cardTitle: { fontSize: 17, fontWeight: '800' },
-  panelHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });
