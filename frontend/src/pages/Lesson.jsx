@@ -88,8 +88,13 @@ export default function Lesson() {
   }, [loadVideo, loadProgress]);
 
   async function handleEnroll() {
+    const isPaid = course.price > 0;
     if (!isAuthenticated) {
-      navigate('/giris', { state: { from: { pathname: `/kurslar/${courseId}` } } });
+      navigate('/giris', { state: { from: { pathname: isPaid ? `/odeme/${courseId}` : `/kurslar/${courseId}` } } });
+      return;
+    }
+    if (isPaid) {
+      navigate(`/odeme/${courseId}`);
       return;
     }
     setEnrolling(true);
