@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { api } from '@/api/client';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { AuthGate } from '@/components/AuthGate';
+import { AdminPanelHome } from '@/components/panels/AdminPanel';
+import { InstructorPanelHome } from '@/components/panels/InstructorPanel';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/theme/theme';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -36,42 +38,10 @@ export default function Panel() {
 
 function PanelInner() {
   const { user } = useAuth();
-  // Öğrenci dashboard'u yalnız öğrencilere; admin/eğitmen kendi paneline yönlenir.
-  if (user && user.role !== 'student') return <StaffNotice />;
+  // Admin/eğitmen: Panelim doğrudan kendi panelini gösterir. Öğrenci: dashboard.
+  if (user?.role === 'admin') return <AdminPanelHome />;
+  if (user?.role === 'instructor') return <InstructorPanelHome />;
   return <PanelContent />;
-}
-
-function StaffNotice() {
-  const { user } = useAuth();
-  const { colors } = useTheme();
-  const router = useRouter();
-  const isAdmin = user?.role === 'admin';
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgCream }]} edges={['top']}>
-      <View style={{ padding: 16, gap: 14 }}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Panelim</Text>
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, gap: 12 }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <View style={[styles.panelIcon, { backgroundColor: colors.accentSoft }]}>
-              <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={24} color={colors.orange} />
-            </View>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 0 }]}>
-              {isAdmin ? 'Yönetim' : 'Eğitmen alanı'}
-            </Text>
-          </View>
-          <Text style={{ color: colors.textSecondary }}>
-            {isAdmin
-              ? 'Kurslar, öğrenciler, siparişler, sorular ve tüm site içeriğini buradan yönet.'
-              : 'Öğrenci sorularını yanıtla ve blog yazılarını yönet.'}
-          </Text>
-          <Button
-            title={isAdmin ? 'Admin Paneli' : 'Eğitmen Paneli'}
-            onPress={() => router.push(isAdmin ? '/admin' : '/egitmen')}
-          />
-        </View>
-      </View>
-    </SafeAreaView>
-  );
 }
 
 function PanelContent() {
