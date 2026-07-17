@@ -6,15 +6,20 @@
 
 .footer__inner {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1.4fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1.3fr;
   gap: 32px;
   padding: 48px 24px;
+}
+
+.footer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .footer__brand img {
   height: var(--footer-logo-height, 30px);
   width: auto;
-  margin-bottom: 12px;
 }
 
 .footer__brand p {
@@ -99,6 +104,21 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.footer__legal-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer__legal-links a {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footer__legal-links a:hover {
+  color: var(--white);
 }
 
 .footer__payment-band {

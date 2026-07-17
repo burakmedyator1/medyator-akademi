@@ -26,6 +26,18 @@ export default function Footer() {
       <div className="container footer__inner">
         <div className="footer__brand">
           {(logoSrc || loaded) && <img src={logoSrc || defaultLogo} alt="Medyator Akademi" />}
+          {activeSocials.length > 0 && (
+            <div className="footer__socials">
+              <strong>Bizi Takip Et</strong>
+              <div className="footer__social-icons">
+                {activeSocials.map(({ key, icon: Icon, label }) => (
+                  <a href={settings[key]} target="_blank" rel="noopener noreferrer" key={key} aria-label={label}>
+                    <Icon />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <p>Online, kurumsal ve yüz yüze eğitim kursları.</p>
         </div>
 
@@ -73,23 +85,16 @@ export default function Footer() {
             )}
           </div>
         )}
-
-        {activeSocials.length > 0 && (
-          <div className="footer__socials">
-            <strong>Bizi Takip Et</strong>
-            <div className="footer__social-icons">
-              {activeSocials.map(({ key, icon: Icon, label }) => (
-                <a href={settings[key]} target="_blank" rel="noopener noreferrer" key={key} aria-label={label}>
-                  <Icon />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="footer__bottom container">
         <span>© {new Date().getFullYear()} Medyator Akademi. Tüm hakları saklıdır.</span>
+        <div className="footer__legal-links">
+          <a href="https://medyatorakademi.com/sozlesmeler-kullanim-kosullari">Kullanım Koşulları</a>
+          <a href="https://medyatorakademi.com/sozlesmeler-satis-sozlesmesi">Satış Sözleşmesi</a>
+          <a href="https://medyatorakademi.com/sozlesmeler-kvkk">KVKK</a>
+          <a href="https://medyatorakademi.com/sozlesmeler-iptal-iade">İptal &amp; İade</a>
+        </div>
         <img src={logoBand} alt="iyzico ile Öde - Mastercard, Visa, American Express, Troy" className="footer__payment-band" />
       </div>
     </footer>
