@@ -695,4 +695,24 @@ router.get('/questions', (req, res) => {
   );
 });
 
+// ---------- Overview (admin dashboard özet istatistikleri) ----------
+
+router.get('/overview', (req, res) => {
+  const c = (sql) => db.prepare(sql).get().c;
+  res.json({
+    students: c("SELECT COUNT(*) AS c FROM users WHERE role = 'student'"),
+    courses: c('SELECT COUNT(*) AS c FROM courses'),
+    instructors: c('SELECT COUNT(*) AS c FROM instructors'),
+    contactRequests: c('SELECT COUNT(*) AS c FROM contact_requests'),
+    applications: c('SELECT COUNT(*) AS c FROM applications'),
+    pendingBlog: c("SELECT COUNT(*) AS c FROM blog_posts WHERE status = 'pending'"),
+    unansweredQuestions: c('SELECT COUNT(*) AS c FROM questions WHERE answer_text IS NULL'),
+    sales: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'approved'"),
+    cart: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'pending'"),
+    revenue: db
+      .prepare("SELECT COALESCE(SUM(amount), 0) AS s FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'approved'")
+      .get().s,
+  });
+});
+
 export default router;

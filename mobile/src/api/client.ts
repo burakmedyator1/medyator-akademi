@@ -176,6 +176,8 @@ export const api = {
 
     getQuestions: () => request('/admin/questions', { auth: true }),
 
+    getOverview: () => request('/admin/overview', { auth: true }),
+
     getApplications: () => request('/admin/applications', { auth: true }),
     deleteApplication: (id: string | number) => request(`/admin/applications/${id}`, { method: 'DELETE', auth: true }),
 
