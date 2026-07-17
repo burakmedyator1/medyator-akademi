@@ -52,12 +52,16 @@ app.use(
           'https://cpp.iyzipay.com',
         ],
         // The YouTube IFrame Player API and iyzico's checkout form are loaded as external scripts.
+        // iyzico serves the checkout form's actual JS bundle from its *-static domain,
+        // separate from the API domain used for server-to-server calls.
         scriptSrc: [
           "'self'",
           "'unsafe-inline'",
           'https://www.youtube.com',
           'https://sandbox-api.iyzipay.com',
           'https://api.iyzipay.com',
+          'https://sandbox-static.iyzipay.com',
+          'https://static.iyzipay.com',
         ],
         imgSrc: ["'self'", 'data:', 'https:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
@@ -66,6 +70,8 @@ app.use(
           "'self'",
           'https://sandbox-api.iyzipay.com',
           'https://api.iyzipay.com',
+          'https://sandbox-static.iyzipay.com',
+          'https://static.iyzipay.com',
         ],
       },
     },
