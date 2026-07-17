@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { Ionicons } from '@expo/vector-icons';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { API_URL } from '@/config';
 
 const PLACEHOLDER_IDS = ['', 'REPLACE_WITH_REAL_VIDEO_ID'];
 const ACCENT = '#6aa016';
@@ -23,41 +24,13 @@ function fmt(sec: number): string {
   return `${m}:${s}`;
 }
 
-// YouTube IFrame API oynatıcısı: yerel kontroller KAPALI (controls:0), doğru
-// origin (baseUrl youtube.com + origin playerVar → "Hata 153" olmaz), komutlar
-// injectJavaScript ile gönderilir (güvenilir). Durum/konum RN'e postMessage'la döner.
-function youtubeHtml(videoId: string, start: number): string {
-  return `<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<style>*{margin:0;padding:0;-webkit-touch-callout:none;-webkit-user-select:none}
-html,body{background:#000;height:100%;overflow:hidden}#p{position:absolute;inset:0}iframe{width:100%;height:100%;border:0}</style>
-</head><body><div id="p"></div>
-<script src="https://www.youtube.com/iframe_api"></script>
-<script>
-var player, ready=false;
-function post(o){ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(o)); }
-function onYouTubeIframeAPIReady(){
-  player = new YT.Player('p', {
-    videoId: ${JSON.stringify(videoId)},
-    playerVars: { controls:0, disablekb:1, rel:0, modestbranding:1, fs:0, iv_load_policy:3, playsinline:1, start:${start||0}, origin: location.origin },
-    events: {
-      onReady: function(){ ready=true; post({type:'ready', duration: player.getDuration()}); },
-      onStateChange: function(e){ post({type:'state', state:e.data, current:player.getCurrentTime(), duration:player.getDuration()}); }
-    }
-  });
-  setInterval(function(){ if(ready){ post({type:'time', current:player.getCurrentTime(), duration:player.getDuration()}); } }, 500);
-}
-function handle(m){ if(!ready||!m) return;
-  if(m.cmd==='play') player.playVideo();
-  else if(m.cmd==='pause') player.pauseVideo();
-  else if(m.cmd==='seek') player.seekTo(m.value, true);
-  else if(m.cmd==='mute') player.mute();
-  else if(m.cmd==='unmute') player.unMute();
-}
-document.addEventListener('message', function(e){ try{ handle(JSON.parse(e.data)); }catch(_){} });
-window.addEventListener('message', function(e){ try{ handle(JSON.parse(e.data)); }catch(_){} });
-document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
-</script></body></html>`;
+// Oynatıcı sayfası kendi backend'imizden servis edilir (`GET /player.html`).
+// Sayfayı WebView'e HTML string olarak vermek yerine gerçek bir URL'den yüklemek
+// şart: YouTube embed'i geçerli bir origin göremezse "Hata 152/153" veriyor.
+// Yerel YouTube kontrolleri kapalı; komutlar injectJavaScript ile handle()'a,
+// durum/konum ise postMessage ile RN'e gider.
+function playerUri(videoId: string, start: number): string {
+  return `${API_URL}/player.html?v=${encodeURIComponent(videoId)}&start=${Math.floor(start) || 0}`;
 }
 
 export function VideoPlayer({ provider, videoId }: { provider?: string; videoId: string; title?: string }) {
@@ -103,9 +76,9 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
   const [muted, setMuted] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
-  // html yalnız videoId veya tam ekran değişince yeniden üretilir (o an kaldığı
+  // URL yalnız videoId veya tam ekran değişince yeniden üretilir (o an kaldığı
   // saniyeden devam etsin diye start=startAt). Normal oynatmada sabit → reload yok.
-  const html = useMemo(() => youtubeHtml(videoId, Math.floor(startAt.current)), [videoId, fullscreen]);
+  const uri = useMemo(() => playerUri(videoId, startAt.current), [videoId, fullscreen]);
 
   useEffect(() => () => {
     if (Platform.OS !== 'web') ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
@@ -158,7 +131,7 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
     return (
       <WebView
         ref={webRef}
-        source={{ html, baseUrl: 'https://www.youtube.com' }}
+        source={{ uri }}
         style={{ width: w, height: h, backgroundColor: '#000' }}
         originWhitelist={['*']}
         allowsInlineMediaPlayback

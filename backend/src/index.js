@@ -94,6 +94,46 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Mobil uygulamanın video oynatıcısı. Sayfa BU origin'den servis edildiği için
+// YouTube embed'i geçerli bir origin görür (aksi halde "Hata 152/153" verir).
+// Yerel kontroller kapalı (controls:0); komutlar RN tarafından injectJavaScript
+// ile handle() çağrılarak gönderilir, durum postMessage ile geri döner.
+app.get('/player.html', (req, res) => {
+  const videoId = String(req.query.v || '').replace(/[^A-Za-z0-9_-]/g, '');
+  const start = Math.max(0, parseInt(String(req.query.start || '0'), 10) || 0);
+  res.type('html').send(`<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>*{margin:0;padding:0;-webkit-touch-callout:none;-webkit-user-select:none}
+html,body{background:#000;height:100%;overflow:hidden}#p{position:absolute;top:0;left:0;right:0;bottom:0}
+iframe{width:100%;height:100%;border:0}</style></head><body><div id="p"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var player, ready = false;
+function post(o){ if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(o)); }
+function onYouTubeIframeAPIReady(){
+  player = new YT.Player('p', {
+    videoId: ${JSON.stringify(videoId)},
+    playerVars: { controls:0, disablekb:1, rel:0, modestbranding:1, fs:0, iv_load_policy:3, playsinline:1, start:${start}, origin: location.origin },
+    events: {
+      onReady: function(){ ready = true; post({ type:'ready', duration: player.getDuration() }); },
+      onStateChange: function(e){ post({ type:'state', state: e.data, current: player.getCurrentTime(), duration: player.getDuration() }); },
+      onError: function(e){ post({ type:'error', code: e.data }); }
+    }
+  });
+  setInterval(function(){ if (ready) post({ type:'time', current: player.getCurrentTime(), duration: player.getDuration() }); }, 500);
+}
+function handle(m){
+  if (!ready || !m) return;
+  if (m.cmd === 'play') player.playVideo();
+  else if (m.cmd === 'pause') player.pauseVideo();
+  else if (m.cmd === 'seek') player.seekTo(m.value, true);
+  else if (m.cmd === 'mute') player.mute();
+  else if (m.cmd === 'unmute') player.unMute();
+}
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
+</script></body></html>`);
+});
+
 // In production the built frontend (frontend/dist) is served from this same
 // process, so the app runs as a single deployable service on one domain.
 const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
