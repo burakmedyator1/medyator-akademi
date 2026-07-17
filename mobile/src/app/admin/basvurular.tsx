@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { api, mediaUrl } from '@/api/client';
 import { useTheme } from '@/theme/theme';
 
@@ -26,7 +26,7 @@ function Content() {
   const load = useCallback(async () => {
     try { setItems((await api.admin.getApplications()) as Application[]); } catch {}
   }, []);
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   function confirmDelete(a: Application) {
     Alert.alert('Sil', `${a.name} başvurusu silinsin mi?`, [

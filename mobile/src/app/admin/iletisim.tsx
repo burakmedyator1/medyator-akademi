@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { api } from '@/api/client';
 import { useTheme } from '@/theme/theme';
 
@@ -25,7 +25,7 @@ function Content() {
   const load = useCallback(async () => {
     try { setItems((await api.admin.getContactRequests()) as Contact[]); } catch {}
   }, []);
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   return (
     <PanelScreen title="İletişim Talepleri">

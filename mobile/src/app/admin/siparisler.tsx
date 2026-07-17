@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/api/client';
 import { useTheme } from '@/theme/theme';
@@ -28,7 +28,7 @@ function Content() {
   const load = useCallback(async () => {
     try { setItems((await api.admin.getOrders()) as Order[]); } catch {}
   }, []);
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   async function remind(o: Order) {
     setRemindingId(o.id);

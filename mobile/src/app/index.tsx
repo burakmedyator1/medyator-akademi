@@ -20,8 +20,7 @@ export default function Index() {
     );
   }
 
-  if (user?.role === 'admin') return <Redirect href="/admin" />;
-  if (user?.role === 'instructor') return <Redirect href="/egitmen" />;
-  // Öğrenci ve misafirler ortak sekmeli deneyime gider.
+  // Tüm roller (admin/eğitmen dahil) uygulamayı canlı görsün diye sekmelere
+  // düşer. Admin/eğitmen kendi paneline Hesabım sekmesinden ulaşır.
   return <Redirect href="/(tabs)" />;
 }

@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ChipSelect } from '@/components/form/ChipSelect';
@@ -42,9 +43,7 @@ function Content() {
       setItems((await api.admin.getTestimonials()) as Testimonial[]);
     } catch {}
   }, []);
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, [load]);
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   async function save() {
     if (!form.studentName.trim() || !form.quote.trim()) return Alert.alert('Eksik', 'İsim ve yorum zorunlu');

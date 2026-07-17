@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { api } from '@/api/client';
 import { useTheme } from '@/theme/theme';
 
@@ -26,7 +27,7 @@ function Content() {
   const load = useCallback(async () => {
     try { setItems((await api.admin.getStudents()) as Student[]); } catch {}
   }, []);
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   return (
     <PanelScreen title="Öğrenciler">

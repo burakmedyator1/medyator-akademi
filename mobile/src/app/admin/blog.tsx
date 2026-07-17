@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { api, mediaUrl } from '@/api/client';
@@ -32,7 +32,7 @@ function Content() {
   const load = useCallback(async () => {
     try { setItems((await api.admin.getBlogPosts()) as Post[]); } catch {}
   }, []);
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  useAutoRefresh(() => { load().finally(() => setLoading(false)); });
 
   async function pickCover() {
     try {

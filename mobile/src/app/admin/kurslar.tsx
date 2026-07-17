@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { PanelScreen } from '@/components/PanelScreen';
 import { AuthGate } from '@/components/AuthGate';
 import { api } from '@/api/client';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useTheme } from '@/theme/theme';
 import { formatPrice } from '@/lib/format';
 
@@ -25,10 +26,10 @@ function Content() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    try { setItems((await api.admin.getCourses()) as AdminCourse[]); } catch {}
+    try { setItems((await api.admin.getCourses()) as AdminCourse[]); } catch {} finally { setLoading(false); }
   }, []);
-  // Düzenleme ekranından dönünce listeyi tazele.
-  useFocusEffect(useCallback(() => { load().finally(() => setLoading(false)); }, [load]));
+  // Ekran açıkken canlı tazele (odak + periyodik).
+  useAutoRefresh(load);
 
   function confirmDelete(course: AdminCourse) {
     Alert.alert('Sil', `"${course.title}" ve tüm dersleri/kayıtları silinsin mi?`, [

@@ -174,6 +174,8 @@ export const api = {
 
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
 
+    getQuestions: () => request('/admin/questions', { auth: true }),
+
     getApplications: () => request('/admin/applications', { auth: true }),
     deleteApplication: (id: string | number) => request(`/admin/applications/${id}`, { method: 'DELETE', auth: true }),
 

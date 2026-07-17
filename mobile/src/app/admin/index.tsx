@@ -12,6 +12,7 @@ const SECTIONS: { icon: any; title: string; href: string }[] = [
   { icon: 'pricetags-outline', title: 'Kategoriler', href: '/admin/kategoriler' },
   { icon: 'people-outline', title: 'Eğitmenler', href: '/admin/egitmenler' },
   { icon: 'chatbubbles-outline', title: 'Yorumlar', href: '/admin/yorumlar' },
+  { icon: 'help-circle-outline', title: 'Sorular', href: '/admin/sorular' },
   { icon: 'school-outline', title: 'Öğrenciler', href: '/admin/ogrenciler' },
   { icon: 'receipt-outline', title: 'Siparişler', href: '/admin/siparisler' },
   { icon: 'mail-outline', title: 'İletişim', href: '/admin/iletisim' },

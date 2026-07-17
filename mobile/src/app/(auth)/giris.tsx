@@ -25,14 +25,14 @@ export default function Giris() {
     setLoading(true);
     try {
       const user = await login(email.trim(), password);
+      // Tüm roller uygulamaya (sekmelere) girer; admin/eğitmen paneline
+      // Hesabım'dan ulaşır. Öğrenci doğrudan panele düşer.
       if (redirect) {
         router.replace(redirect as any);
-      } else if (user.role === 'admin') {
-        router.replace('/admin');
-      } else if (user.role === 'instructor') {
-        router.replace('/egitmen');
-      } else {
+      } else if (user.role === 'student') {
         router.replace('/(tabs)/panel');
+      } else {
+        router.replace('/(tabs)');
       }
     } catch (err: any) {
       setError(err.message);

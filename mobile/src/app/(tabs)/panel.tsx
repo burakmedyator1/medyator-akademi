@@ -28,9 +28,40 @@ type Dashboard = { enrolledCourses: EnrolledCourse[]; nextLessons: NextLesson[];
 
 export default function Panel() {
   return (
-    <AuthGate role="student">
-      <PanelContent />
+    <AuthGate>
+      <PanelInner />
     </AuthGate>
+  );
+}
+
+function PanelInner() {
+  const { user } = useAuth();
+  // Öğrenci dashboard'u yalnız öğrencilere; admin/eğitmen kendi paneline yönlenir.
+  if (user && user.role !== 'student') return <StaffNotice />;
+  return <PanelContent />;
+}
+
+function StaffNotice() {
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const isAdmin = user?.role === 'admin';
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgCream }]} edges={['top']}>
+      <View style={{ padding: 16, gap: 14 }}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Panelim</Text>
+        <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={40} color={colors.textSecondary} />
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+            Bu bölüm öğrenci hesapları içindir. Yönetim ekranların Hesabım sekmesinde.
+          </Text>
+          <Button
+            title={isAdmin ? 'Admin Paneli' : 'Eğitmen Paneli'}
+            onPress={() => router.push(isAdmin ? '/admin' : '/egitmen')}
+          />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 

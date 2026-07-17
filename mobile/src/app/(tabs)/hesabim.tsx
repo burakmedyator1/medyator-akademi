@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Card } from '@/components/ui/Card';
@@ -21,7 +22,7 @@ const SOCIALS = [
 
 export default function Hesabim() {
   return (
-    <AuthGate role="student">
+    <AuthGate>
       <HesabimContent />
     </AuthGate>
   );
@@ -40,6 +41,61 @@ type Profile = {
 };
 
 function HesabimContent() {
+  const { user } = useAuth();
+  // Admin/eğitmen: sade hesap + panel kısayolu. Öğrenci: tam profil.
+  if (user && user.role !== 'student') return <StaffAccount />;
+  return <StudentAccount />;
+}
+
+/** Admin ve eğitmen için: hesap bilgisi + panel butonu + çıkış. */
+function StaffAccount() {
+  const { user, logout } = useAuth();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const isAdmin = user?.role === 'admin';
+
+  return (
+    <Screen>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>Hesabım</Text>
+
+      <Card style={{ gap: 10 }}>
+        <Field label="Ad Soyad" value={user?.name} colors={colors} />
+        <Field label="E-posta" value={user?.email} colors={colors} />
+        <Field label="Rol" value={isAdmin ? 'Yönetici' : 'Eğitmen'} colors={colors} />
+      </Card>
+
+      <Card style={{ gap: 12 }}>
+        <View style={styles.panelHead}>
+          <Ionicons name={isAdmin ? 'shield-checkmark-outline' : 'briefcase-outline'} size={22} color={colors.orange} />
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
+            {isAdmin ? 'Yönetim' : 'Eğitmen alanı'}
+          </Text>
+        </View>
+        <Text style={{ color: colors.textSecondary }}>
+          {isAdmin
+            ? 'Kurslar, öğrenciler, siparişler ve tüm site içeriğini buradan yönet.'
+            : 'Öğrenci sorularını yanıtla ve blog yazılarını yönet.'}
+        </Text>
+        <Button
+          title={isAdmin ? 'Admin Paneli' : 'Eğitmen Paneli'}
+          onPress={() => router.push(isAdmin ? '/admin' : '/egitmen')}
+        />
+      </Card>
+
+      <Button
+        title="Çıkış Yap"
+        variant="outline"
+        onPress={async () => {
+          await logout();
+          router.replace('/(tabs)');
+        }}
+      />
+    </Screen>
+  );
+}
+
+/** Öğrenci için: düzenlenebilir profil + şifre + çıkış. */
+function StudentAccount() {
   const { logout } = useAuth();
   const { colors } = useTheme();
   const router = useRouter();
@@ -50,7 +106,6 @@ function HesabimContent() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
-  // Şifre
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
@@ -125,28 +180,18 @@ function HesabimContent() {
     <Screen>
       <Text style={[styles.title, { color: colors.textPrimary }]}>Hesabım</Text>
 
-      {/* Salt okunur kimlik alanları */}
       <Card style={{ gap: 10 }}>
         <Field label="Ad Soyad" value={profile?.name} colors={colors} />
         <Field label="E-posta" value={profile?.email} colors={colors} />
-        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-          Ad soyad ve e-posta değiştirilemez.
-        </Text>
+        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Ad soyad ve e-posta değiştirilemez.</Text>
       </Card>
 
-      {/* Düzenlenebilir bilgiler */}
       <Card style={{ gap: 12 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Bilgilerim</Text>
         <Input label="Telefon" keyboardType="phone-pad" value={form.phone} onChangeText={(v) => set('phone', v)} />
         <DateField label="Doğum tarihi" value={form.birthDate} onChange={(v) => set('birthDate', v)} />
         {SOCIALS.map(({ key, label }) => (
-          <Input
-            key={key}
-            label={label}
-            autoCapitalize="none"
-            value={form[key]}
-            onChangeText={(v) => set(key, v)}
-          />
+          <Input key={key} label={label} autoCapitalize="none" value={form[key]} onChangeText={(v) => set(key, v)} />
         ))}
         {profileMsg ? (
           <Text style={{ color: profileMsg.type === 'ok' ? colors.orange : '#d9542d', fontWeight: '600' }}>
@@ -156,7 +201,6 @@ function HesabimContent() {
         <Button title="Bilgileri Kaydet" onPress={saveProfile} loading={savingProfile} />
       </Card>
 
-      {/* Şifre */}
       <Card style={{ gap: 12 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Şifre Değiştir</Text>
         <Input label="Mevcut şifre" secureTextEntry value={current} onChangeText={setCurrent} />
@@ -184,4 +228,5 @@ function Field({ label, value, colors }: { label: string; value?: string; colors
 const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800' },
   cardTitle: { fontSize: 17, fontWeight: '800' },
+  panelHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

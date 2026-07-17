@@ -676,4 +676,23 @@ router.put('/settings', (req, res) => {
   res.json({ updated: true });
 });
 
+// ---------- Questions (admin görünümü — eğitmenlere sorulan tüm sorular) ----------
+
+router.get('/questions', (req, res) => {
+  res.json(
+    db
+      .prepare(
+        `SELECT questions.id, questions.question_text AS questionText, questions.answer_text AS answerText,
+                questions.created_at AS createdAt, questions.answered_at AS answeredAt,
+                courses.title AS courseTitle, users.name AS studentName, instructors.name AS instructorName
+         FROM questions
+         JOIN courses ON courses.id = questions.course_id
+         JOIN users ON users.id = questions.user_id
+         JOIN instructors ON instructors.id = questions.instructor_id
+         ORDER BY (questions.answer_text IS NOT NULL), questions.created_at DESC`
+      )
+      .all()
+  );
+});
+
 export default router;
