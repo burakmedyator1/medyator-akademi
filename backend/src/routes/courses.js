@@ -113,7 +113,9 @@ router.get('/:id/lessons/:lessonId/video', optionalAuth, (req, res) => {
 
 router.get('/:id/enrollment', requireAuth, rejectInstructor, (req, res) => {
   const enrollment = db
-    .prepare('SELECT progress, payment_status AS paymentStatus FROM enrollments WHERE user_id = ? AND course_id = ?')
+    .prepare(
+      "SELECT progress, payment_status AS paymentStatus FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'"
+    )
     .get(req.user.id, req.params.id);
   if (!enrollment) return res.status(404).json({ error: 'Kayıt bulunamadı' });
   res.json(enrollment);

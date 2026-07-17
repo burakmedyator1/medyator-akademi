@@ -71,7 +71,7 @@ router.get('/dashboard', (req, res) => {
        FROM enrollments
        JOIN courses ON courses.id = enrollments.course_id
        JOIN instructors ON instructors.id = courses.instructor_id
-       WHERE enrollments.user_id = ?`
+       WHERE enrollments.user_id = ? AND enrollments.payment_status = 'approved'`
     )
     .all(req.user.id);
 
