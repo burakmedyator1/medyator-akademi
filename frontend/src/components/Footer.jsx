@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { MapPin, Mail } from 'lucide-react';
 import { InstagramIcon, TikTokIcon, YouTubeIcon, LinkedInIcon, XIcon } from './SocialIcons';
 import { useSettings } from '../context/SettingsContext';
-import { useTheme } from '../context/ThemeContext';
 import defaultLogo from '../assets/logo.png';
 import logoBand from '../assets/payment/iyzico-logo-band-white.svg';
 import './Footer.css';
@@ -17,9 +16,10 @@ const SOCIALS = [
 
 export default function Footer() {
   const { settings, loaded } = useSettings();
-  const { theme } = useTheme();
   const activeSocials = SOCIALS.filter(({ key }) => settings[key]);
-  const logoSrc = theme === 'dark' && settings.logo_url_dark ? settings.logo_url_dark : settings.logo_url;
+  // Footer'ın arka planı temadan bağımsız hep koyu, bu yüzden logo da
+  // siteye göre değil, her zaman karanlık mod logosunu kullanır.
+  const logoSrc = settings.logo_url_dark || settings.logo_url;
 
   return (
     <footer className="footer">
