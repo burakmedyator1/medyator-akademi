@@ -2,8 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
-  ChevronUp,
-  ChevronDown,
   PlayCircle,
   CheckCircle2,
   Circle,
@@ -27,9 +25,9 @@ function formatTotalDuration(minutes) {
 }
 
 const TABS = [
+  { key: 'lessons', label: 'Dersler' },
   { key: 'description', label: 'Açıklama' },
   { key: 'materials', label: 'Materyaller' },
-  { key: 'homework', label: 'Ödev' },
 ];
 
 export default function Lesson() {
@@ -44,8 +42,7 @@ export default function Lesson() {
   const [progress, setProgress] = useState(0);
   const [enrolled, setEnrolled] = useState(false);
   const [completing, setCompleting] = useState(false);
-  const [activeTab, setActiveTab] = useState('description');
-  const [curriculumOpen, setCurriculumOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState('lessons');
   const [shared, setShared] = useState(false);
 
   const loadVideo = useCallback(async () => {
@@ -87,7 +84,7 @@ export default function Lesson() {
   useEffect(() => {
     loadVideo();
     loadProgress();
-    setActiveTab('description');
+    setActiveTab('lessons');
   }, [loadVideo, loadProgress]);
 
   async function handleEnroll() {
@@ -211,6 +208,40 @@ export default function Lesson() {
           </div>
 
           <div className="card lesson-page__tab-content">
+            {activeTab === 'lessons' && (
+              <>
+                <p className="lesson-page__lessons-total">
+                  {course.lessons.length} ders · {formatTotalDuration(totalMinutes)}
+                </p>
+                <ul className="lesson-page__lessons-list">
+                  {course.lessons.map((lesson) => {
+                    const done = enrolled && progress >= lesson.order_;
+                    const active = String(lesson.id) === lessonId;
+                    const accessible = enrolled || lesson.isPreview || active;
+                    return (
+                      <li key={lesson.id} className={active ? 'active' : ''}>
+                        <Link to={`/kurslar/${course.id}/ders/${lesson.id}`}>
+                          {active ? (
+                            <PlayCircle size={16} />
+                          ) : done ? (
+                            <CheckCircle2 size={16} className="lesson-page__done-icon" />
+                          ) : accessible ? (
+                            <Circle size={16} />
+                          ) : (
+                            <Lock size={16} />
+                          )}
+                          <span>{lesson.title}</span>
+                          {lesson.isPreview && !enrolled && !active && (
+                            <span className="lesson-page__preview-badge">Ücretsiz</span>
+                          )}
+                          <span className="lesson-page__duration">{lesson.durationMinutes} dk</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
             {activeTab === 'description' &&
               (currentLesson?.description ? (
                 <p>{currentLesson.description}</p>
@@ -219,9 +250,6 @@ export default function Lesson() {
               ))}
             {activeTab === 'materials' && (
               <p className="lesson-page__empty">Bu ders için henüz materyal eklenmedi.</p>
-            )}
-            {activeTab === 'homework' && (
-              <p className="lesson-page__empty">Bu ders için henüz ödev eklenmedi.</p>
             )}
           </div>
 
@@ -250,48 +278,6 @@ export default function Lesson() {
             </div>
           </Link>
         </div>
-
-        <aside className="card lesson-page__list">
-          <button className="lesson-page__list-toggle" onClick={() => setCurriculumOpen((v) => !v)}>
-            <div>
-              <span className="lesson-page__list-index">01.</span>
-              <span className="lesson-page__list-title">Dersler</span>
-            </div>
-            <div className="lesson-page__list-toggle-right">
-              <span className="lesson-page__duration">{formatTotalDuration(totalMinutes)}</span>
-              {curriculumOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-            </div>
-          </button>
-          {curriculumOpen && (
-            <ul>
-              {course.lessons.map((lesson) => {
-                const done = enrolled && progress >= lesson.order_;
-                const active = String(lesson.id) === lessonId;
-                const accessible = enrolled || lesson.isPreview || active;
-                return (
-                  <li key={lesson.id} className={active ? 'active' : ''}>
-                    <Link to={`/kurslar/${course.id}/ders/${lesson.id}`}>
-                      {active ? (
-                        <PlayCircle size={16} />
-                      ) : done ? (
-                        <CheckCircle2 size={16} className="lesson-page__done-icon" />
-                      ) : accessible ? (
-                        <Circle size={16} />
-                      ) : (
-                        <Lock size={16} />
-                      )}
-                      <span>{lesson.title}</span>
-                      {lesson.isPreview && !enrolled && !active && (
-                        <span className="lesson-page__preview-badge">Ücretsiz</span>
-                      )}
-                      <span className="lesson-page__duration">{lesson.durationMinutes} dk</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </aside>
       </div>
     </div>
   );

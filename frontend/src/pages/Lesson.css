@@ -63,10 +63,8 @@
 }
 
 .lesson-page__body {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  align-items: start;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .lesson-page__player-card {
@@ -218,57 +216,23 @@
   font-size: 0.85rem;
 }
 
-.lesson-page__list {
-  padding: 0;
-  overflow: hidden;
-}
-
-.lesson-page__list-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px;
-  background: transparent;
-  border-bottom: 1px solid var(--border);
-}
-
-.lesson-page__list-toggle > div:first-child {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.lesson-page__list-index {
+.lesson-page__lessons-total {
+  margin: 0 0 14px;
   color: var(--text-secondary);
+  font-size: 0.85rem;
   font-weight: 700;
-  font-size: 0.95rem;
 }
 
-.lesson-page__list-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text-primary);
-}
-
-.lesson-page__list-toggle-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--text-secondary);
-}
-
-.lesson-page__list ul {
+.lesson-page__lessons-list {
   list-style: none;
   margin: 0;
-  padding: 12px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.lesson-page__list li a {
+.lesson-page__lessons-list li a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -279,17 +243,17 @@
   transition: background 0.15s ease;
 }
 
-.lesson-page__list li a:hover {
+.lesson-page__lessons-list li a:hover {
   background: var(--bg-cream);
 }
 
-.lesson-page__list li.active a {
+.lesson-page__lessons-list li.active a {
   background: var(--bg-cream);
   color: var(--text-primary);
   font-weight: 700;
 }
 
-.lesson-page__list li a span:first-of-type {
+.lesson-page__lessons-list li a span:first-of-type {
   flex: 1;
 }
 
@@ -310,10 +274,4 @@
   font-size: 0.68rem;
   font-weight: 700;
   white-space: nowrap;
-}
-
-@media (max-width: 900px) {
-  .lesson-page__body {
-    grid-template-columns: 1fr;
-  }
 }
