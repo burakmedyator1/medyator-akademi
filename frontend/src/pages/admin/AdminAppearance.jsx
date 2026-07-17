@@ -235,6 +235,17 @@ export default function AdminAppearance() {
           />
         </div>
 
+        <div className="admin-field">
+          <label>Footer Logo Yüksekliği (px)</label>
+          <input
+            type="number"
+            min="16"
+            max="120"
+            value={form.footer_logo_height || 30}
+            onChange={(e) => setForm({ ...form, footer_logo_height: e.target.value })}
+          />
+        </div>
+
         <h2 style={{ marginTop: 12 }}>Açılış Ekranı</h2>
         <div className="admin-field">
           <label>Alt Başlık Yazısı</label>

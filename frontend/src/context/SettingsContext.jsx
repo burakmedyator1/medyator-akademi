@@ -31,6 +31,9 @@ function applySettings(settings) {
   if (settings.navbar_logo_height) {
     document.documentElement.style.setProperty('--navbar-logo-height', `${settings.navbar_logo_height}px`);
   }
+  if (settings.footer_logo_height) {
+    document.documentElement.style.setProperty('--footer-logo-height', `${settings.footer_logo_height}px`);
+  }
   if (settings.splash_logo_width) {
     document.documentElement.style.setProperty('--splash-logo-width', `${settings.splash_logo_width}px`);
   }

@@ -12,7 +12,7 @@
 }
 
 .footer__brand img {
-  height: 30px;
+  height: var(--footer-logo-height, 30px);
   width: auto;
   margin-bottom: 12px;
   background: var(--surface);

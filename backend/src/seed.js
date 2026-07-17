@@ -43,6 +43,7 @@ const DEFAULT_SETTINGS = {
   'cursor-glow-intensity': '12',
   logo_url: '',
   navbar_logo_height: '34',
+  footer_logo_height: '30',
   splash_logo_width: '380',
   splash_tagline: 'Öğrenmenin yeni adresi',
   splash_enabled: 'true',
