@@ -89,12 +89,6 @@ export default function Footer() {
 
       <div className="footer__bottom container">
         <span>© {new Date().getFullYear()} Medyator Akademi. Tüm hakları saklıdır.</span>
-        <div className="footer__legal-links">
-          <a href="https://medyatorakademi.com/sozlesmeler-kullanim-kosullari">Kullanım Koşulları</a>
-          <a href="https://medyatorakademi.com/sozlesmeler-satis-sozlesmesi">Satış Sözleşmesi</a>
-          <a href="https://medyatorakademi.com/sozlesmeler-kvkk">KVKK</a>
-          <a href="https://medyatorakademi.com/sozlesmeler-iptal-iade">İptal &amp; İade</a>
-        </div>
         <img src={logoBand} alt="iyzico ile Öde - Mastercard, Visa, American Express, Troy" className="footer__payment-band" />
       </div>
     </footer>
