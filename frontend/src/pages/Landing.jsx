@@ -3,13 +3,17 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, Building2, Users, Star } from 'lucide-react';
 import { api } from '../api/client';
 import { useSettings } from '../context/SettingsContext';
+import { useAuth } from '../context/AuthContext';
 import CourseCard from '../components/CourseCard';
 import HeroPreview from '../components/HeroPreview';
 import VideoPlayer from '../components/VideoPlayer';
 import './Landing.css';
 
+const DASHBOARD_PATH = { admin: '/admin', instructor: '/egitmen-panel' };
+
 export default function Landing() {
   const { settings } = useSettings();
+  const { isAuthenticated, user } = useAuth();
   const [featured, setFeatured] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -62,9 +66,15 @@ export default function Landing() {
               'Eğitmenlerinden video dersler al, ilerlemeni takip et. Online, kurumsal veya yüz yüze — sana uygun formatı seç.'}
           </p>
           <div className="landing__hero-actions">
-            <Link to="/kayit" className="btn btn-primary">
-              Hemen Başla
-            </Link>
+            {isAuthenticated ? (
+              <Link to={DASHBOARD_PATH[user.role] || '/panel'} className="btn btn-primary">
+                Panelime Git
+              </Link>
+            ) : (
+              <Link to="/kayit" className="btn btn-primary">
+                Hemen Başla
+              </Link>
+            )}
             <Link to="/kurslar" className="btn btn-outline">
               Kursları İncele
             </Link>
