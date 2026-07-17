@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
@@ -62,12 +62,17 @@ export function VideoPlayer({ provider, videoId }: { provider?: string; videoId:
             height={height}
             width={width}
             videoId={videoId}
-            // Yerel kontroller açık (altyazı + kalite dahil); marka/öneri kısık.
-            initialPlayerParams={{ modestbranding: true, rel: false, iv_load_policy: 3 }}
+            // Yerel kontroller açık (altyazı + kalite dahil); marka/öneri kısık,
+            // tam ekran kapalı (tam ekranda paylaş erişilebilir olur).
+            initialPlayerParams={{ modestbranding: true, rel: false, iv_load_policy: 3, preventFullScreen: true }}
             webViewProps={protectiveWebViewProps as any}
             webViewStyle={{ backgroundColor: '#000' }}
           />
         )}
+        {/* Üst şeridi kapatan görünmez katman: paylaş/başlık/izleme-listesi
+            butonları üst köşede olduğundan dokunulamaz; alttaki kontroller
+            (oynat, altyazı, kalite) serbest kalır. */}
+        <Pressable style={styles.topGuard} onPress={() => {}} />
       </View>
     );
   }
@@ -96,4 +101,5 @@ const styles = StyleSheet.create({
   web: { flex: 1, backgroundColor: '#000' },
   center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   msg: { color: '#fff', fontSize: 14, textAlign: 'center' },
+  topGuard: { position: 'absolute', top: 0, left: 0, right: 0, height: '26%' },
 });
