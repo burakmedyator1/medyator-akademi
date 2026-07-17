@@ -6,7 +6,7 @@
 
 .footer__inner {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1.4fr 1fr;
   gap: 32px;
   padding: 48px 24px;
 }
@@ -67,6 +67,30 @@
 
 .footer__social-icons a:hover {
   background: var(--orange);
+}
+
+.footer__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.footer__contact strong {
+  color: var(--white);
+  font-size: 0.8rem;
+}
+
+.footer__contact-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.footer__contact-row svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--orange);
 }
 
 .footer__bottom {

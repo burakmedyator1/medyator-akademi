@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MapPin, Mail } from 'lucide-react';
 import { InstagramIcon, TikTokIcon, YouTubeIcon, LinkedInIcon, XIcon } from './SocialIcons';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
@@ -48,9 +49,30 @@ export default function Footer() {
         </div>
 
         <div className="footer__links">
-          <strong>Yasal</strong>
+          <strong>Destek</strong>
           <Link to="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
+          <a href="https://medyatorakademi.com/sss">Sıkça Sorulan Sorular</a>
+          <a href="https://medyatorakademi.com/yardim-destek">Yardım &amp; Destek</a>
+          <a href="https://medyatorakademi.com/iletisim">İletişim</a>
         </div>
+
+        {(settings.company_address || settings.company_email) && (
+          <div className="footer__contact">
+            <strong>İletişim Bilgilerimiz</strong>
+            {settings.company_address && (
+              <div className="footer__contact-row">
+                <MapPin size={18} />
+                <span>{settings.company_address}</span>
+              </div>
+            )}
+            {settings.company_email && (
+              <div className="footer__contact-row">
+                <Mail size={18} />
+                <span>{settings.company_email}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeSocials.length > 0 && (
           <div className="footer__socials">
