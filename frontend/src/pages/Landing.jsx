@@ -97,6 +97,18 @@ export default function Landing() {
       </section>
 
       <section className="container landing__section">
+        <div className="landing__section-head">
+          <h2>Öne çıkan online kurslar</h2>
+          <Link to="/kurslar">Tümünü gör →</Link>
+        </div>
+        <div className="landing__course-grid">
+          {featured.map((course) => (
+            <CourseCard key={course.id} course={course} mode="catalog" />
+          ))}
+        </div>
+      </section>
+
+      <section className="container landing__section">
         <h2>Sana uygun eğitim formatını seç</h2>
         <div className="landing__delivery-grid">
           {deliveryTypes.map(({ icon: Icon, title, description, href, cta }) => (
@@ -108,18 +120,6 @@ export default function Landing() {
                 {cta}
               </Link>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="container landing__section">
-        <div className="landing__section-head">
-          <h2>Öne çıkan online kurslar</h2>
-          <Link to="/kurslar">Tümünü gör →</Link>
-        </div>
-        <div className="landing__course-grid">
-          {featured.map((course) => (
-            <CourseCard key={course.id} course={course} mode="catalog" />
           ))}
         </div>
       </section>

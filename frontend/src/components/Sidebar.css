@@ -49,3 +49,20 @@
 .sidebar__item--button {
   background: transparent;
 }
+
+@media (max-width: 700px) {
+  .sidebar {
+    width: 60px;
+    padding: 16px 8px;
+  }
+
+  .sidebar__item {
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+  }
+
+  .sidebar__item span {
+    display: none;
+  }
+}

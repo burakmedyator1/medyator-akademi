@@ -171,3 +171,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 700px) {
+  .dashboard {
+    gap: 12px;
+    padding: 16px 12px;
+  }
+
+  .dashboard__table {
+    display: block;
+    overflow-x: auto;
+  }
+}
