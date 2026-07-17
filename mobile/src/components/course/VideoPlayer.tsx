@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView, WebViewNavigation } from 'react-native-webview';
-import YoutubePlayer, { YoutubeIframeRef } from 'react-native-youtube-iframe';
+import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 const PLACEHOLDER_IDS = ['', 'REPLACE_WITH_REAL_VIDEO_ID'];
@@ -17,30 +16,48 @@ function isBlocked(url: string): boolean {
   );
 }
 
-const INJECTED = `
-  (function(){
-    var s=document.createElement('style');
-    s.innerHTML='*{-webkit-touch-callout:none!important;-webkit-user-select:none!important;}';
-    document.head.appendChild(s);
-    document.addEventListener('contextmenu',function(e){e.preventDefault();},true);
-  })(); true;
-`;
-
-const protectiveWebViewProps = {
-  onShouldStartLoadWithRequest: (req: WebViewNavigation) => !isBlocked(req.url),
-  setSupportMultipleWindows: false,
-  allowsLinkPreview: false,
-  injectedJavaScript: INJECTED,
-  // iOS'ta programatik oynatma (kendi play tuşumuz) için gerekli.
-  allowsInlineMediaPlayback: true,
-  mediaPlaybackRequiresUserAction: false,
-};
-
 function fmt(sec: number): string {
   if (!sec || Number.isNaN(sec)) return '0:00';
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+// YouTube IFrame API oynatıcısı: yerel kontroller KAPALI (controls:0), doğru
+// origin (baseUrl youtube.com + origin playerVar → "Hata 153" olmaz), komutlar
+// injectJavaScript ile gönderilir (güvenilir). Durum/konum RN'e postMessage'la döner.
+function youtubeHtml(videoId: string, start: number): string {
+  return `<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>*{margin:0;padding:0;-webkit-touch-callout:none;-webkit-user-select:none}
+html,body{background:#000;height:100%;overflow:hidden}#p{position:absolute;inset:0}iframe{width:100%;height:100%;border:0}</style>
+</head><body><div id="p"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var player, ready=false;
+function post(o){ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(o)); }
+function onYouTubeIframeAPIReady(){
+  player = new YT.Player('p', {
+    videoId: ${JSON.stringify(videoId)},
+    playerVars: { controls:0, disablekb:1, rel:0, modestbranding:1, fs:0, iv_load_policy:3, playsinline:1, start:${start||0}, origin: location.origin },
+    events: {
+      onReady: function(){ ready=true; post({type:'ready', duration: player.getDuration()}); },
+      onStateChange: function(e){ post({type:'state', state:e.data, current:player.getCurrentTime(), duration:player.getDuration()}); }
+    }
+  });
+  setInterval(function(){ if(ready){ post({type:'time', current:player.getCurrentTime(), duration:player.getDuration()}); } }, 500);
+}
+function handle(m){ if(!ready||!m) return;
+  if(m.cmd==='play') player.playVideo();
+  else if(m.cmd==='pause') player.pauseVideo();
+  else if(m.cmd==='seek') player.seekTo(m.value, true);
+  else if(m.cmd==='mute') player.mute();
+  else if(m.cmd==='unmute') player.unMute();
+}
+document.addEventListener('message', function(e){ try{ handle(JSON.parse(e.data)); }catch(_){} });
+window.addEventListener('message', function(e){ try{ handle(JSON.parse(e.data)); }catch(_){} });
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); }, true);
+</script></body></html>`;
 }
 
 export function VideoPlayer({ provider, videoId }: { provider?: string; videoId: string; title?: string }) {
@@ -61,61 +78,71 @@ export function VideoPlayer({ provider, videoId }: { provider?: string; videoId:
         source={{ uri }}
         style={styles.web}
         originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
         allowsFullscreenVideo
         javaScriptEnabled
         domStorageEnabled
-        {...protectiveWebViewProps}
+        onShouldStartLoadWithRequest={(req) => !isBlocked(req.url)}
+        setSupportMultipleWindows={false}
+        allowsLinkPreview={false}
       />
     </View>
   );
 }
 
-/** Native kontroller KAPALI (controls:0) — ayar/paylaş/copy-url yok. Kendi
- *  kontrollerimiz: oynat/duraklat, 10sn ileri-geri, dokun-atla, tam ekran. */
 function YoutubeCustom({ videoId }: { videoId: string }) {
-  const ref = useRef<YoutubeIframeRef>(null);
+  const webRef = useRef<WebView>(null);
   const startAt = useRef(0);
   const dims = useWindowDimensions();
 
   const [inlineW, setInlineW] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [ready, setReady] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
-  useEffect(() => {
-    if (!ready) return;
-    const id = setInterval(async () => {
-      try {
-        const t = await ref.current?.getCurrentTime();
-        const d = await ref.current?.getDuration();
-        if (typeof t === 'number') { setCurrent(t); startAt.current = t; }
-        if (typeof d === 'number' && d) setDuration(d);
-      } catch {
-        /* yok say */
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [ready]);
+  // html yalnız videoId veya tam ekran değişince yeniden üretilir (o an kaldığı
+  // saniyeden devam etsin diye start=startAt). Normal oynatmada sabit → reload yok.
+  const html = useMemo(() => youtubeHtml(videoId, Math.floor(startAt.current)), [videoId, fullscreen]);
 
-  // Ekrandan çıkınca dikeye geri dön (native).
   useEffect(() => () => {
     if (Platform.OS !== 'web') ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
   }, []);
 
-  const onState = useCallback((s: string) => {
-    if (s === 'playing') setPlaying(true);
-    else if (s === 'paused' || s === 'ended') setPlaying(false);
-  }, []);
+  function send(cmd: string, value?: number) {
+    webRef.current?.injectJavaScript(`handle(${JSON.stringify({ cmd, value })}); true;`);
+  }
 
-  const seekTo = (sec: number) => {
+  function onMessage(e: WebViewMessageEvent) {
+    try {
+      const m = JSON.parse(e.nativeEvent.data);
+      if (m.type === 'time' || m.type === 'state' || m.type === 'ready') {
+        if (typeof m.current === 'number') { setCurrent(m.current); startAt.current = m.current; }
+        if (typeof m.duration === 'number' && m.duration) setDuration(m.duration);
+      }
+      if (m.type === 'state') setPlaying(m.state === 1);
+    } catch {
+      /* yok say */
+    }
+  }
+
+  function togglePlay() {
+    if (playing) send('pause');
+    else send('play');
+    setPlaying((p) => !p);
+  }
+  function seekTo(sec: number) {
     const to = Math.max(0, duration ? Math.min(duration, sec) : sec);
-    ref.current?.seekTo(to, true);
+    send('seek', to);
     setCurrent(to);
     startAt.current = to;
-  };
-
+  }
+  function toggleMute() {
+    send(muted ? 'unmute' : 'mute');
+    setMuted((x) => !x);
+  }
   async function toggleFullscreen() {
     const web = Platform.OS === 'web';
     if (!fullscreen) {
@@ -127,26 +154,28 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
     }
   }
 
-  function player(w: number, h: number) {
+  function web(w: number, h: number) {
     return (
-      <YoutubePlayer
-        ref={ref}
-        height={h}
-        width={w}
-        play={playing}
-        videoId={videoId}
-        onReady={() => setReady(true)}
-        onChangeState={onState}
-        initialPlayerParams={{ controls: false, modestbranding: true, rel: false, iv_load_policy: 3, start: Math.floor(startAt.current) } as any}
-        webViewProps={protectiveWebViewProps as any}
-        webViewStyle={{ backgroundColor: '#000' }}
+      <WebView
+        ref={webRef}
+        source={{ html, baseUrl: 'https://www.youtube.com' }}
+        style={{ width: w, height: h, backgroundColor: '#000' }}
+        originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        mediaPlaybackRequiresUserAction={false}
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={onMessage}
+        onShouldStartLoadWithRequest={(req: WebViewNavigation) => !isBlocked(req.url)}
+        setSupportMultipleWindows={false}
+        allowsLinkPreview={false}
       />
     );
   }
 
   const controls = (
     <View style={styles.bar}>
-      <Pressable onPress={() => setPlaying((p) => !p)} hitSlop={8}>
+      <Pressable onPress={togglePlay} hitSlop={8}>
         <Ionicons name={playing ? 'pause' : 'play'} size={22} color="#fff" />
       </Pressable>
       <Pressable onPress={() => seekTo(current - 10)} hitSlop={6}>
@@ -157,15 +186,17 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
       </Pressable>
       <Text style={styles.time}>{fmt(current)} / {fmt(duration)}</Text>
       <SeekBar current={current} duration={duration} onSeek={seekTo} />
+      <Pressable onPress={toggleMute} hitSlop={8}>
+        <Ionicons name={muted ? 'volume-mute' : 'volume-high'} size={18} color="#fff" />
+      </Pressable>
       <Pressable onPress={toggleFullscreen} hitSlop={8}>
         <Ionicons name={fullscreen ? 'contract' : 'expand'} size={20} color="#fff" />
       </Pressable>
     </View>
   );
 
-  // Videonun yalnız ORTA karesini dokunulabilir bırakan maske: etraf (üst/sol/
-  // sağ/alt) bloklanır → YouTube'un paylaş/başlık butonlarına dokunulamaz;
-  // ortadaki kareye dokunuş videoya ulaşıp oynat/duraklat yapar.
+  // Ortadaki kare hariç her yeri bloklayan maske (paylaş/başlık dokunulamaz;
+  // ortaya dokunuş native oynat/duraklat yapar).
   const mask = (w: number, hh: number) => {
     const sq = Math.round(Math.min(w, hh) * 0.5);
     const top = Math.round((hh - sq) / 2);
@@ -185,7 +216,7 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
     return (
       <Modal visible transparent={false} supportedOrientations={['landscape', 'landscape-left', 'landscape-right']} onRequestClose={toggleFullscreen}>
         <View style={styles.fsRoot}>
-          {player(fw, fh)}
+          {web(fw, fh)}
           {mask(fw, fh)}
           {controls}
         </View>
@@ -196,7 +227,7 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
   const h = inlineW > 0 ? (inlineW * 9) / 16 : 0;
   return (
     <View style={styles.frame} onLayout={(e) => setInlineW(e.nativeEvent.layout.width)}>
-      {inlineW > 0 && player(inlineW, h)}
+      {inlineW > 0 && web(inlineW, h)}
       {inlineW > 0 && mask(inlineW, h)}
       {controls}
     </View>
