@@ -167,7 +167,6 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
       <Modal visible transparent={false} supportedOrientations={['landscape', 'landscape-left', 'landscape-right']} onRequestClose={toggleFullscreen}>
         <View style={styles.fsRoot}>
           {player(fw, fh)}
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPlaying((p) => !p)} />
           {controls}
         </View>
       </Modal>
@@ -178,7 +177,6 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
   return (
     <View style={styles.frame} onLayout={(e) => setInlineW(e.nativeEvent.layout.width)}>
       {inlineW > 0 && player(inlineW, h)}
-      <Pressable style={StyleSheet.absoluteFill} onPress={() => setPlaying((p) => !p)} />
       {controls}
     </View>
   );
