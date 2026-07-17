@@ -8,7 +8,9 @@
     "scheme": "medyatorakademi",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.medyatorakademi.app",
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
@@ -34,7 +36,14 @@
         }
       ],
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kapak ve profil görseli yükleyebilmek için fotoğraflarına erişim izni gerekiyor."
+        }
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -17,7 +17,7 @@ import { api, mediaUrl } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
 import { useCourseColors } from '@/theme/courseColors';
 import { coverColorValue } from '@/lib/coverColors';
-import { deliveryTypeLabel, formatDuration, formatPrice } from '@/lib/format';
+import { deliveryTypeLabel, formatDuration } from '@/lib/format';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { Course, Enrollment } from '@/types';
 
@@ -88,10 +88,6 @@ export default function CourseDetail() {
       Alert.alert('Bilgi', 'Kursa kayıt yalnızca öğrenci hesaplarıyla yapılabilir.');
       return;
     }
-    if (isPaid) {
-      router.push(`/odeme/${id}` as any);
-      return;
-    }
     setBusy(true);
     try {
       await api.enroll(id);
@@ -112,11 +108,11 @@ export default function CourseDetail() {
   }
 
   const instructorPhoto = mediaUrl(course.instructorPhotoUrl);
-  const primaryLabel = approved
-    ? 'Derse Devam Et'
-    : isPaid
-      ? `${formatPrice(course.price)} · Satın Al`
-      : 'Ücretsiz Kaydol';
+  // App Store 3.1.1: uygulama içinde dijital içerik satılamaz, harici bir satın
+  // alma yoluna yönlendirilemez. Ücretli kurslar yalnızca web sitesinden alınır;
+  // uygulama, erişimi olmayan ücretli kursu sadece kilitli gösterir.
+  const canAct = approved || !user || !isPaid;
+  const primaryLabel = approved ? 'Derse Devam Et' : !user ? 'Giriş Yap' : 'Ücretsiz Kaydol';
 
   return (
     <View style={{ flex: 1, backgroundColor: c.pageBg }}>
@@ -261,20 +257,29 @@ export default function CourseDetail() {
 
       {/* Sabit alt buton */}
       <View style={[styles.ctaBar, { paddingBottom: insets.bottom + 12, backgroundColor: c.card, borderTopColor: c.border }]}>
-        <Pressable onPress={handlePrimary} disabled={busy} style={{ opacity: busy ? 0.7 : 1 }}>
-          <LinearGradient
-            colors={c.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.ctaBtn}
-          >
-            {busy ? (
-              <ActivityIndicator color={c.onAccent} />
-            ) : (
-              <Text style={styles.ctaText}>{primaryLabel}</Text>
-            )}
-          </LinearGradient>
-        </Pressable>
+        {canAct ? (
+          <Pressable onPress={handlePrimary} disabled={busy} style={{ opacity: busy ? 0.7 : 1 }}>
+            <LinearGradient
+              colors={c.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaBtn}
+            >
+              {busy ? (
+                <ActivityIndicator color={c.onAccent} />
+              ) : (
+                <Text style={styles.ctaText}>{primaryLabel}</Text>
+              )}
+            </LinearGradient>
+          </Pressable>
+        ) : (
+          <View style={[styles.locked, { borderColor: c.border, backgroundColor: c.pageBg }]}>
+            <Ionicons name="lock-closed" size={17} color={c.textMuted} />
+            <Text style={{ color: c.textSecondary, fontSize: 13.5, flex: 1, lineHeight: 18 }}>
+              Bu kursa erişimin bulunmuyor. Ücretsiz önizleme derslerini izleyebilirsin.
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -343,5 +348,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   ctaBtn: { height: 56, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  locked: {
+    minHeight: 56, borderRadius: 20, borderWidth: 1, paddingHorizontal: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+  },
   ctaText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
 });

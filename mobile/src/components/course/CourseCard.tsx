@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Course } from '@/types';
 import { useCourseColors } from '@/theme/courseColors';
 import { coverColorValue } from '@/lib/coverColors';
-import { formatPrice, lessonCountLabel } from '@/lib/format';
+import { lessonCountLabel } from '@/lib/format';
 import { mediaUrl } from '@/api/client';
 
 /** Kurslar listesi kartı — yeşil/modern dil. */
@@ -42,7 +42,9 @@ export function CourseCard({ course }: { course: Course }) {
         <Text style={[styles.meta, { color: c.textSecondary }]} numberOfLines={1}>
           {[course.instructorName, lessonCountLabel(course.lessonCount)].filter(Boolean).join(' · ')}
         </Text>
-        <Text style={[styles.price, { color: c.accent }]}>{formatPrice(course.price)}</Text>
+        {/* App Store 3.1.1: ücretli kursların fiyatı/satın alma yolu uygulamada
+            gösterilmez; yalnız ücretsizler işaretlenir. */}
+        {!course.price ? <Text style={[styles.price, { color: c.accent }]}>Ücretsiz</Text> : null}
       </View>
 
       <Ionicons name="chevron-forward" size={20} color={c.textMuted} style={styles.chevron} />

@@ -40,7 +40,6 @@ export default function RootLayout() {
               <Stack.Screen name="kurslar" />
               <Stack.Screen name="egitmenler" />
               <Stack.Screen name="sorularim" />
-              <Stack.Screen name="odeme" />
               <Stack.Screen name="egitmen" />
               <Stack.Screen name="admin" />
             </Stack>
