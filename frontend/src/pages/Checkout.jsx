@@ -24,6 +24,12 @@ export default function Checkout() {
 
   useEffect(() => {
     if (checkoutHtml && formContainerRef.current) {
+      // iyzico's injected script only runs its setup when `typeof iyziInit ==
+      // 'undefined'`. Without a full page reload (this is an SPA), a second
+      // checkout attempt sees the global left over from the first one and
+      // silently no-ops — the widget never appears again. Clearing it first
+      // makes every attempt start fresh.
+      window.iyziInit = undefined;
       formContainerRef.current.innerHTML = checkoutHtml;
       const scripts = formContainerRef.current.querySelectorAll('script');
       scripts.forEach((oldScript) => {
