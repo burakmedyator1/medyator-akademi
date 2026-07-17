@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import YoutubePlayer, { YoutubeIframeRef } from 'react-native-youtube-iframe';
@@ -99,8 +99,10 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
     return () => clearInterval(id);
   }, [ready]);
 
-  // Ekrandan çıkınca dikeye geri dön.
-  useEffect(() => () => { ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {}); }, []);
+  // Ekrandan çıkınca dikeye geri dön (native).
+  useEffect(() => () => {
+    if (Platform.OS !== 'web') ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+  }, []);
 
   const onState = useCallback((s: string) => {
     if (s === 'playing') setPlaying(true);
@@ -115,11 +117,12 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
   };
 
   async function toggleFullscreen() {
+    const web = Platform.OS === 'web';
     if (!fullscreen) {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
+      if (!web) await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
       setFullscreen(true);
     } else {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      if (!web) await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
       setFullscreen(false);
     }
   }

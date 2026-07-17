@@ -2,13 +2,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useColorScheme } from 'react-native';
-import { usePreventScreenCapture } from 'expo-screen-capture';
+import { Platform, useColorScheme } from 'react-native';
+import * as ScreenCapture from 'expo-screen-capture';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect } from 'react';
 
 import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider } from '@/context/SettingsContext';
+import { PushRegistrar } from '@/components/PushRegistrar';
 
 /**
  * Kök yerleşim: tüm sağlayıcılar (Auth, Settings) + gruplar arası Stack.
@@ -17,17 +18,20 @@ import { SettingsProvider } from '@/context/SettingsContext';
  */
 export default function RootLayout() {
   const scheme = useColorScheme();
-  // Ekran kaydını engelle (Android: tamamen; iOS: kayıt sırasında içerik gizlenir).
-  usePreventScreenCapture();
-  // Uygulama normalde dikey; yalnız video tam ekranında yatay override edilir.
+  // Native'de: ekran kaydını engelle + uygulamayı dikeye kilitle (web'de bu
+  // modüller yok; video tam ekranında yatay override edilir).
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+    ScreenCapture.preventScreenCaptureAsync().catch(() => {});
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    return () => { ScreenCapture.allowScreenCaptureAsync().catch(() => {}); };
   }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
           <SettingsProvider>
+            <PushRegistrar />
             <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />

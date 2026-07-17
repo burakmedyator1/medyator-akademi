@@ -149,6 +149,14 @@ db.exec(`
     instructor_id INTEGER REFERENCES instructors(id),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    recipient_count INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Backfill categories from any course.category values that predate the
@@ -165,6 +173,7 @@ function addColumnIfMissing(table, column, definition) {
   }
 }
 addColumnIfMissing('users', 'birth_date', 'TEXT');
+addColumnIfMissing('users', 'expo_push_token', 'TEXT');
 addColumnIfMissing('testimonials', 'user_id', 'INTEGER REFERENCES users(id)');
 addColumnIfMissing('testimonials', 'course_id', 'INTEGER REFERENCES courses(id)');
 addColumnIfMissing('testimonials', 'status', "TEXT NOT NULL DEFAULT 'approved'");

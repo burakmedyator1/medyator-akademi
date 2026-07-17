@@ -88,6 +88,7 @@ export const api = {
   changePassword: (payload: any) => request('/me/password', { method: 'PUT', body: payload, auth: true }),
   getProfile: () => request('/me/profile', { auth: true }),
   updateProfile: (payload: any) => request('/me/profile', { method: 'PUT', body: payload, auth: true }),
+  registerPushToken: (token: string) => request('/push/token', { method: 'POST', body: { token }, auth: true }),
 
   sendContact: (payload: any) => request('/contact', { method: 'POST', body: payload }),
 
@@ -177,6 +178,9 @@ export const api = {
     getQuestions: () => request('/admin/questions', { auth: true }),
 
     getOverview: () => request('/admin/overview', { auth: true }),
+
+    getNotifications: () => request('/admin/notifications', { auth: true }),
+    sendNotification: (payload: any) => request('/admin/notifications', { method: 'POST', body: payload, auth: true }),
 
     getApplications: () => request('/admin/applications', { auth: true }),
     deleteApplication: (id: string | number) => request(`/admin/applications/${id}`, { method: 'DELETE', auth: true }),

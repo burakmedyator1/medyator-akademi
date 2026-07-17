@@ -766,4 +766,51 @@ router.get('/overview', (req, res) => {
   });
 });
 
+// ---------- Bildirimler (push) ----------
+
+router.get('/notifications', (req, res) => {
+  res.json(
+    db
+      .prepare('SELECT id, title, body, recipient_count AS recipientCount, created_at AS createdAt FROM notifications ORDER BY created_at DESC')
+      .all()
+  );
+});
+
+router.post('/notifications', async (req, res) => {
+  const { title, body } = req.body;
+  if (!title || !title.trim() || !body || !body.trim()) {
+    return res.status(400).json({ error: 'Başlık ve mesaj zorunlu' });
+  }
+  const tokens = db
+    .prepare("SELECT expo_push_token AS t FROM users WHERE expo_push_token IS NOT NULL AND expo_push_token != ''")
+    .all()
+    .map((r) => r.t);
+
+  // Expo Push servisi üzerinden gönder (token varsa). Hata olsa da kayıt tutulur.
+  let sent = 0;
+  try {
+    for (let i = 0; i < tokens.length; i += 100) {
+      const batch = tokens.slice(i, i + 100).map((to) => ({
+        to,
+        title: title.trim(),
+        body: body.trim(),
+        sound: 'default',
+      }));
+      const resp = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+      if (resp.ok) sent += batch.length;
+    }
+  } catch (err) {
+    console.error('Push gönderim hatası:', err.message);
+  }
+
+  const result = db
+    .prepare('INSERT INTO notifications (title, body, recipient_count) VALUES (?, ?, ?)')
+    .run(title.trim(), body.trim(), tokens.length);
+  res.status(201).json({ id: result.lastInsertRowid, recipientCount: tokens.length, sent });
+});
+
 export default router;

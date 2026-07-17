@@ -25,6 +25,7 @@ const SECTIONS: { icon: any; title: string; href: string; badge?: keyof Overview
   { icon: 'mail-outline', title: 'İletişim', href: '/admin/iletisim', badge: 'contactRequests' },
   { icon: 'clipboard-outline', title: 'Başvurular', href: '/admin/basvurular', badge: 'applications' },
   { icon: 'document-text-outline', title: 'Blog', href: '/admin/blog', badge: 'pendingBlog' },
+  { icon: 'notifications-outline', title: 'Bildirimler', href: '/admin/bildirimler' },
   { icon: 'settings-outline', title: 'Ayarlar', href: '/admin/ayarlar' },
 ];
 
