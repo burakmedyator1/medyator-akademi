@@ -163,6 +163,22 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
     </View>
   );
 
+  // Videonun yalnız ORTA karesini dokunulabilir bırakan maske: etraf (üst/sol/
+  // sağ/alt) bloklanır → YouTube'un paylaş/başlık butonlarına dokunulamaz;
+  // ortadaki kareye dokunuş videoya ulaşıp oynat/duraklat yapar.
+  const mask = (w: number, hh: number) => {
+    const sq = Math.round(Math.min(w, hh) * 0.5);
+    const top = Math.round((hh - sq) / 2);
+    const side = Math.round((w - sq) / 2);
+    const B = (s: any, k: string) => <Pressable key={k} style={[styles.block, s]} onPress={() => {}} />;
+    return [
+      B({ top: 0, left: 0, right: 0, height: top }, 't'),
+      B({ top: top + sq, left: 0, right: 0, bottom: 0 }, 'b'),
+      B({ top, left: 0, width: side, height: sq }, 'l'),
+      B({ top, right: 0, width: side, height: sq }, 'r'),
+    ];
+  };
+
   if (fullscreen) {
     const fw = Math.max(dims.width, dims.height);
     const fh = Math.min(dims.width, dims.height);
@@ -170,6 +186,7 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
       <Modal visible transparent={false} supportedOrientations={['landscape', 'landscape-left', 'landscape-right']} onRequestClose={toggleFullscreen}>
         <View style={styles.fsRoot}>
           {player(fw, fh)}
+          {mask(fw, fh)}
           {controls}
         </View>
       </Modal>
@@ -180,6 +197,7 @@ function YoutubeCustom({ videoId }: { videoId: string }) {
   return (
     <View style={styles.frame} onLayout={(e) => setInlineW(e.nativeEvent.layout.width)}>
       {inlineW > 0 && player(inlineW, h)}
+      {inlineW > 0 && mask(inlineW, h)}
       {controls}
     </View>
   );
@@ -206,6 +224,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   msg: { color: '#fff', fontSize: 14, textAlign: 'center' },
   fsRoot: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
+  block: { position: 'absolute' },
   bar: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     flexDirection: 'row', alignItems: 'center', gap: 10,
