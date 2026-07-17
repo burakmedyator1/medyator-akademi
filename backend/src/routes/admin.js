@@ -264,6 +264,12 @@ router.post('/courses/cover', (req, res) => {
 
 router.delete('/courses/:id', (req, res) => {
   const tx = db.transaction((id) => {
+    const questionIds = db.prepare('SELECT id FROM questions WHERE course_id = ?').all(id).map((q) => q.id);
+    for (const questionId of questionIds) {
+      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
+    }
+    db.prepare('DELETE FROM questions WHERE course_id = ?').run(id);
+    db.prepare('DELETE FROM testimonials WHERE course_id = ?').run(id);
     db.prepare('DELETE FROM enrollments WHERE course_id = ?').run(id);
     db.prepare('DELETE FROM lessons WHERE course_id = ?').run(id);
     db.prepare('DELETE FROM courses WHERE id = ?').run(id);
@@ -425,6 +431,7 @@ router.delete('/instructors/:id', (req, res) => {
   if (inUse.count > 0) {
     return res.status(400).json({ error: 'Bu eğitmene bağlı kurslar var, önce onları başka eğitmene atayın' });
   }
+  db.prepare('UPDATE blog_posts SET instructor_id = NULL WHERE instructor_id = ?').run(req.params.id);
   db.prepare('DELETE FROM instructors WHERE id = ?').run(req.params.id);
   res.json({ deleted: true });
 });

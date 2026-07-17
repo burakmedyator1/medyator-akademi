@@ -44,6 +44,7 @@ export const api = {
     request(`/courses/${courseId}/lessons/${lessonId}/video`, { auth: true }),
   completeLesson: (courseId, lessonId) =>
     request(`/courses/${courseId}/lessons/${lessonId}/complete`, { method: 'POST', auth: true }),
+  getCourseReviews: (id) => request(`/courses/${id}/reviews`),
   getCourseReview: (id) => request(`/courses/${id}/review`, { auth: true }),
   submitCourseReview: (id, payload) =>
     request(`/courses/${id}/review`, { method: 'POST', body: payload, auth: true }),

@@ -21,6 +21,7 @@ export default function CourseDetail() {
   const [error, setError] = useState('');
   const [enrolled, setEnrolled] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [reviews, setReviews] = useState([]);
   const [review, setReview] = useState(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewQuote, setReviewQuote] = useState('');
@@ -30,6 +31,7 @@ export default function CourseDetail() {
 
   useEffect(() => {
     api.getCourse(id).then(setCourse);
+    api.getCourseReviews(id).then(setReviews);
   }, [id]);
 
   useEffect(() => {
@@ -177,6 +179,39 @@ export default function CourseDetail() {
                 : 'Kayıt olduğunda bu kursun tüm ders videolarına erişim kazanırsın.'}
             </p>
           </div>
+
+          {reviews.length > 0 && (
+            <div className="card course-detail__reviews">
+              <h3>Öğrenci Yorumları</h3>
+              <div className="course-detail__reviews-list">
+                {reviews.map((r, i) => (
+                  <div className="course-detail__review-item" key={i}>
+                    <div className="course-detail__review-item-head">
+                      <span
+                        className="course-detail__review-avatar"
+                        style={{ background: r.avatarColor }}
+                      >
+                        {r.photoUrl ? (
+                          <img src={r.photoUrl} alt="" />
+                        ) : (
+                          r.studentName.charAt(0).toUpperCase()
+                        )}
+                      </span>
+                      <div>
+                        <strong>{r.studentName}</strong>
+                        <div className="course-detail__review-item-stars">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <Star key={n} size={14} fill={n <= r.rating ? 'currentColor' : 'none'} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <p>{r.quote}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isFinished && (
             <div className="card course-detail__review">

@@ -141,6 +141,16 @@ router.post('/:id/lessons/:lessonId/complete', requireAuth, rejectInstructor, (r
 
 // ---------- Course reviews (only after the student has finished the course) ----------
 
+router.get('/:id/reviews', (req, res) => {
+  const reviews = db
+    .prepare(
+      `SELECT student_name AS studentName, quote, rating, avatar_color AS avatarColor, photo_url AS photoUrl
+       FROM testimonials WHERE course_id = ? AND status = 'approved' ORDER BY created_at DESC`
+    )
+    .all(req.params.id);
+  res.json(reviews);
+});
+
 router.get('/:id/review', requireAuth, rejectInstructor, (req, res) => {
   const review = db
     .prepare(
