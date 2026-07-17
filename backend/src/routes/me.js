@@ -26,6 +26,43 @@ router.put('/password', (req, res) => {
   res.json({ updated: true });
 });
 
+// Profil bilgilerini getir (Hesabım formunu doldurmak için).
+router.get('/profile', (req, res) => {
+  const user = db
+    .prepare(
+      `SELECT id, name, email, phone, birth_date AS birthDate,
+              instagram, tiktok, youtube, linkedin, twitter
+       FROM users WHERE id = ?`
+    )
+    .get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+  res.json(user);
+});
+
+// Profil güncelle — ad soyad ve e-posta değiştirilemez (kimlik alanları).
+router.put('/profile', (req, res) => {
+  const { phone, birthDate, instagram, tiktok, youtube, linkedin, twitter } = req.body;
+  if (!phone || !phone.trim()) {
+    return res.status(400).json({ error: 'Telefon zorunlu' });
+  }
+  db.prepare(
+    `UPDATE users SET phone = @phone, birth_date = @birthDate,
+            instagram = @instagram, tiktok = @tiktok, youtube = @youtube,
+            linkedin = @linkedin, twitter = @twitter
+     WHERE id = @id`
+  ).run({
+    id: req.user.id,
+    phone: phone.trim(),
+    birthDate: birthDate || null,
+    instagram: instagram || null,
+    tiktok: tiktok || null,
+    youtube: youtube || null,
+    linkedin: linkedin || null,
+    twitter: twitter || null,
+  });
+  res.json({ updated: true });
+});
+
 router.get('/dashboard', (req, res) => {
   const enrollments = db
     .prepare(
