@@ -19,8 +19,7 @@ export default function Footer() {
   const { settings, loaded } = useSettings();
   const { theme } = useTheme();
   const activeSocials = SOCIALS.filter(({ key }) => settings[key]);
-  const logoSrc =
-    settings.logo_url_footer || (theme === 'dark' && settings.logo_url_dark ? settings.logo_url_dark : settings.logo_url);
+  const logoSrc = theme === 'dark' && settings.logo_url_dark ? settings.logo_url_dark : settings.logo_url;
 
   return (
     <footer className="footer">

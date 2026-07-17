@@ -264,19 +264,6 @@ export const api = {
       return data;
     },
 
-    uploadLogoFooter: async (file) => {
-      const formData = new FormData();
-      formData.append('logo', file);
-      const res = await fetch('/api/admin/settings/logo-footer', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: formData,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
-      return data;
-    },
-
     uploadSplashImage: async (file) => {
       const formData = new FormData();
       formData.append('splashImage', file);

@@ -37,12 +37,6 @@ export default function AdminAppearance() {
   const [darkLogoUploading, setDarkLogoUploading] = useState(false);
   const [darkLogoError, setDarkLogoError] = useState('');
 
-  const footerLogoInputRef = useRef(null);
-  const [footerLogoFile, setFooterLogoFile] = useState(null);
-  const [footerLogoPreview, setFooterLogoPreview] = useState(null);
-  const [footerLogoUploading, setFooterLogoUploading] = useState(false);
-  const [footerLogoError, setFooterLogoError] = useState('');
-
   const splashFileInputRef = useRef(null);
   const [splashFile, setSplashFile] = useState(null);
   const [splashPreview, setSplashPreview] = useState(null);
@@ -113,31 +107,6 @@ export default function AdminAppearance() {
       setDarkLogoError(err.message);
     } finally {
       setDarkLogoUploading(false);
-    }
-  }
-
-  function handleFooterLogoChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFooterLogoFile(file);
-    setFooterLogoPreview(URL.createObjectURL(file));
-    setFooterLogoError('');
-  }
-
-  async function handleFooterLogoUpload() {
-    if (!footerLogoFile) return;
-    setFooterLogoUploading(true);
-    setFooterLogoError('');
-    try {
-      await api.admin.uploadLogoFooter(footerLogoFile);
-      await reload();
-      setFooterLogoFile(null);
-      setFooterLogoPreview(null);
-      if (footerLogoInputRef.current) footerLogoInputRef.current.value = '';
-    } catch (err) {
-      setFooterLogoError(err.message);
-    } finally {
-      setFooterLogoUploading(false);
     }
   }
 
@@ -220,33 +189,6 @@ export default function AdminAppearance() {
           Ziyaretçi karanlık moda geçtiğinde navbar ve footer'da normal logo yerine bunu gösterir — koyu
           arkaplanda okunaklı kalması için genelde açık renkli bir logo yüklemen gerekir. Yüklemezsen normal
           logo kullanılmaya devam eder.
-        </p>
-      </div>
-
-      <div className="admin-form" style={{ maxWidth: 480, marginBottom: 24 }}>
-        <h2>Footer Logosu</h2>
-        {footerLogoError && <div className="auth-error">{footerLogoError}</div>}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img
-            src={footerLogoPreview || settings.logo_url_footer || settings.logo_url_dark || settings.logo_url || defaultLogo}
-            alt="Footer logosu"
-            style={{ height: 44, background: '#1b1e29', borderRadius: 8, padding: 6 }}
-          />
-          <input ref={footerLogoInputRef} type="file" accept="image/*" onChange={handleFooterLogoChange} />
-        </div>
-
-        <button
-          className="btn btn-primary"
-          type="button"
-          onClick={handleFooterLogoUpload}
-          disabled={!footerLogoFile || footerLogoUploading}
-        >
-          {footerLogoUploading ? 'Yükleniyor...' : 'Logoyu Yükle'}
-        </button>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-          Sadece sayfanın en altındaki footer'da gösterilecek ayrı bir logo. Yüklemezsen navbar'daki logo
-          (varsa karanlık mod logosu) footer'da da kullanılmaya devam eder.
         </p>
       </div>
 
