@@ -26,7 +26,6 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="kurslar" />
               <Stack.Screen name="egitmenler" />
-              <Stack.Screen name="blog" />
               <Stack.Screen name="sorularim" />
               <Stack.Screen name="odeme" />
               <Stack.Screen name="egitmen" />

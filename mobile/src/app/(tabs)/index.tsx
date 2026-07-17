@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { api, mediaUrl } from '@/api/client';
+import { api } from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/theme/theme';
@@ -15,7 +15,6 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 
 type Instructor = { id: number; name: string; title?: string; photo_url?: string | null; avatar_color?: string };
-type BlogPost = { id: number; title: string; slug: string; excerpt?: string; cover_image_url?: string | null };
 type Testimonial = { id: number; studentName: string; studentTitle?: string; quote: string; rating?: number; avatarColor?: string; photoUrl?: string | null };
 
 export default function Home() {
@@ -26,20 +25,17 @@ export default function Home() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
-  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    const [cs, ins, bp, ts] = await Promise.allSettled([
+    const [cs, ins, ts] = await Promise.allSettled([
       api.getCourses({ deliveryType: 'online' }),
       api.getInstructors(),
-      api.getBlogPosts(),
       api.getTestimonials(),
     ]);
     if (cs.status === 'fulfilled') setCourses(cs.value as Course[]);
     if (ins.status === 'fulfilled') setInstructors(ins.value as Instructor[]);
-    if (bp.status === 'fulfilled') setPosts(bp.value as BlogPost[]);
     if (ts.status === 'fulfilled') setTestimonials(ts.value as Testimonial[]);
     // Site adı/slogan/logo gibi ayarlar da güncel kalsın.
     reloadSettings().catch(() => {});
@@ -159,39 +155,6 @@ export default function Home() {
           </>
         )}
 
-        {posts.length > 0 && (
-          <>
-            <Section title="Blog" onSeeAll={() => router.push('/blog')} colors={colors} />
-            <View style={{ gap: 12 }}>
-              {posts.slice(0, 3).map((post) => {
-                const cover = mediaUrl(post.cover_image_url);
-                return (
-                  <Pressable
-                    key={post.id}
-                    onPress={() => router.push(`/blog/${post.slug}` as any)}
-                    style={[styles.postRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  >
-                    {cover ? (
-                      <Image source={{ uri: cover }} style={styles.postImg} />
-                    ) : (
-                      <View style={[styles.postImg, { backgroundColor: colors.accentSoft }]} />
-                    )}
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={[styles.postTitle, { color: colors.textPrimary }]} numberOfLines={2}>
-                        {post.title}
-                      </Text>
-                      {post.excerpt ? (
-                        <Text style={{ color: colors.textSecondary, fontSize: 13 }} numberOfLines={2}>
-                          {post.excerpt}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

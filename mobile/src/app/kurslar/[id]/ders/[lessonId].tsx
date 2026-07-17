@@ -26,12 +26,14 @@ export default function Lesson() {
   const [lessons, setLessons] = useState<LessonType[]>([]);
   const [videoLoading, setVideoLoading] = useState(true);
   const [error, setError] = useState('');
-  const [completed, setCompleted] = useState(false);
+  // Tamamlanan derslerin en yüksek sırası (backend progress). done = progress >= order_.
+  const [progress, setProgress] = useState(0);
   const [marking, setMarking] = useState(false);
 
-  // Kurs ders listesi (önceki/sonraki + içerik listesi için).
+  // Kurs ders listesi + tamamlanma ilerlemesi (içerik listesindeki tikler için).
   useEffect(() => {
     api.getCourse(id).then((data: any) => setLessons(data.lessons || [])).catch(() => {});
+    api.getEnrollment(id).then((e: any) => setProgress(e.progress ?? 0)).catch(() => setProgress(0));
   }, [id]);
 
   // Aktif ders değişince yalnızca video'yu yenile — ekranın geri kalanı yerinde
@@ -40,7 +42,6 @@ export default function Lesson() {
     let cancelled = false;
     setVideoLoading(true);
     setError('');
-    setCompleted(false);
     api
       .getLessonVideo(id, currentLessonId)
       .then((data) => {
@@ -82,8 +83,8 @@ export default function Lesson() {
   async function markComplete() {
     setMarking(true);
     try {
-      await api.completeLesson(id, currentLessonId);
-      setCompleted(true);
+      const res: any = await api.completeLesson(id, currentLessonId);
+      setProgress((p) => Math.max(p, res.progress ?? p));
     } catch (err: any) {
       setError(err.message || 'İşaretlenemedi');
     } finally {
@@ -92,6 +93,7 @@ export default function Lesson() {
   }
 
   const canComplete = user?.role === 'student';
+  const currentDone = currentLesson ? progress >= (currentLesson.order_ ?? Infinity) : false;
   const title = video?.title || currentLesson?.title || '';
   // İlk açılış: henüz ne ders listesi ne video var → tam spinner.
   const firstLoad = !video && !error && lessons.length === 0;
@@ -132,19 +134,19 @@ export default function Lesson() {
             {canComplete && video && (
               <Pressable
                 onPress={markComplete}
-                disabled={marking || completed}
+                disabled={marking || currentDone}
                 style={[
                   styles.completeBtn,
-                  { backgroundColor: completed ? c.accentSoft : c.accent, opacity: marking ? 0.7 : 1 },
+                  { backgroundColor: currentDone ? c.accentSoft : c.accent, opacity: marking ? 0.7 : 1 },
                 ]}
               >
                 <Ionicons
-                  name={completed ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                  name={currentDone ? 'checkmark-circle' : 'checkmark-circle-outline'}
                   size={20}
-                  color={completed ? c.accent : c.onAccent}
+                  color={currentDone ? c.accent : c.onAccent}
                 />
-                <Text style={{ color: completed ? c.accent : c.onAccent, fontWeight: '800' }}>
-                  {completed ? 'Tamamlandı' : 'Tamamlandı olarak işaretle'}
+                <Text style={{ color: currentDone ? c.accent : c.onAccent, fontWeight: '800' }}>
+                  {currentDone ? 'Tamamlandı' : 'Tamamlandı olarak işaretle'}
                 </Text>
               </Pressable>
             )}
@@ -179,6 +181,7 @@ export default function Lesson() {
                 <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Kurs içeriği</Text>
                 {lessons.map((l, i) => {
                   const active = String(l.id) === String(currentLessonId);
+                  const done = progress >= (l.order_ ?? Infinity);
                   return (
                     <Pressable
                       key={l.id}
@@ -195,9 +198,13 @@ export default function Lesson() {
                         {active ? (
                           videoLoading ? (
                             <ActivityIndicator color={c.onAccent} size="small" />
+                          ) : done ? (
+                            <Ionicons name="checkmark" size={16} color={c.onAccent} />
                           ) : (
                             <Ionicons name="play" size={14} color={c.onAccent} />
                           )
+                        ) : done ? (
+                          <Ionicons name="checkmark" size={16} color={c.accent} />
                         ) : (
                           <Text style={{ color: c.accent, fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
                         )}
