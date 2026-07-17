@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Check, X } from 'lucide-react';
 import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
+
+const STATUS_LABELS = {
+  approved: { label: 'Onaylandı', className: 'admin-badge--approved' },
+  pending: { label: 'Onay Bekliyor', className: 'admin-badge--pending' },
+  rejected: { label: 'Reddedildi', className: 'admin-badge--rejected' },
+};
 
 const EMPTY_FORM = {
   studentName: '',
@@ -14,8 +20,16 @@ const EMPTY_FORM = {
   displayOrder: 0,
 };
 
+const FILTERS = [
+  { key: 'all', label: 'Tümü' },
+  { key: 'pending', label: 'Onay Bekliyor' },
+  { key: 'approved', label: 'Onaylandı' },
+  { key: 'rejected', label: 'Reddedildi' },
+];
+
 export default function AdminTestimonials() {
   const [testimonials, setTestimonials] = useState([]);
+  const [filter, setFilter] = useState('all');
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
@@ -91,6 +105,18 @@ export default function AdminTestimonials() {
     }
   }
 
+  async function handleStatusChange(id, status) {
+    try {
+      await api.admin.updateTestimonialStatus(id, status);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const visibleTestimonials =
+    filter === 'all' ? testimonials : testimonials.filter((t) => t.status === filter);
+
   return (
     <AdminLayout>
       <div className="admin-page-head">
@@ -102,24 +128,69 @@ export default function AdminTestimonials() {
 
       <div className="admin-split">
         <div className="admin-table-wrap">
+          <div className="courses-page__filters" style={{ marginBottom: 16 }}>
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                className={`pill${filter === f.key ? ' active' : ''}`}
+                onClick={() => setFilter(f.key)}
+              >
+                {f.label}
+                {f.key === 'pending' &&
+                  testimonials.filter((t) => t.status === 'pending').length > 0 &&
+                  ` (${testimonials.filter((t) => t.status === 'pending').length})`}
+              </button>
+            ))}
+          </div>
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Öğrenci</th>
+                <th>Kurs</th>
                 <th>Yorum</th>
                 <th>Puan</th>
+                <th>Durum</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {testimonials.map((testimonial) => (
+              {visibleTestimonials.map((testimonial) => (
                 <tr key={testimonial.id} className="clickable" onClick={() => startEdit(testimonial)}>
                   <td>{testimonial.studentName}</td>
+                  <td>{testimonial.courseTitle || '—'}</td>
                   <td>{testimonial.quote.slice(0, 60)}...</td>
                   <td>{testimonial.rating}/5</td>
                   <td>
+                    <span className={`admin-badge ${STATUS_LABELS[testimonial.status]?.className || ''}`}>
+                      {STATUS_LABELS[testimonial.status]?.label || testimonial.status}
+                    </span>
+                  </td>
+                  <td>
                     <div className="admin-table__actions">
+                      {testimonial.userId && testimonial.status !== 'approved' && (
+                        <button
+                          title="Onayla"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(testimonial.id, 'approved');
+                          }}
+                        >
+                          <Check size={16} />
+                        </button>
+                      )}
+                      {testimonial.userId && testimonial.status !== 'rejected' && (
+                        <button
+                          title="Reddet"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(testimonial.id, 'rejected');
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
                       <button
+                        title="Sil"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(testimonial.id);
@@ -131,9 +202,9 @@ export default function AdminTestimonials() {
                   </td>
                 </tr>
               ))}
-              {testimonials.length === 0 && (
+              {visibleTestimonials.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="admin-empty">
+                  <td colSpan={6} className="admin-empty">
                     Henüz yorum yok.
                   </td>
                 </tr>

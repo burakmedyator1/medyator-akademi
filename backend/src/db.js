@@ -101,7 +101,11 @@ db.exec(`
     rating INTEGER NOT NULL DEFAULT 5,
     avatar_color TEXT NOT NULL DEFAULT '#f0653c',
     photo_url TEXT,
-    display_order INTEGER NOT NULL DEFAULT 0
+    display_order INTEGER NOT NULL DEFAULT 0,
+    user_id INTEGER REFERENCES users(id),
+    course_id INTEGER REFERENCES courses(id),
+    status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS applications (
@@ -161,6 +165,11 @@ function addColumnIfMissing(table, column, definition) {
   }
 }
 addColumnIfMissing('users', 'birth_date', 'TEXT');
+addColumnIfMissing('testimonials', 'user_id', 'INTEGER REFERENCES users(id)');
+addColumnIfMissing('testimonials', 'course_id', 'INTEGER REFERENCES courses(id)');
+addColumnIfMissing('testimonials', 'status', "TEXT NOT NULL DEFAULT 'approved'");
+addColumnIfMissing('testimonials', 'created_at', 'TEXT');
+db.prepare("UPDATE testimonials SET created_at = datetime('now') WHERE created_at IS NULL").run();
 addColumnIfMissing('instructors', 'photo_url', 'TEXT');
 addColumnIfMissing('instructors', 'email', 'TEXT');
 addColumnIfMissing('instructors', 'password_hash', 'TEXT');

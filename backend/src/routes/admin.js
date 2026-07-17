@@ -108,9 +108,13 @@ router.delete('/categories/:id', (req, res) => {
 router.get('/testimonials', (req, res) => {
   const rows = db
     .prepare(
-      `SELECT id, student_name AS studentName, student_title AS studentTitle, quote, rating,
-              avatar_color AS avatarColor, photo_url AS photoUrl, display_order AS displayOrder
-       FROM testimonials ORDER BY display_order ASC, id ASC`
+      `SELECT testimonials.id, student_name AS studentName, student_title AS studentTitle, quote, rating,
+              avatar_color AS avatarColor, photo_url AS photoUrl, testimonials.display_order AS displayOrder,
+              status, testimonials.user_id AS userId, courses.title AS courseTitle,
+              testimonials.created_at AS createdAt
+       FROM testimonials
+       LEFT JOIN courses ON courses.id = testimonials.course_id
+       ORDER BY (status = 'pending') DESC, testimonials.display_order ASC, testimonials.id DESC`
     )
     .all();
   res.json(rows);
@@ -123,8 +127,8 @@ router.post('/testimonials', (req, res) => {
   }
   const result = db
     .prepare(
-      `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, photo_url, display_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, photo_url, display_order, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')`
     )
     .run(
       studentName,
@@ -159,6 +163,16 @@ router.put('/testimonials/:id', (req, res) => {
     displayOrder || 0,
     req.params.id
   );
+  res.json({ updated: true });
+});
+
+router.patch('/testimonials/:id/status', (req, res) => {
+  const { status } = req.body;
+  if (!['pending', 'approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Geçersiz durum' });
+  }
+  const result = db.prepare('UPDATE testimonials SET status = ? WHERE id = ?').run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Yorum bulunamadı' });
   res.json({ updated: true });
 });
 

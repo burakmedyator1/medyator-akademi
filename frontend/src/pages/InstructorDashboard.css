@@ -29,6 +29,32 @@
   margin: 32px 0 16px;
 }
 
+.instructor-dashboard__overview {
+  display: flex;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.instructor-dashboard__stat {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.instructor-dashboard__stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.instructor-dashboard__stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 .instructor-dashboard__hint {
   color: var(--text-secondary);
   font-size: 0.85rem;

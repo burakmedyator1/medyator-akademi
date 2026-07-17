@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Lock, PlayCircle, CheckCircle2, Circle, Play } from 'lucide-react';
+import { Lock, PlayCircle, CheckCircle2, Circle, Play, Star } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
 import './CourseDetail.css';
+
+const REVIEW_STATUS_LABELS = {
+  pending: 'Onay bekliyor — onaylandığında sitede görünecek',
+  approved: 'Yayında',
+  rejected: 'Yayınlanmadı',
+};
 
 export default function CourseDetail() {
   const { id } = useParams();
@@ -15,6 +21,12 @@ export default function CourseDetail() {
   const [error, setError] = useState('');
   const [enrolled, setEnrolled] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [review, setReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewQuote, setReviewQuote] = useState('');
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     api.getCourse(id).then(setCourse);
@@ -32,9 +44,34 @@ export default function CourseDetail() {
         setProgress(data.progress);
       })
       .catch(() => setEnrolled(false));
+    api.getCourseReview(id).then((data) => {
+      if (data) {
+        setReview(data);
+        setReviewRating(data.rating);
+        setReviewQuote(data.quote);
+      }
+    });
   }, [id, isAuthenticated]);
 
   const isPaid = course?.price > 0;
+  const isFinished = enrolled && course?.lessons.length > 0 && progress >= course.lessons.length;
+
+  async function handleReviewSubmit(e) {
+    e.preventDefault();
+    if (!reviewQuote.trim()) return;
+    setReviewSaving(true);
+    setReviewError('');
+    setReviewSubmitted(false);
+    try {
+      await api.submitCourseReview(id, { rating: reviewRating, quote: reviewQuote });
+      setReview({ rating: reviewRating, quote: reviewQuote, status: 'pending' });
+      setReviewSubmitted(true);
+    } catch (err) {
+      setReviewError(err.message);
+    } finally {
+      setReviewSaving(false);
+    }
+  }
 
   async function handleEnroll() {
     if (!isAuthenticated) {
@@ -140,6 +177,41 @@ export default function CourseDetail() {
                 : 'Kayıt olduğunda bu kursun tüm ders videolarına erişim kazanırsın.'}
             </p>
           </div>
+
+          {isFinished && (
+            <div className="card course-detail__review">
+              <h3>Kursu Değerlendir</h3>
+              {reviewError && <p className="course-detail__error">{reviewError}</p>}
+              {reviewSubmitted && (
+                <p className="course-detail__review-success">Değerlendirmen gönderildi, teşekkürler!</p>
+              )}
+              <form onSubmit={handleReviewSubmit}>
+                <div className="course-detail__stars">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      type="button"
+                      key={n}
+                      onClick={() => setReviewRating(n)}
+                      aria-label={`${n} yıldız`}
+                    >
+                      <Star size={22} fill={n <= reviewRating ? 'currentColor' : 'none'} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Kurs hakkındaki düşüncelerini yaz..."
+                  required
+                  value={reviewQuote}
+                  onChange={(e) => setReviewQuote(e.target.value)}
+                />
+                <button className="btn btn-outline" type="submit" disabled={reviewSaving}>
+                  {reviewSaving ? 'Gönderiliyor...' : review ? 'Güncelle' : 'Gönder'}
+                </button>
+              </form>
+              {review && <p className="course-detail__review-status">{REVIEW_STATUS_LABELS[review.status]}</p>}
+            </div>
+          )}
         </aside>
       </div>
     </div>

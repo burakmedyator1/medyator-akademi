@@ -14,7 +14,7 @@ const EMPTY_BLOG_FORM = { title: '', excerpt: '', content: '', coverImageUrl: ''
 
 export default function InstructorDashboard() {
   const { user, logout } = useAuth();
-  const [view, setView] = useState('students');
+  const [view, setView] = useState('overview');
   const [students, setStudents] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -99,6 +99,21 @@ export default function InstructorDashboard() {
     [questions, selectedStudentId]
   );
 
+  const stats = useMemo(() => {
+    let doneCount = 0;
+    let totalCount = 0;
+    for (const student of students) {
+      for (const c of student.courses) {
+        doneCount += c.progress;
+        totalCount += c.lessonCount;
+      }
+    }
+    return {
+      studentCount: students.length,
+      completionRate: totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0,
+    };
+  }, [students]);
+
   return (
     <div className="container instructor-dashboard">
       <div className="instructor-dashboard__header">
@@ -112,6 +127,9 @@ export default function InstructorDashboard() {
       </div>
 
       <div className="instructor-dashboard__tabs">
+        <button className={`pill${view === 'overview' ? ' active' : ''}`} onClick={() => setView('overview')}>
+          Ana Sayfa
+        </button>
         <button className={`pill${view === 'students' ? ' active' : ''}`} onClick={() => setView('students')}>
           Öğrencilerim
         </button>
@@ -121,6 +139,19 @@ export default function InstructorDashboard() {
       </div>
 
       {error && <div className="auth-error">{error}</div>}
+
+      {view === 'overview' && (
+        <div className="instructor-dashboard__overview">
+          <div className="card instructor-dashboard__stat">
+            <span className="instructor-dashboard__stat-value">{stats.studentCount}</span>
+            <span className="instructor-dashboard__stat-label">Öğrenci</span>
+          </div>
+          <div className="card instructor-dashboard__stat">
+            <span className="instructor-dashboard__stat-value">%{stats.completionRate}</span>
+            <span className="instructor-dashboard__stat-label">Ortalama Ders Tamamlama</span>
+          </div>
+        </div>
+      )}
 
       {view === 'students' && (
         <div className="instructor-dashboard__students">

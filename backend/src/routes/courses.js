@@ -139,4 +139,54 @@ router.post('/:id/lessons/:lessonId/complete', requireAuth, rejectInstructor, (r
   res.json({ progress });
 });
 
+// ---------- Course reviews (only after the student has finished the course) ----------
+
+router.get('/:id/review', requireAuth, rejectInstructor, (req, res) => {
+  const review = db
+    .prepare(
+      `SELECT id, rating, quote, status FROM testimonials WHERE user_id = ? AND course_id = ?`
+    )
+    .get(req.user.id, req.params.id);
+  res.json(review || null);
+});
+
+router.post('/:id/review', requireAuth, rejectInstructor, (req, res) => {
+  const { rating, quote } = req.body;
+  const ratingNum = Number(rating);
+  if (!ratingNum || ratingNum < 1 || ratingNum > 5 || !quote || !quote.trim()) {
+    return res.status(400).json({ error: 'Puan (1-5) ve yorum metni zorunlu' });
+  }
+
+  const enrollment = db
+    .prepare("SELECT progress FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
+    .get(req.user.id, req.params.id);
+  if (!enrollment) {
+    return res.status(403).json({ error: 'Değerlendirme yapabilmek için bu kursa kayıtlı ve onaylı olmalısın' });
+  }
+
+  const lessonCount = db
+    .prepare('SELECT COUNT(*) AS count FROM lessons WHERE course_id = ?')
+    .get(req.params.id).count;
+  if (lessonCount === 0 || enrollment.progress < lessonCount) {
+    return res.status(403).json({ error: 'Değerlendirme yapabilmek için kursu tamamlamış olmalısın' });
+  }
+
+  const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.id);
+  const existing = db
+    .prepare('SELECT id FROM testimonials WHERE user_id = ? AND course_id = ?')
+    .get(req.user.id, req.params.id);
+
+  if (existing) {
+    db.prepare(
+      "UPDATE testimonials SET rating = ?, quote = ?, status = 'pending' WHERE id = ?"
+    ).run(ratingNum, quote.trim(), existing.id);
+  } else {
+    db.prepare(
+      `INSERT INTO testimonials (student_name, quote, rating, user_id, course_id, status)
+       VALUES (?, ?, ?, ?, ?, 'pending')`
+    ).run(user.name, quote.trim(), ratingNum, req.user.id, req.params.id);
+  }
+  res.status(201).json({ submitted: true });
+});
+
 export default router;

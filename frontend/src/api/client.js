@@ -44,6 +44,9 @@ export const api = {
     request(`/courses/${courseId}/lessons/${lessonId}/video`, { auth: true }),
   completeLesson: (courseId, lessonId) =>
     request(`/courses/${courseId}/lessons/${lessonId}/complete`, { method: 'POST', auth: true }),
+  getCourseReview: (id) => request(`/courses/${id}/review`, { auth: true }),
+  submitCourseReview: (id, payload) =>
+    request(`/courses/${id}/review`, { method: 'POST', body: payload, auth: true }),
 
   getPaymentStatus: () => request('/payments/status'),
   startCheckout: (payload) => request('/payments/checkout-form', { method: 'POST', body: payload, auth: true }),
@@ -137,6 +140,8 @@ export const api = {
     updateTestimonial: (id, payload) =>
       request(`/admin/testimonials/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteTestimonial: (id) => request(`/admin/testimonials/${id}`, { method: 'DELETE', auth: true }),
+    updateTestimonialStatus: (id, status) =>
+      request(`/admin/testimonials/${id}/status`, { method: 'PATCH', body: { status }, auth: true }),
     uploadTestimonialPhoto: async (file) => {
       const formData = new FormData();
       formData.append('photo', file);

@@ -113,6 +113,53 @@
   color: var(--orange-dark);
 }
 
+.course-detail__review {
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.course-detail__review h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
+.course-detail__review form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.course-detail__stars {
+  display: flex;
+  gap: 4px;
+}
+
+.course-detail__stars button {
+  background: transparent;
+  color: var(--yellow);
+  padding: 2px;
+}
+
+.course-detail__review textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.course-detail__review-success {
+  color: #2f8a4e;
+  font-size: 0.85rem;
+  margin: 0 0 10px;
+}
+
+.course-detail__review-status {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin: 10px 0 0;
+}
+
 .course-detail__enrolled {
   display: inline-flex;
   align-items: center;

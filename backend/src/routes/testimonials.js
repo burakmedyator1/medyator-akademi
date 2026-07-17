@@ -9,7 +9,7 @@ router.get('/', (req, res) => {
       .prepare(
         `SELECT id, student_name AS studentName, student_title AS studentTitle, quote, rating,
                 avatar_color AS avatarColor, photo_url AS photoUrl
-         FROM testimonials ORDER BY display_order ASC, id ASC`
+         FROM testimonials WHERE status = 'approved' ORDER BY display_order ASC, id ASC`
       )
       .all()
   );
