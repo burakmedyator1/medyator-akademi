@@ -5,16 +5,26 @@ import './SplashScreen.css';
 
 const TOTAL_DURATION = 2600;
 
+// sessionStorage sekme kapanana kadar yaşar: splash bu sekmede yalnızca ilk
+// girişte oynar, ana sayfaya sonraki her dönüşte tekrar gösterilmez. Sekme
+// kapatılıp site yeniden açıldığında ise baştan gösterilir.
+const SPLASH_SHOWN_KEY = 'medyator_splash_shown';
+
 export default function SplashScreen() {
   const { settings, loaded } = useSettings();
   const [phase, setPhase] = useState('active');
+  // Bayrak state başlatıcısında BİR KEZ okunur; effect'te hemen yazılırsa bile
+  // görünmekte olan animasyon kesilmez, yalnızca sonraki mount'lar gizlenir.
+  const [shouldShow] = useState(() => !sessionStorage.getItem(SPLASH_SHOWN_KEY));
 
   useEffect(() => {
+    if (!shouldShow) return;
+    sessionStorage.setItem(SPLASH_SHOWN_KEY, '1');
     const removeTimer = setTimeout(() => setPhase('done'), TOTAL_DURATION);
     return () => clearTimeout(removeTimer);
-  }, []);
+  }, [shouldShow]);
 
-  if (phase === 'done' || settings.splash_enabled === 'false') return null;
+  if (!shouldShow || phase === 'done' || settings.splash_enabled === 'false') return null;
 
   const showImage = settings.splash_show_logo !== 'false';
   // Wait for settings to load before falling back to the bundled default logo —
