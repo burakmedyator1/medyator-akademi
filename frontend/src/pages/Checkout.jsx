@@ -33,6 +33,14 @@ export default function Checkout() {
       // silently no-ops — the widget never appears again. Clearing it first
       // makes every attempt start fresh.
       window.iyziInit = undefined;
+
+      // The widget mounts itself onto document.body under a fixed id
+      // (#iyzipay-checkout-form) and never removes it. If an earlier attempt
+      // in this same page session left one behind, the new script mounts
+      // inside/alongside that stale copy instead of building a fresh modal —
+      // it renders as plain unstyled content instead of the centered overlay.
+      document.getElementById('iyzipay-checkout-form')?.remove();
+
       formContainerRef.current.innerHTML = checkoutHtml;
       const scripts = formContainerRef.current.querySelectorAll('script');
       scripts.forEach((oldScript) => {
