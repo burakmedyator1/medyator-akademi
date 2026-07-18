@@ -51,6 +51,12 @@ export default function Checkout() {
     if (e.target.value) api.getNeighborhoods(form.city, e.target.value).then(setNeighborhoods);
   }
 
+  function handleNeighborhoodChange(e) {
+    const name = e.target.value;
+    const match = neighborhoods.find((n) => n.name === name);
+    setForm((f) => ({ ...f, neighborhood: name, zipCode: match ? match.postCode : f.zipCode }));
+  }
+
   useEffect(() => {
     if (checkoutHtml && formContainerRef.current) {
       // iyzico's injected script only runs its setup when `typeof iyziInit ==
@@ -209,18 +215,18 @@ export default function Checkout() {
             </select>
           </div>
           <div className="auth-field">
-            <label htmlFor="neighborhood">Mahalle</label>
+            <label htmlFor="neighborhood">Mahalle/Köy</label>
             <select
               id="neighborhood"
               required
               value={form.neighborhood}
-              onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+              onChange={handleNeighborhoodChange}
               disabled={!form.district}
             >
               <option value="">Seçiniz</option>
               {neighborhoods.map((n) => (
-                <option key={n} value={n}>
-                  {n}
+                <option key={n.name} value={n.name}>
+                  {n.name}
                 </option>
               ))}
             </select>
