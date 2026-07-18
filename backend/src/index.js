@@ -47,6 +47,12 @@ app.use(
         // YouTube/Vimeo lesson videos are embedded in iframes. The YouTube
         // IFrame Player API always creates the iframe on youtube.com itself
         // (not youtube-nocookie.com) regardless of the src we pass it.
+        // After card details are submitted, iyzico's force3Ds setting sends the
+        // buyer through their card-issuing BANK's own 3D Secure page, loaded in
+        // an iframe — a different domain per bank (Garanti, İş Bankası, Yapı
+        // Kredi, ...), impossible to whitelist individually. Without a wildcard
+        // here, the browser silently blocks that iframe and the "Öde" button
+        // spins forever: the request never fails, it just never starts.
         frameSrc: [
           "'self'",
           'https://www.youtube.com',
@@ -55,6 +61,7 @@ app.use(
           'https://sandbox-cpp.iyzipay.com',
           'https://cpp.iyzipay.com',
           'https://ode.iyzico.com',
+          'https:',
         ],
         // The YouTube IFrame Player API and iyzico's checkout form are loaded as external scripts.
         // iyzico serves the checkout form's actual JS bundle from its *-static domain,
