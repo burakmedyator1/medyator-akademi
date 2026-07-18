@@ -1,0 +1,281 @@
+// Medyator Akademi veri modeli — mevcut SQLite şemasının (src/db.js)
+// PostgreSQL karşılığı. SQLite'taki CHECK kısıtlamaları burada gerçek
+// enum tiplerine, is_preview gibi 0/1 kolonları Boolean'a, created_at
+// metin kolonları timestamp'e dönüştürüldü. Tablo/kolon adları @@map ve
+// @map ile birebir korunduğu için SQLite'tan veri taşıma doğrudan
+// kolon eşleşmesiyle yapılabilir.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  admin
+}
+
+enum DeliveryType {
+  online
+  corporate
+  in_person
+}
+
+enum PaymentStatus {
+  pending
+  approved
+  rejected
+}
+
+enum VideoProvider {
+  youtube
+  vimeo
+}
+
+enum ContactType {
+  corporate
+  in_person
+  support
+  general
+}
+
+enum TestimonialStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ApplicationType {
+  intern
+  instructor
+}
+
+enum SenderRole {
+  student
+  instructor
+}
+
+enum BlogStatus {
+  pending
+  published
+  rejected
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  name          String
+  role          Role     @default(student)
+  phone         String   @default("")
+  birthDate     String?  @map("birth_date")
+  instagram     String?
+  tiktok        String?
+  youtube       String?
+  linkedin      String?
+  twitter       String?
+  expoPushToken String?  @map("expo_push_token")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  enrollments  Enrollment[]
+  questions    Question[]
+  testimonials Testimonial[]
+
+  @@map("users")
+}
+
+model Instructor {
+  id           Int     @id @default(autoincrement())
+  name         String
+  title        String
+  bio          String
+  avatarColor  String  @default("#F0653C") @map("avatar_color")
+  photoUrl     String? @map("photo_url")
+  email        String?
+  passwordHash String? @map("password_hash")
+
+  courses   Course[]
+  questions Question[]
+  blogPosts BlogPost[]
+
+  @@map("instructors")
+}
+
+model Course {
+  id            Int          @id @default(autoincrement())
+  title         String
+  category      String
+  deliveryType  DeliveryType @map("delivery_type")
+  description   String
+  coverColor    String       @default("yellow") @map("cover_color")
+  coverImageUrl String?      @map("cover_image_url")
+  price         Int          @default(0)
+  displayOrder  Int          @default(0) @map("display_order")
+  instructorId  Int?         @map("instructor_id")
+
+  instructor   Instructor?   @relation(fields: [instructorId], references: [id])
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  questions    Question[]
+  testimonials Testimonial[]
+
+  @@map("courses")
+}
+
+model Lesson {
+  id              Int           @id @default(autoincrement())
+  courseId        Int           @map("course_id")
+  title           String
+  description     String        @default("")
+  durationMinutes Int           @map("duration_minutes")
+  lessonOrder     Int           @map("lesson_order")
+  videoProvider   VideoProvider @map("video_provider")
+  videoId         String        @map("video_id")
+  isPreview       Boolean       @default(false) @map("is_preview")
+
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id               Int           @id @default(autoincrement())
+  userId           Int           @map("user_id")
+  courseId         Int           @map("course_id")
+  progress         Int           @default(0)
+  paymentStatus    PaymentStatus @default(approved) @map("payment_status")
+  amount           Int?
+  paymentProvider  String?       @map("payment_provider")
+  paymentReference String?       @map("payment_reference")
+  paymentToken     String?       @map("payment_token")
+  reminderSentAt   DateTime?     @map("reminder_sent_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model ContactRequest {
+  id        Int         @id @default(autoincrement())
+  type      ContactType
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  category  String?
+  subject   String?
+  message   String?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@map("contact_requests")
+}
+
+model SiteSetting {
+  key   String @id
+  value String
+
+  @@map("site_settings")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  @@map("categories")
+}
+
+model Testimonial {
+  id           Int               @id @default(autoincrement())
+  studentName  String            @map("student_name")
+  studentTitle String            @default("") @map("student_title")
+  quote        String
+  rating       Int               @default(5)
+  avatarColor  String            @default("#f0653c") @map("avatar_color")
+  photoUrl     String?           @map("photo_url")
+  displayOrder Int               @default(0) @map("display_order")
+  userId       Int?              @map("user_id")
+  courseId     Int?              @map("course_id")
+  status       TestimonialStatus @default(approved)
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  user   User?   @relation(fields: [userId], references: [id])
+  course Course? @relation(fields: [courseId], references: [id])
+
+  @@map("testimonials")
+}
+
+model Application {
+  id          Int             @id @default(autoincrement())
+  type        ApplicationType
+  name        String
+  email       String
+  phone       String
+  description String          @default("")
+  cvFileUrl   String?         @map("cv_file_url")
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  @@map("applications")
+}
+
+model Question {
+  id           Int       @id @default(autoincrement())
+  courseId     Int       @map("course_id")
+  userId       Int       @map("user_id")
+  instructorId Int       @map("instructor_id")
+  questionText String    @map("question_text")
+  answerText   String?   @map("answer_text")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  answeredAt   DateTime? @map("answered_at")
+
+  course     Course            @relation(fields: [courseId], references: [id])
+  user       User              @relation(fields: [userId], references: [id])
+  instructor Instructor        @relation(fields: [instructorId], references: [id])
+  messages   QuestionMessage[]
+
+  @@map("questions")
+}
+
+model QuestionMessage {
+  id          Int        @id @default(autoincrement())
+  questionId  Int        @map("question_id")
+  senderRole  SenderRole @map("sender_role")
+  messageText String     @map("message_text")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@map("question_messages")
+}
+
+model BlogPost {
+  id            Int        @id @default(autoincrement())
+  title         String
+  slug          String     @unique
+  excerpt       String     @default("")
+  content       String
+  coverImageUrl String?    @map("cover_image_url")
+  status        BlogStatus @default(published)
+  instructorId  Int?       @map("instructor_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  instructor Instructor? @relation(fields: [instructorId], references: [id])
+
+  @@map("blog_posts")
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  title          String
+  body           String
+  recipientCount Int      @default(0) @map("recipient_count")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
