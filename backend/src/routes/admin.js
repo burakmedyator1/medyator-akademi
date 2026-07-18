@@ -562,9 +562,12 @@ router.get('/instructors', async (req, res, next) => {
 
 router.post('/instructors', async (req, res, next) => {
   try {
-    const { name, title, bio, avatarColor, photoUrl, email, displayOrder } = req.body;
+    const { name, title, bio, avatarColor, photoUrl, email, displayOrder, password: customPassword } = req.body;
     if (!name || !title || !bio || !email) {
       return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun (e-posta dahil)' });
+    }
+    if (customPassword && customPassword.length < 6) {
+      return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
     }
     const emailTaken =
       (await prisma.instructor.findFirst({ where: { email }, select: { id: true } })) ||
@@ -573,7 +576,7 @@ router.post('/instructors', async (req, res, next) => {
       return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
     }
 
-    const password = generateRandomPassword();
+    const password = customPassword || generateRandomPassword();
     const created = await prisma.instructor.create({
       data: {
         name,
@@ -595,8 +598,11 @@ router.post('/instructors', async (req, res, next) => {
 router.put('/instructors/:id', async (req, res, next) => {
   try {
     const id = toId(req.params.id);
-    const { name, title, bio, avatarColor, photoUrl, email, displayOrder } = req.body;
+    const { name, title, bio, avatarColor, photoUrl, email, displayOrder, password: customPassword } = req.body;
     if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
+    if (customPassword && customPassword.length < 6) {
+      return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
+    }
 
     const existing = id
       ? await prisma.instructor.findUnique({ where: { id }, select: { passwordHash: true } })
@@ -610,10 +616,17 @@ router.put('/instructors/:id', async (req, res, next) => {
       return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
     }
 
-    // Older instructors created before login accounts existed have no password yet;
-    // generate one the first time an email is attached so they gain access immediately.
+    // Admin explicitly typed a password → use it. Otherwise, older instructors
+    // created before login accounts existed have no password yet; generate one
+    // the first time an email is attached so they gain access immediately.
     let password;
-    if (!existing.passwordHash) {
+    if (customPassword) {
+      password = customPassword;
+      await prisma.instructor.update({
+        where: { id },
+        data: { passwordHash: bcrypt.hashSync(password, 10) },
+      });
+    } else if (!existing.passwordHash) {
       password = generateRandomPassword();
       await prisma.instructor.update({
         where: { id },

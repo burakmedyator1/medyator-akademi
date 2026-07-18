@@ -4,7 +4,16 @@ import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_FORM = { name: '', title: '', bio: '', avatarColor: '#f0653c', photoUrl: '', email: '', displayOrder: 0 };
+const EMPTY_FORM = {
+  name: '',
+  title: '',
+  bio: '',
+  avatarColor: '#f0653c',
+  photoUrl: '',
+  email: '',
+  displayOrder: 0,
+  password: '',
+};
 
 export default function AdminInstructors() {
   const [instructors, setInstructors] = useState([]);
@@ -32,6 +41,7 @@ export default function AdminInstructors() {
       photoUrl: instructor.photo_url || '',
       email: instructor.email || '',
       displayOrder: instructor.displayOrder || 0,
+      password: '',
     });
   }
 
@@ -186,6 +196,17 @@ export default function AdminInstructors() {
           <div className="admin-field">
             <label>Unvan</label>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div className="admin-field">
+            <label>
+              {editingId ? 'Şifre (değiştirmek için yaz, boş bırakırsan aynı kalır)' : 'Şifre (boş bırakırsan otomatik oluşturulur)'}
+            </label>
+            <input
+              type="text"
+              placeholder="En az 6 karakter"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
           </div>
           <div className="admin-field">
             <label>Sıra (Eğitmenler sayfasında küçükten büyüğe sıralanır)</label>
