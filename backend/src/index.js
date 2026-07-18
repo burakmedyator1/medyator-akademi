@@ -20,6 +20,7 @@ import locationRoutes from './routes/locations.js';
 import testimonialRoutes from './routes/testimonials.js';
 import adminRoutes from './routes/admin.js';
 import { STORAGE_DIR } from './storagePath.js';
+import { runStartupImportIfNeeded } from './sqliteImport.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -178,6 +179,16 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(400).json({ error: err.message || 'Bir hata oluştu' });
 });
+
+// PostgreSQL boşsa diskteki SQLite verisini tek seferlik içeri aktar
+// (SQLite -> PostgreSQL geçişi). Hata olursa süreç başlamaz: Render'da
+// başarısız deploy, eski sürümü yayında bırakır — veri kaybı riski yok.
+try {
+  await runStartupImportIfNeeded();
+} catch (err) {
+  console.error('SQLite -> PostgreSQL otomatik taşıma başarısız:', err);
+  process.exit(1);
+}
 
 app.listen(PORT, () => {
   console.log(`Medyator Akademi API http://localhost:${PORT} adresinde çalışıyor`);
