@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -15,13 +15,17 @@ export default function Dashboard() {
   const [category, setCategory] = useState('all');
 
   useEffect(() => {
-    api.getDashboard().then(setData);
-  }, []);
+    if (user.role !== 'instructor') api.getDashboard().then(setData);
+  }, [user.role]);
 
   const categories = useMemo(
     () => (data ? ['all', ...new Set(data.enrolledCourses.map((c) => c.category))] : ['all']),
     [data]
   );
+
+  // Eğitmen hesaplarının öğrenci enrollment kaydı olmadığı için bu uç zaten
+  // reddediliyor — kendi paneline yönlendir, sonsuz "Yükleniyor..." yerine.
+  if (user.role === 'instructor') return <Navigate to="/egitmen-panel" replace />;
 
   if (!data) return <div className="container">Yükleniyor...</div>;
 
