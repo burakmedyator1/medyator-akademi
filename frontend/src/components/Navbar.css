@@ -101,7 +101,7 @@
   color: var(--orange);
 }
 
-.navbar__dropdown:hover .navbar__dropdown-menu,
+.navbar__dropdown-menu--open,
 .navbar__dropdown:focus-within .navbar__dropdown-menu {
   opacity: 1;
   visibility: visible;
