@@ -30,7 +30,9 @@ export default function AdminCourseEdit() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [durationFetching, setDurationFetching] = useState(false);
   const lessonFormRef = useRef(null);
+  const lastDurationFetchRef = useRef('');
 
   function loadCourse() {
     api.admin.getCourses().then((courses) => {
@@ -109,6 +111,36 @@ export default function AdminCourseEdit() {
   function resetLessonForm() {
     setEditingLessonId(null);
     setLessonForm({ ...EMPTY_LESSON, order: lessons.length + 1 });
+    lastDurationFetchRef.current = '';
+  }
+
+  // Video linki tamamlanmış, geçerli bir ID'ye dönüşünce (örn. bir YouTube/Vimeo
+  // linki yapıştırıldığında) süreyi otomatik çek ve doldur. Aynı ID için tekrar
+  // istek atmamak üzere en son çekileni hatırlıyoruz — hem her tuş vuruşunda
+  // spam istek atmamak için hem de bir dersi sadece görüntülemek/açmak zaten
+  // doğru olan süreyi ezmesin diye (yalnızca ID gerçekten YENİ bir şeye
+  // değiştiğinde tetiklenir).
+  async function handleVideoLinkChange(e) {
+    const provider = lessonForm.videoProvider;
+    const newId = extractVideoId(e.target.value, provider);
+    setLessonForm((f) => ({ ...f, videoId: newId }));
+
+    const looksComplete = provider === 'vimeo' ? /^\d+$/.test(newId) : /^[\w-]{11}$/.test(newId);
+    if (!looksComplete || newId === lastDurationFetchRef.current) return;
+    lastDurationFetchRef.current = newId;
+
+    setDurationFetching(true);
+    try {
+      const { durationMinutes } = await api.admin.getVideoDuration(provider, newId);
+      if (durationMinutes) {
+        setLessonForm((f) => (f.videoId === newId ? { ...f, durationMinutes } : f));
+      }
+    } catch {
+      // Süre otomatik alınamadı (video bulunamadı, YouTube anahtarı ayarlanmamış
+      // vb.) — engelleyici bir hata değil, admin süreyi elle girebilir.
+    } finally {
+      setDurationFetching(false);
+    }
   }
 
   async function handleLessonSubmit(e) {
@@ -331,7 +363,9 @@ export default function AdminCourseEdit() {
             />
           </div>
           <div className="admin-field">
-            <label>Süre (dk)</label>
+            <label>
+              Süre (dk){durationFetching && ' — video süresine göre alınıyor...'}
+            </label>
             <input
               type="number"
               min="1"
@@ -366,9 +400,7 @@ export default function AdminCourseEdit() {
               required
               placeholder="örn. https://www.youtube.com/watch?v=..."
               value={lessonForm.videoId}
-              onChange={(e) =>
-                setLessonForm({ ...lessonForm, videoId: extractVideoId(e.target.value, lessonForm.videoProvider) })
-              }
+              onChange={handleVideoLinkChange}
             />
           </div>
           <div className="admin-field">

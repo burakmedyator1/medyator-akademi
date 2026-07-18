@@ -8,6 +8,7 @@ import { imageUpload as upload } from '../imageUpload.js';
 import { slugify } from '../slugify.js';
 import { extractVideoId } from '../videoId.js';
 import { sendCartReminderEmail } from '../mailer.js';
+import { fetchVideoDurationSeconds } from '../videoDuration.js';
 
 function generateRandomPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
@@ -492,6 +493,22 @@ router.delete('/courses/:courseId/lessons/:id', async (req, res, next) => {
     res.json({ deleted: true });
   } catch (err) {
     next(err);
+  }
+});
+
+// Ders formunda video linki girilince süreyi otomatik doldurmak için.
+// Bulunamama/servis hatası admin'e engelleyici bir hata olarak gösterilmez —
+// frontend sessizce yutup elle girişe düşer.
+router.get('/video-duration', async (req, res) => {
+  const { provider, videoId } = req.query;
+  if (!videoId || !['youtube', 'vimeo'].includes(provider)) {
+    return res.status(400).json({ error: 'provider ve videoId zorunlu' });
+  }
+  try {
+    const seconds = await fetchVideoDurationSeconds(provider, videoId);
+    res.json({ durationMinutes: Math.max(1, Math.round(seconds / 60)) });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
   }
 });
 

@@ -134,6 +134,8 @@ export const api = {
       request(`/admin/courses/${courseId}/lessons/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteLesson: (courseId, id) =>
       request(`/admin/courses/${courseId}/lessons/${id}`, { method: 'DELETE', auth: true }),
+    getVideoDuration: (provider, videoId) =>
+      request(`/admin/video-duration?provider=${provider}&videoId=${encodeURIComponent(videoId)}`, { auth: true }),
 
     getCategories: () => request('/admin/categories', { auth: true }),
     createCategory: (payload) => request('/admin/categories', { method: 'POST', body: payload, auth: true }),
