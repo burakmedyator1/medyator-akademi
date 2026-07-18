@@ -9,7 +9,7 @@ export default function Checkout() {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [configured, setConfigured] = useState(true);
-  const [form, setForm] = useState({ identityNumber: '', address: '', city: '', zipCode: '' });
+  const [form, setForm] = useState({ email: '', phone: '', identityNumber: '', address: '', city: '', zipCode: '' });
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [checkoutHtml, setCheckoutHtml] = useState(null);
   const [widgetLoading, setWidgetLoading] = useState(false);
@@ -20,6 +20,9 @@ export default function Checkout() {
   useEffect(() => {
     api.getCourse(courseId).then(setCourse);
     api.getPaymentStatus().then((s) => setConfigured(s.configured));
+    api.getProfile().then((profile) =>
+      setForm((f) => ({ ...f, email: profile.email || '', phone: profile.phone || '' }))
+    );
   }, [courseId]);
 
   useEffect(() => {
@@ -112,6 +115,27 @@ export default function Checkout() {
       ) : (
         <form className="card checkout-page__form" onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
+          <div className="auth-field">
+            <label htmlFor="email">E-posta</label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+          <div className="auth-field">
+            <label htmlFor="phone">Telefon (GSM)</label>
+            <input
+              id="phone"
+              type="tel"
+              required
+              placeholder="+90 5xx xxx xx xx"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </div>
           <div className="auth-field">
             <label htmlFor="identityNumber">TC Kimlik No</label>
             <input

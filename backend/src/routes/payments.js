@@ -43,9 +43,12 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     return res.status(503).json({ error: 'Ödeme altyapısı henüz yapılandırılmadı' });
   }
 
-  const { courseId, identityNumber, address, city, zipCode } = req.body;
-  if (!courseId || !identityNumber || !address || !city) {
+  const { courseId, email, phone, identityNumber, address, city, zipCode } = req.body;
+  if (!courseId || !email || !phone || !identityNumber || !address || !city) {
     return res.status(400).json({ error: 'Tüm alanları doldurun' });
+  }
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ error: 'Geçerli bir e-posta adresi girmelisin' });
   }
   if (!isValidTcKimlikNo(identityNumber)) {
     return res.status(400).json({ error: 'Geçerli bir TC Kimlik No girmelisin' });
@@ -62,7 +65,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     .get(req.user.id, courseId);
   if (existing) return res.status(409).json({ error: 'Bu kursa zaten kayıtlısınız' });
 
-  const user = db.prepare('SELECT name, email, phone, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT name, created_at FROM users WHERE id = ?').get(req.user.id);
   const conversationId = crypto.randomUUID();
   const price = Number(course.price).toFixed(2);
   const [name, ...rest] = user.name.split(' ');
@@ -83,8 +86,8 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
       id: String(req.user.id),
       name,
       surname,
-      gsmNumber: formatGsmNumber(user.phone),
-      email: user.email,
+      gsmNumber: formatGsmNumber(phone),
+      email,
       identityNumber,
       lastLoginDate: formatDate(),
       registrationDate: formatDate(user.created_at),

@@ -58,6 +58,7 @@ export const api = {
   getTestimonials: () => request('/testimonials'),
 
   getDashboard: () => request('/me/dashboard', { auth: true }),
+  getProfile: () => request('/me/profile', { auth: true }),
   changePassword: (payload) => request('/me/password', { method: 'PUT', body: payload, auth: true }),
 
   sendContact: (payload) => request('/contact', { method: 'POST', body: payload }),
