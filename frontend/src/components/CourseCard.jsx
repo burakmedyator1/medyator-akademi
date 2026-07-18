@@ -49,7 +49,7 @@ export default function CourseCard({ course, mode = 'catalog', tagOverride }) {
               .join(' · ')}
           </p>
           <div className="course-card__footer">
-            <AvatarStack seed={course.id} total={40 + course.id * 12} />
+            {course.comingSoon ? <span /> : <AvatarStack seed={course.id} total={40 + course.id * 12} />}
             <div className="course-card__actions">
               {course.comingSoon ? (
                 <span className="course-card__coming-soon">Yakında</span>
