@@ -290,6 +290,16 @@
   .admin-split {
     grid-template-columns: 1fr;
   }
+  /* Sticky only makes sense next to a side-by-side scrolling table; stacked
+     single-column it just leaves the form pinned wherever it happens to fall
+     in the document, often far below a long table (nothing seems to happen
+     when you tap "Düzenle" and the form is off-screen). Also move the form
+     ahead of the table so editing/adding a lesson doesn't require scrolling
+     past the whole list first. */
+  .admin-split .admin-form {
+    position: static;
+    order: -1;
+  }
   .admin-stats {
     grid-template-columns: repeat(2, 1fr);
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trash2, Pencil } from 'lucide-react';
 import { api } from '../../api/client';
@@ -30,6 +30,7 @@ export default function AdminCourseEdit() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const lessonFormRef = useRef(null);
 
   function loadCourse() {
     api.admin.getCourses().then((courses) => {
@@ -99,6 +100,10 @@ export default function AdminCourseEdit() {
       videoId: lesson.videoId,
       isPreview: Boolean(lesson.isPreview),
     });
+    // Ders formu uzun listelerde (çok sayıda ders varsa) ekranın çok aşağısında
+    // kalabiliyor — Düzenle'ye basınca form dolduruluyor ama görünmediği için
+    // hiçbir şey olmamış gibi görünüyordu. Formu görünür alana kaydır.
+    lessonFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function resetLessonForm() {
@@ -305,7 +310,7 @@ export default function AdminCourseEdit() {
           </table>
         </div>
 
-        <form className="admin-form" onSubmit={handleLessonSubmit}>
+        <form className="admin-form" ref={lessonFormRef} onSubmit={handleLessonSubmit}>
           <h2>{editingLessonId ? 'Dersi Düzenle' : 'Yeni Ders'}</h2>
 
           <div className="admin-field">
