@@ -56,6 +56,14 @@ export default function AdminStudentDetail() {
     }
   }
 
+  async function handleDelete() {
+    if (!window.confirm(`${student.name} adlı öğrenciyi silmek istediğine emin misin? Bu işlem geri alınamaz.`)) {
+      return;
+    }
+    await api.admin.deleteStudent(id);
+    navigate('/admin/ogrenciler');
+  }
+
   if (!student) return <AdminLayout>Yükleniyor...</AdminLayout>;
 
   const availableCourses = allCourses.filter(
@@ -66,9 +74,14 @@ export default function AdminStudentDetail() {
     <AdminLayout>
       <div className="admin-page-head">
         <h1>{student.name}</h1>
-        <button className="btn btn-outline" onClick={() => navigate('/admin/ogrenciler')}>
-          Öğrencilere Dön
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-outline" onClick={handleDelete}>
+            Öğrenciyi Sil
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate('/admin/ogrenciler')}>
+            Öğrencilere Dön
+          </button>
+        </div>
       </div>
 
       <div className="admin-table-wrap" style={{ padding: 20, marginBottom: 20 }}>

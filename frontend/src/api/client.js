@@ -179,6 +179,7 @@ export const api = {
 
     getStudents: () => request('/admin/students', { auth: true }),
     getStudent: (id) => request(`/admin/students/${id}`, { auth: true }),
+    deleteStudent: (id) => request(`/admin/students/${id}`, { method: 'DELETE', auth: true }),
     enrollStudent: (id, payload) =>
       request(`/admin/students/${id}/enroll`, { method: 'POST', body: payload, auth: true }),
     resetStudentPassword: (id) =>

@@ -486,6 +486,26 @@ router.get('/students/:id', (req, res) => {
   res.json({ ...student, enrollments });
 });
 
+router.delete('/students/:id', (req, res) => {
+  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
+  if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
+
+  const tx = db.transaction((id) => {
+    const questionIds = db.prepare('SELECT id FROM questions WHERE user_id = ?').all(id).map((q) => q.id);
+    for (const questionId of questionIds) {
+      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
+    }
+    db.prepare('DELETE FROM questions WHERE user_id = ?').run(id);
+    // Reviews the student already left stay visible (they're already public,
+    // approved content) — just detach the author instead of deleting them.
+    db.prepare('UPDATE testimonials SET user_id = NULL WHERE user_id = ?').run(id);
+    db.prepare('DELETE FROM enrollments WHERE user_id = ?').run(id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  });
+  tx(req.params.id);
+  res.json({ deleted: true });
+});
+
 router.post('/students/:id/reset-password', (req, res) => {
   const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
   if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
