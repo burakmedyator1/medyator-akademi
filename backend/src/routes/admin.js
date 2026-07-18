@@ -317,6 +317,7 @@ router.get('/courses', async (req, res, next) => {
         price: c.price,
         displayOrder: c.displayOrder,
         instructorId: c.instructorId,
+        comingSoon: c.comingSoon,
         instructorName: c.instructor?.name,
       }))
     );
@@ -327,8 +328,18 @@ router.get('/courses', async (req, res, next) => {
 
 router.post('/courses', async (req, res, next) => {
   try {
-    const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
-      req.body;
+    const {
+      title,
+      category,
+      deliveryType,
+      description,
+      coverColor,
+      coverImageUrl,
+      price,
+      displayOrder,
+      instructorId,
+      comingSoon,
+    } = req.body;
     if (!title || !category || !deliveryType || !description || !instructorId) {
       return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
     }
@@ -343,6 +354,7 @@ router.post('/courses', async (req, res, next) => {
         price: price || 0,
         displayOrder: displayOrder || 0,
         instructorId: Number(instructorId),
+        comingSoon: Boolean(comingSoon),
       },
     });
     res.status(201).json({ id: created.id });
@@ -354,8 +366,18 @@ router.post('/courses', async (req, res, next) => {
 router.put('/courses/:id', async (req, res, next) => {
   try {
     const id = toId(req.params.id);
-    const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
-      req.body;
+    const {
+      title,
+      category,
+      deliveryType,
+      description,
+      coverColor,
+      coverImageUrl,
+      price,
+      displayOrder,
+      instructorId,
+      comingSoon,
+    } = req.body;
     const result = id
       ? await prisma.course.updateMany({
           where: { id },
@@ -369,6 +391,7 @@ router.put('/courses/:id', async (req, res, next) => {
             price,
             displayOrder: displayOrder || 0,
             instructorId: Number(instructorId),
+            comingSoon: Boolean(comingSoon),
           },
         })
       : { count: 0 };

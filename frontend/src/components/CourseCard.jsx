@@ -51,9 +51,13 @@ export default function CourseCard({ course, mode = 'catalog', tagOverride }) {
           <div className="course-card__footer">
             <AvatarStack seed={course.id} total={40 + course.id * 12} />
             <div className="course-card__actions">
-              {course.price > 0 && <span className="course-card__price">{course.price} TL</span>}
+              {course.comingSoon ? (
+                <span className="course-card__coming-soon">Yakında</span>
+              ) : (
+                course.price > 0 && <span className="course-card__price">{course.price} TL</span>
+              )}
               <Link to={`/kurslar/${course.id}`} className="btn btn-dark course-card__cta">
-                Kursa Git
+                {course.comingSoon ? 'İncele' : 'Kursa Git'}
               </Link>
             </div>
           </div>

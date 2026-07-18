@@ -116,6 +116,7 @@ model Course {
   price         Int          @default(0)
   displayOrder  Int          @default(0) @map("display_order")
   instructorId  Int?         @map("instructor_id")
+  comingSoon    Boolean      @default(false) @map("coming_soon")
 
   instructor   Instructor?   @relation(fields: [instructorId], references: [id])
   lessons      Lesson[]

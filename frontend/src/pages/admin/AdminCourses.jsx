@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   price: 0,
   displayOrder: 0,
   instructorId: '',
+  comingSoon: false,
 };
 
 const DELIVERY_LABELS = { online: 'Online', corporate: 'Kurumsal', in_person: 'Yüz Yüze' };
@@ -82,7 +83,10 @@ export default function AdminCourses() {
               {courses.map((course) => (
                 <tr key={course.id}>
                   <td>{course.displayOrder}</td>
-                  <td>{course.title}</td>
+                  <td>
+                    {course.title}
+                    {course.comingSoon && <span className="admin-lesson-preview-badge">Yakında</span>}
+                  </td>
                   <td>{DELIVERY_LABELS[course.deliveryType]}</td>
                   <td>{course.price} TL</td>
                   <td>
@@ -197,6 +201,17 @@ export default function AdminCourses() {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
+          </div>
+          <div className="admin-field">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                style={{ width: 'auto', padding: 0 }}
+                checked={form.comingSoon}
+                onChange={(e) => setForm({ ...form, comingSoon: e.target.checked })}
+              />
+              Yakında (kayıt/satın alma henüz açık değil, sitede "Yakında" olarak görünür)
+            </label>
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={saving}>

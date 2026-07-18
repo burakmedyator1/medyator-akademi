@@ -48,6 +48,7 @@ export default function AdminCourseEdit() {
           price: found.price,
           displayOrder: found.displayOrder || 0,
           instructorId: found.instructorId,
+          comingSoon: Boolean(found.comingSoon),
         });
       }
     });
@@ -288,6 +289,17 @@ export default function AdminCourseEdit() {
             value={courseForm.description}
             onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
           />
+        </div>
+        <div className="admin-field">
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              style={{ width: 'auto', padding: 0 }}
+              checked={courseForm.comingSoon}
+              onChange={(e) => setCourseForm({ ...courseForm, comingSoon: e.target.checked })}
+            />
+            Yakında (kayıt/satın alma henüz açık değil, sitede "Yakında" olarak görünür)
+          </label>
         </div>
 
         <button className="btn btn-primary" type="submit" disabled={saving}>

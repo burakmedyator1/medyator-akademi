@@ -32,6 +32,7 @@ function mapCourse(course) {
     price: course.price,
     displayOrder: course.displayOrder,
     instructorId: course.instructorId,
+    comingSoon: course.comingSoon,
     instructorName: course.instructor?.name,
     instructorTitle: course.instructor?.title,
     instructorPhotoUrl: course.instructor?.photoUrl,
@@ -96,8 +97,11 @@ router.post('/:id/enroll', requireAuth, rejectInstructor, async (req, res, next)
     const courseId = toId(req.params.id);
     if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true, comingSoon: true } });
     if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
+    if (course.comingSoon) {
+      return res.status(403).json({ error: 'Bu kurs yakında satışa sunulacak, henüz kayıt alınmıyor' });
+    }
 
     const existing = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId: req.user.id, courseId } },

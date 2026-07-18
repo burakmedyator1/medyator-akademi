@@ -113,6 +113,16 @@
   color: var(--orange-dark);
 }
 
+.course-detail__coming-soon-badge {
+  align-self: center;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .course-detail__reviews {
   padding: 24px;
   margin-top: 16px;

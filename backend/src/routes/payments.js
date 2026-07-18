@@ -56,9 +56,12 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
 
   const course = await prisma.course.findUnique({
     where: { id: Number(courseId) },
-    select: { id: true, title: true, category: true, price: true },
+    select: { id: true, title: true, category: true, price: true, comingSoon: true },
   });
   if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
+  if (course.comingSoon) {
+    return res.status(403).json({ error: 'Bu kurs yakında satışa sunulacak, henüz kayıt alınmıyor' });
+  }
   if (!course.price || course.price <= 0) {
     return res.status(400).json({ error: 'Bu kurs ücretsiz, doğrudan kayıt olabilirsiniz' });
   }

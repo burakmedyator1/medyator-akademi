@@ -160,7 +160,9 @@ export default function CourseDetail() {
         <aside className="course-detail__side">
           <div className="card course-detail__enroll">
             {error && <p className="course-detail__error">{error}</p>}
-            {enrolled ? (
+            {course.comingSoon ? (
+              <span className="course-detail__coming-soon-badge">Yakında</span>
+            ) : enrolled ? (
               <button className="btn btn-outline course-detail__enrolled" onClick={() => navigate('/panel')}>
                 <CheckCircle2 size={18} />
                 Kursa Katılındı
@@ -172,7 +174,9 @@ export default function CourseDetail() {
               </button>
             )}
             <p>
-              {enrolled
+              {course.comingSoon
+                ? 'Bu kurs hazırlanıyor. Satışa açıldığında burada kayıt/satın alma seçeneği görünecek.'
+                : enrolled
                 ? 'Kurslarım sekmesinden derslerine devam edebilirsin.'
                 : isPaid
                 ? 'Satın aldığında bu kursun tüm ders videolarına erişim kazanırsın.'
