@@ -33,7 +33,8 @@ const TABS = [
 export default function Lesson() {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isInstructor = user?.role === 'instructor';
   const [course, setCourse] = useState(null);
   const [video, setVideo] = useState(null);
   const [locked, setLocked] = useState(false);
@@ -136,8 +137,10 @@ export default function Lesson() {
   return (
     <div className="container lesson-page">
       <p className="lesson-page__breadcrumb">
-        <Link to={isAuthenticated ? '/panel' : '/kurslar'}>{isAuthenticated ? 'Kurslarım' : 'Online Eğitimler'}</Link> /{' '}
-        {currentLesson?.title}
+        <Link to={isInstructor ? '/egitmen-panel' : isAuthenticated ? '/panel' : '/kurslar'}>
+          {isInstructor ? 'Eğitmen Paneli' : isAuthenticated ? 'Kurslarım' : 'Online Eğitimler'}
+        </Link>{' '}
+        / {currentLesson?.title}
       </p>
 
       <div className="lesson-page__header">
@@ -222,7 +225,7 @@ export default function Lesson() {
                   {course.lessons.map((lesson) => {
                     const done = enrolled && progress >= lesson.order_;
                     const active = String(lesson.id) === lessonId;
-                    const accessible = enrolled || lesson.isPreview || active;
+                    const accessible = enrolled || isInstructor || lesson.isPreview || active;
                     return (
                       <li key={lesson.id} className={active ? 'active' : ''}>
                         <Link to={`/kurslar/${course.id}/ders/${lesson.id}`}>

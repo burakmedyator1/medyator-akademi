@@ -15,7 +15,8 @@ const REVIEW_STATUS_LABELS = {
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isInstructor = user?.role === 'instructor';
   const [course, setCourse] = useState(null);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +36,9 @@ export default function CourseDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Eğitmen hesaplarının öğrenci enrollment/yorum kaydı olmaz — bu uçlar
+    // onlar için zaten reddediliyor, gereksiz isteği hiç atma.
+    if (!isAuthenticated || isInstructor) {
       setEnrolled(false);
       return;
     }
@@ -46,15 +49,22 @@ export default function CourseDetail() {
         setProgress(data.progress);
       })
       .catch(() => setEnrolled(false));
-    api.getCourseReview(id).then((data) => {
-      if (data) {
-        setReview(data);
-        setReviewRating(data.rating);
-        setReviewQuote(data.quote);
-      }
-    });
-  }, [id, isAuthenticated]);
+    api
+      .getCourseReview(id)
+      .then((data) => {
+        if (data) {
+          setReview(data);
+          setReviewRating(data.rating);
+          setReviewQuote(data.quote);
+        }
+      })
+      .catch(() => {});
+  }, [id, isAuthenticated, isInstructor]);
 
+  // Eğitmenler kayıtlı olmasalar da tüm derslere göz atabilmeli — bu bayrak
+  // yalnızca müfredat listesinin kilit/erişim görünümünü etkiler; "enrolled"
+  // gerçek öğrenci kaydı anlamına gelmeye devam ediyor (ilerleme, yorum vb.).
+  const canViewLessons = enrolled || isInstructor;
   const isPaid = course?.price > 0;
   const isFinished = enrolled && course?.lessons.length > 0 && progress >= course.lessons.length;
 
@@ -117,7 +127,7 @@ export default function CourseDetail() {
           <h2>Müfredat</h2>
           <ul className="course-detail__lessons">
             {course.lessons.map((lesson) => {
-              if (enrolled) {
+              if (canViewLessons) {
                 return (
                   <li key={lesson.id}>
                     <Link to={`/kurslar/${course.id}/ders/${lesson.id}`} className="course-detail__lesson-link">
@@ -160,7 +170,9 @@ export default function CourseDetail() {
         <aside className="course-detail__side">
           <div className="card course-detail__enroll">
             {error && <p className="course-detail__error">{error}</p>}
-            {course.comingSoon ? (
+            {isInstructor ? (
+              <span className="course-detail__coming-soon-badge">Eğitmen Erişimi</span>
+            ) : course.comingSoon ? (
               <span className="course-detail__coming-soon-badge">Yakında</span>
             ) : enrolled ? (
               <button className="btn btn-outline course-detail__enrolled" onClick={() => navigate('/panel')}>
@@ -174,7 +186,9 @@ export default function CourseDetail() {
               </button>
             )}
             <p>
-              {course.comingSoon
+              {isInstructor
+                ? 'Eğitmen hesabıyla bu kursun tüm ders videolarına erişimin var.'
+                : course.comingSoon
                 ? 'Bu kurs hazırlanıyor. Satışa açıldığında burada kayıt/satın alma seçeneği görünecek.'
                 : enrolled
                 ? 'Kurslarım sekmesinden derslerine devam edebilirsin.'

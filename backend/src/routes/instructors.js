@@ -18,7 +18,9 @@ function toPublic(instructor) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const instructors = await prisma.instructor.findMany();
+    const instructors = await prisma.instructor.findMany({
+      orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
+    });
     res.json(instructors.map(toPublic));
   } catch (err) {
     next(err);

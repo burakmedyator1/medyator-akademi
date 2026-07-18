@@ -139,8 +139,11 @@ router.get('/:id/lessons/:lessonId/video', optionalAuth, async (req, res, next) 
     if (!req.user) {
       return res.status(403).json({ error: 'Bu derse erişmek için giriş yapmalısınız' });
     }
+    // Eğitmenler öğrenci enrollment kaydı taşımaz ama siteyi normal bir
+    // ziyaretçi gibi gezip tüm derslere önizleme/kontrol amaçlı erişebilmeli
+    // — hangi kursun eğitmeni olduğuna bakılmaksızın.
     if (req.user.role === 'instructor') {
-      return res.status(403).json({ error: 'Bu işlem eğitmen hesapları için kullanılamaz' });
+      return res.json(videoInfo);
     }
 
     const enrollment = await prisma.enrollment.findFirst({

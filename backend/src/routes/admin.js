@@ -539,7 +539,9 @@ router.get('/video-duration', async (req, res) => {
 
 router.get('/instructors', async (req, res, next) => {
   try {
-    const instructors = await prisma.instructor.findMany({ orderBy: { id: 'desc' } });
+    const instructors = await prisma.instructor.findMany({
+      orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
+    });
     // Frontend bu uçta ham kolon adlarını (avatar_color, photo_url) bekliyor.
     res.json(
       instructors.map((i) => ({
@@ -550,6 +552,7 @@ router.get('/instructors', async (req, res, next) => {
         avatar_color: i.avatarColor,
         photo_url: i.photoUrl,
         email: i.email,
+        displayOrder: i.displayOrder,
       }))
     );
   } catch (err) {
@@ -559,7 +562,7 @@ router.get('/instructors', async (req, res, next) => {
 
 router.post('/instructors', async (req, res, next) => {
   try {
-    const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+    const { name, title, bio, avatarColor, photoUrl, email, displayOrder } = req.body;
     if (!name || !title || !bio || !email) {
       return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun (e-posta dahil)' });
     }
@@ -579,6 +582,7 @@ router.post('/instructors', async (req, res, next) => {
         avatarColor: avatarColor || '#F0653C',
         photoUrl: photoUrl || null,
         email,
+        displayOrder: displayOrder || 0,
         passwordHash: bcrypt.hashSync(password, 10),
       },
     });
@@ -591,7 +595,7 @@ router.post('/instructors', async (req, res, next) => {
 router.put('/instructors/:id', async (req, res, next) => {
   try {
     const id = toId(req.params.id);
-    const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+    const { name, title, bio, avatarColor, photoUrl, email, displayOrder } = req.body;
     if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
 
     const existing = id
@@ -619,7 +623,7 @@ router.put('/instructors/:id', async (req, res, next) => {
 
     await prisma.instructor.update({
       where: { id },
-      data: { name, title, bio, avatarColor, photoUrl: photoUrl || null, email },
+      data: { name, title, bio, avatarColor, photoUrl: photoUrl || null, email, displayOrder: displayOrder || 0 },
     });
     res.json({ updated: true, password });
   } catch (err) {

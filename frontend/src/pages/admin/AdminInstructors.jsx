@@ -4,7 +4,7 @@ import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_FORM = { name: '', title: '', bio: '', avatarColor: '#f0653c', photoUrl: '', email: '' };
+const EMPTY_FORM = { name: '', title: '', bio: '', avatarColor: '#f0653c', photoUrl: '', email: '', displayOrder: 0 };
 
 export default function AdminInstructors() {
   const [instructors, setInstructors] = useState([]);
@@ -31,6 +31,7 @@ export default function AdminInstructors() {
       avatarColor: instructor.avatar_color,
       photoUrl: instructor.photo_url || '',
       email: instructor.email || '',
+      displayOrder: instructor.displayOrder || 0,
     });
   }
 
@@ -110,6 +111,7 @@ export default function AdminInstructors() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Sıra</th>
                 <th>Ad</th>
                 <th>Unvan</th>
                 <th>E-posta</th>
@@ -119,6 +121,7 @@ export default function AdminInstructors() {
             <tbody>
               {instructors.map((instructor) => (
                 <tr key={instructor.id} className="clickable" onClick={() => startEdit(instructor)}>
+                  <td>{instructor.displayOrder || 0}</td>
                   <td>{instructor.name}</td>
                   <td>{instructor.title}</td>
                   <td>{instructor.email || '—'}</td>
@@ -147,7 +150,7 @@ export default function AdminInstructors() {
               ))}
               {instructors.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="admin-empty">
+                  <td colSpan={5} className="admin-empty">
                     Henüz eğitmen yok.
                   </td>
                 </tr>
@@ -183,6 +186,14 @@ export default function AdminInstructors() {
           <div className="admin-field">
             <label>Unvan</label>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div className="admin-field">
+            <label>Sıra (Eğitmenler sayfasında küçükten büyüğe sıralanır)</label>
+            <input
+              type="number"
+              value={form.displayOrder}
+              onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
+            />
           </div>
           <div className="admin-field">
             <label>Biyografi</label>

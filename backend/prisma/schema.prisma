@@ -97,6 +97,7 @@ model Instructor {
   photoUrl     String? @map("photo_url")
   email        String?
   passwordHash String? @map("password_hash")
+  displayOrder Int     @default(0) @map("display_order")
 
   courses   Course[]
   questions Question[]
