@@ -75,6 +75,7 @@ export default function AdminOrders() {
               <th>Kurs</th>
               <th>Tutar</th>
               <th>Yöntem</th>
+              <th>İşlem No</th>
               <th>Durum</th>
               <th></th>
             </tr>
@@ -95,6 +96,7 @@ export default function AdminOrders() {
                   </td>
                   <td>{order.amount} TL</td>
                   <td>{order.paymentProvider || '—'}</td>
+                  <td style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>{order.paymentReference || '—'}</td>
                   <td>
                     <span className={`admin-badge ${status.className}`}>{status.label}</span>
                   </td>
@@ -125,7 +127,7 @@ export default function AdminOrders() {
             })}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={7} className="admin-empty">
+                <td colSpan={8} className="admin-empty">
                   Bu filtreye uyan sipariş yok.
                 </td>
               </tr>

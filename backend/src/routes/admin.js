@@ -561,7 +561,8 @@ router.get('/orders', (req, res) => {
   const orders = db
     .prepare(
       `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
-              enrollments.payment_provider AS paymentProvider, enrollments.created_at AS createdAt,
+              enrollments.payment_provider AS paymentProvider, enrollments.payment_reference AS paymentReference,
+              enrollments.created_at AS createdAt,
               enrollments.reminder_sent_at AS reminderSentAt,
               users.id AS studentId, users.name AS studentName, users.email AS studentEmail,
               courses.id AS courseId, courses.title AS courseTitle
