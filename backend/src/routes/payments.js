@@ -127,11 +127,12 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     const result = await initializeCheckoutForm(request);
 
     db.prepare(
-      `INSERT INTO enrollments (user_id, course_id, progress, payment_status, amount, payment_provider, payment_reference)
-       VALUES (?, ?, 0, 'pending', ?, 'iyzico', ?)
+      `INSERT INTO enrollments (user_id, course_id, progress, payment_status, amount, payment_provider, payment_reference, payment_token)
+       VALUES (?, ?, 0, 'pending', ?, 'iyzico', ?, ?)
        ON CONFLICT(user_id, course_id) DO UPDATE SET
-         payment_status = 'pending', amount = excluded.amount, payment_provider = 'iyzico', payment_reference = excluded.payment_reference`
-    ).run(req.user.id, courseId, course.price, conversationId);
+         payment_status = 'pending', amount = excluded.amount, payment_provider = 'iyzico',
+         payment_reference = excluded.payment_reference, payment_token = excluded.payment_token`
+    ).run(req.user.id, courseId, course.price, conversationId, result.token);
 
     // Gömülü widget (checkoutFormContent) yerine iyzico'nun kendi barındırdığı
     // ödeme sayfasının adresi dönülüyor: mobil tarayıcılarda widget hiç
@@ -152,11 +153,28 @@ router.post('/callback', async (req, res) => {
 
   try {
     const result = await retrieveCheckoutForm({ locale: Iyzipay.LOCALE.TR, token });
-    const enrollment = db
-      .prepare('SELECT id FROM enrollments WHERE payment_reference = ?')
-      .get(result.conversationId);
 
-    if (!enrollment) return res.redirect(`${baseUrl}/odeme/sonuc?durum=hata`);
+    // Kayıt, başlatma sırasında saklanan iyzico token'ıyla bulunur — callback
+    // gövdesinde token zaten var. Sorgulama yanıtındaki conversationId'ye
+    // güvenilmez: sorgu isteğinde conversationId göndermediğimiz için iyzico
+    // yanıtında boş dönebiliyor; ilk gerçek ödemede kayıt tam da bu yüzden
+    // bulunamadı ve başarılı ödeme "hata" ekranına düştü. conversationId
+    // araması yalnızca token kolonu boş olan eski kayıtlar için yedek.
+    const enrollment =
+      db.prepare('SELECT id, payment_status FROM enrollments WHERE payment_token = ?').get(token) ||
+      (result.conversationId
+        ? db.prepare('SELECT id, payment_status FROM enrollments WHERE payment_reference = ?').get(result.conversationId)
+        : undefined);
+
+    if (!enrollment) {
+      console.error('iyzico callback: ödeme kaydı eşleştirilemedi', {
+        token,
+        conversationId: result.conversationId,
+        status: result.status,
+        paymentStatus: result.paymentStatus,
+      });
+      return res.redirect(`${baseUrl}/odeme/sonuc?durum=hata`);
+    }
 
     if (result.status === 'success' && result.paymentStatus === 'SUCCESS') {
       db.prepare("UPDATE enrollments SET payment_status = 'approved' WHERE id = ?").run(enrollment.id);
