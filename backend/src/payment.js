@@ -24,29 +24,58 @@ export function isPaymentConfigured() {
   return Boolean(getClient());
 }
 
-export function initializeCheckoutForm(request) {
-  return new Promise((resolve, reject) => {
-    const iyzipay = getClient();
-    if (!iyzipay) return reject(new Error('Ödeme altyapısı yapılandırılmadı'));
+// iyzico's connection intermittently drops with ECONNRESET/ETIMEDOUT before
+// completing the TLS handshake — transient, and gone on the very next attempt.
+// Retrying a couple of times beats surfacing a "genel hata" to the student
+// for a network blip that had nothing to do with their card.
+const RETRYABLE_ERROR_CODES = new Set(['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE']);
 
-    iyzipay.checkoutFormInitialize.create(request, (err, result) => {
-      if (err) return reject(err);
-      if (result.status !== 'success') return reject(new Error(result.errorMessage || 'Ödeme başlatılamadı'));
-      resolve(result);
-    });
-  });
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry(fn, attempts = 3) {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const retryable = RETRYABLE_ERROR_CODES.has(err.code);
+      if (!retryable || attempt === attempts) throw err;
+      console.warn(`iyzico isteği başarısız (${err.code}), tekrar deneniyor... (${attempt}/${attempts})`);
+      await sleep(300 * attempt);
+    }
+  }
+}
+
+export function initializeCheckoutForm(request) {
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        const iyzipay = getClient();
+        if (!iyzipay) return reject(new Error('Ödeme altyapısı yapılandırılmadı'));
+
+        iyzipay.checkoutFormInitialize.create(request, (err, result) => {
+          if (err) return reject(err);
+          if (result.status !== 'success') return reject(new Error(result.errorMessage || 'Ödeme başlatılamadı'));
+          resolve(result);
+        });
+      })
+  );
 }
 
 export function retrieveCheckoutForm(request) {
-  return new Promise((resolve, reject) => {
-    const iyzipay = getClient();
-    if (!iyzipay) return reject(new Error('Ödeme altyapısı yapılandırılmadı'));
+  return withRetry(
+    () =>
+      new Promise((resolve, reject) => {
+        const iyzipay = getClient();
+        if (!iyzipay) return reject(new Error('Ödeme altyapısı yapılandırılmadı'));
 
-    iyzipay.checkoutForm.retrieve(request, (err, result) => {
-      if (err) return reject(err);
-      resolve(result);
-    });
-  });
+        iyzipay.checkoutForm.retrieve(request, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      })
+  );
 }
 
 export { Iyzipay };

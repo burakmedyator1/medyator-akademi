@@ -132,7 +132,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
   } catch (err) {
     console.error('iyzico checkout başlatma hatası:', err.message);
-    res.status(502).json({ error: 'Ödeme başlatılamadı, lütfen tekrar deneyin', debug: err.message, debugStack: err.stack });
+    res.status(502).json({ error: 'Ödeme başlatılamadı, lütfen tekrar deneyin' });
   }
 });
 
