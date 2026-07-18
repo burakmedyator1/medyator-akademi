@@ -36,16 +36,25 @@
   font-weight: 700;
 }
 
-.auth-field input {
+.auth-field input,
+.auth-field select {
   padding: 12px 14px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border);
   font-size: 0.95rem;
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
-.auth-field input:focus {
+.auth-field input:focus,
+.auth-field select:focus {
   outline: none;
   border-color: var(--orange);
+}
+
+.auth-field select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .auth-error {

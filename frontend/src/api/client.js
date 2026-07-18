@@ -52,6 +52,11 @@ export const api = {
   getPaymentStatus: () => request('/payments/status'),
   startCheckout: (payload) => request('/payments/checkout-form', { method: 'POST', body: payload, auth: true }),
 
+  getCities: () => request('/locations/cities'),
+  getDistricts: (city) => request(`/locations/districts?city=${encodeURIComponent(city)}`),
+  getNeighborhoods: (city, district) =>
+    request(`/locations/neighborhoods?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`),
+
   getInstructors: () => request('/instructors'),
   getInstructor: (id) => request(`/instructors/${id}`),
 

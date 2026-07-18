@@ -9,7 +9,19 @@ export default function Checkout() {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [configured, setConfigured] = useState(true);
-  const [form, setForm] = useState({ email: '', phone: '', identityNumber: '', address: '', city: '', zipCode: '' });
+  const [form, setForm] = useState({
+    email: '',
+    phone: '',
+    identityNumber: '',
+    address: '',
+    city: '',
+    district: '',
+    neighborhood: '',
+    zipCode: '',
+  });
+  const [cities, setCities] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [neighborhoods, setNeighborhoods] = useState([]);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [checkoutHtml, setCheckoutHtml] = useState(null);
   const [widgetLoading, setWidgetLoading] = useState(false);
@@ -23,7 +35,21 @@ export default function Checkout() {
     api.getProfile().then((profile) =>
       setForm((f) => ({ ...f, email: profile.email || '', phone: profile.phone || '' }))
     );
+    api.getCities().then(setCities);
   }, [courseId]);
+
+  function handleCityChange(e) {
+    setForm((f) => ({ ...f, city: e.target.value, district: '', neighborhood: '' }));
+    setDistricts([]);
+    setNeighborhoods([]);
+    if (e.target.value) api.getDistricts(e.target.value).then(setDistricts);
+  }
+
+  function handleDistrictChange(e) {
+    setForm((f) => ({ ...f, district: e.target.value, neighborhood: '' }));
+    setNeighborhoods([]);
+    if (e.target.value) api.getNeighborhoods(form.city, e.target.value).then(setNeighborhoods);
+  }
 
   useEffect(() => {
     if (checkoutHtml && formContainerRef.current) {
@@ -155,21 +181,57 @@ export default function Checkout() {
             />
           </div>
           <div className="auth-field">
-            <label htmlFor="address">Adres</label>
+            <label htmlFor="city">İl</label>
+            <select id="city" required value={form.city} onChange={handleCityChange}>
+              <option value="">Seçiniz</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="auth-field">
+            <label htmlFor="district">İlçe</label>
+            <select
+              id="district"
+              required
+              value={form.district}
+              onChange={handleDistrictChange}
+              disabled={!form.city}
+            >
+              <option value="">Seçiniz</option>
+              {districts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="auth-field">
+            <label htmlFor="neighborhood">Mahalle</label>
+            <select
+              id="neighborhood"
+              required
+              value={form.neighborhood}
+              onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+              disabled={!form.district}
+            >
+              <option value="">Seçiniz</option>
+              {neighborhoods.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="auth-field">
+            <label htmlFor="address">Adres (Sokak, Bina No, Daire)</label>
             <input
               id="address"
               required
               value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          </div>
-          <div className="auth-field">
-            <label htmlFor="city">Şehir</label>
-            <input
-              id="city"
-              required
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
             />
           </div>
           <div className="auth-field">

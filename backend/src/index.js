@@ -16,6 +16,7 @@ import applicationRoutes from './routes/applications.js';
 import questionRoutes from './routes/questions.js';
 import instructorPanelRoutes from './routes/instructorPanel.js';
 import paymentRoutes from './routes/payments.js';
+import locationRoutes from './routes/locations.js';
 import testimonialRoutes from './routes/testimonials.js';
 import adminRoutes from './routes/admin.js';
 import { STORAGE_DIR } from './storagePath.js';
@@ -117,6 +118,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/instructor', instructorPanelRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/locations', locationRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/admin', adminRoutes);
 

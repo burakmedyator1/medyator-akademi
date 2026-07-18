@@ -43,8 +43,8 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     return res.status(503).json({ error: 'Ödeme altyapısı henüz yapılandırılmadı' });
   }
 
-  const { courseId, email, phone, identityNumber, address, city, zipCode } = req.body;
-  if (!courseId || !email || !phone || !identityNumber || !address || !city) {
+  const { courseId, email, phone, identityNumber, address, city, district, neighborhood, zipCode } = req.body;
+  if (!courseId || !email || !phone || !identityNumber || !address || !city || !district || !neighborhood) {
     return res.status(400).json({ error: 'Tüm alanları doldurun' });
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -72,6 +72,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
   const surname = rest.join(' ') || name;
 
   const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const fullAddress = `${neighborhood}, ${address}, ${district}/${city}`;
 
   const request = {
     locale: Iyzipay.LOCALE.TR,
@@ -91,7 +92,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
       identityNumber,
       lastLoginDate: formatDate(),
       registrationDate: formatDate(user.created_at),
-      registrationAddress: address,
+      registrationAddress: fullAddress,
       ip: req.ip,
       city,
       country: 'Turkey',
@@ -101,14 +102,14 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
       contactName: user.name,
       city,
       country: 'Turkey',
-      address,
+      address: fullAddress,
       zipCode: zipCode || '00000',
     },
     billingAddress: {
       contactName: user.name,
       city,
       country: 'Turkey',
-      address,
+      address: fullAddress,
       zipCode: zipCode || '00000',
     },
     basketItems: [
