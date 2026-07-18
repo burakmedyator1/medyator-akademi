@@ -133,7 +133,11 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
          payment_status = 'pending', amount = excluded.amount, payment_provider = 'iyzico', payment_reference = excluded.payment_reference`
     ).run(req.user.id, courseId, course.price, conversationId);
 
-    res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
+    // Gömülü widget (checkoutFormContent) yerine iyzico'nun kendi barındırdığı
+    // ödeme sayfasının adresi dönülüyor: mobil tarayıcılarda widget hiç
+    // açılmıyordu ve gömülü yaklaşım CSP/DOM sorunlarına çok açıktı. Ayrı
+    // pencerede açılan bu sayfa tamamen iyzico'nun kendi ortamında çalışıyor.
+    res.json({ paymentPageUrl: result.paymentPageUrl, token: result.token });
   } catch (err) {
     console.error('iyzico checkout başlatma hatası:', err.message);
     res.status(502).json({ error: 'Ödeme başlatılamadı, lütfen tekrar deneyin' });

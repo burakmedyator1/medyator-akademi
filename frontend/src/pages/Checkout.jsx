@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import iyzicoIleOde from '../assets/payment/iyzico-ile-ode.svg';
@@ -23,11 +23,9 @@ export default function Checkout() {
   const [districts, setDistricts] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
-  const [checkoutHtml, setCheckoutHtml] = useState(null);
-  const [widgetLoading, setWidgetLoading] = useState(false);
+  const [paymentPageUrl, setPaymentPageUrl] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const formContainerRef = useRef(null);
 
   useEffect(() => {
     api.getCourse(courseId).then(setCourse);
@@ -57,62 +55,34 @@ export default function Checkout() {
     setForm((f) => ({ ...f, neighborhood: name, zipCode: match ? match.postCode : f.zipCode }));
   }
 
-  useEffect(() => {
-    if (checkoutHtml && formContainerRef.current) {
-      // iyzico's injected script only runs its setup when `typeof iyziInit ==
-      // 'undefined'`. Without a full page reload (this is an SPA), a second
-      // checkout attempt sees the global left over from the first one and
-      // silently no-ops — the widget never appears again. Clearing it first
-      // makes every attempt start fresh.
-      window.iyziInit = undefined;
-
-      // The widget mounts itself onto document.body under a fixed id
-      // (#iyzipay-checkout-form) and never removes it. If an earlier attempt
-      // in this same page session left one behind, the new script mounts
-      // inside/alongside that stale copy instead of building a fresh modal —
-      // it renders as plain unstyled content instead of the centered overlay.
-      document.getElementById('iyzipay-checkout-form')?.remove();
-
-      formContainerRef.current.innerHTML = checkoutHtml;
-      const scripts = formContainerRef.current.querySelectorAll('script');
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement('script');
-        Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
-        newScript.textContent = oldScript.textContent;
-        oldScript.replaceWith(newScript);
-      });
-
-      // iyzico's widget script renders its own modal directly onto document.body
-      // (not inside our container), so "loaded" means a new node showed up there.
-      setWidgetLoading(true);
-      const bodyChildCountBefore = document.body.children.length;
-      const observer = new MutationObserver(() => {
-        if (document.body.children.length > bodyChildCountBefore) {
-          setWidgetLoading(false);
-          observer.disconnect();
-        }
-      });
-      observer.observe(document.body, { childList: true });
-      const fallback = setTimeout(() => {
-        setWidgetLoading(false);
-        observer.disconnect();
-      }, 15000);
-
-      return () => {
-        observer.disconnect();
-        clearTimeout(fallback);
-      };
-    }
-  }, [checkoutHtml]);
-
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+
+    // Yeni pencere, kullanıcı etkileşiminin (form submit) senkron akışında
+    // açılmak zorunda — istek tamamlandıktan sonra window.open çağrılırsa
+    // tarayıcıların popup engelleyicisi (özellikle mobilde) pencereyi
+    // engelliyor. Önce boş pencere açılıyor, adres sonra yönlendiriliyor.
+    const paymentWindow = window.open('', '_blank');
+    if (paymentWindow) {
+      paymentWindow.document.write(
+        '<p style="font-family:sans-serif;padding:24px;">Ödeme sayfası yükleniyor...</p>'
+      );
+    }
+
     try {
-      const { checkoutFormContent } = await api.startCheckout({ courseId: Number(courseId), ...form });
-      setCheckoutHtml(checkoutFormContent);
+      const { paymentPageUrl: url } = await api.startCheckout({ courseId: Number(courseId), ...form });
+      setPaymentPageUrl(url);
+      if (paymentWindow) {
+        paymentWindow.location = url;
+      } else {
+        // Popup yine de engellendiyse aynı pencerede aç — ödeme sonrası
+        // callback zaten /odeme/sonuc sayfamıza geri yönlendiriyor.
+        window.location.href = url;
+      }
     } catch (err) {
+      if (paymentWindow) paymentWindow.close();
       setError(err.message);
     } finally {
       setSubmitting(false);
@@ -142,16 +112,23 @@ export default function Checkout() {
         {course.title} · <strong>{course.price} TL</strong>
       </p>
 
-      {checkoutHtml ? (
-        <>
-          {widgetLoading && (
-            <div className="card checkout-page__widget-loading">
-              <span className="checkout-page__spinner" />
-              <p>Ödeme formu yükleniyor...</p>
-            </div>
-          )}
-          <div className="checkout-page__form-frame" ref={formContainerRef} />
-        </>
+      {paymentPageUrl ? (
+        <div className="card checkout-page__notice">
+          <h2>Ödeme sayfası yeni pencerede açıldı</h2>
+          <p>
+            Kart bilgilerini açılan iyzico ödeme sayfasında girebilirsin. Ödemeni tamamladığında
+            sonuç sayfasına yönlendirileceksin.
+          </p>
+          <p>Pencereyi göremiyorsan aşağıdaki butonla tekrar açabilirsin.</p>
+          <div className="checkout-page__reopen">
+            <a className="btn btn-primary" href={paymentPageUrl} target="_blank" rel="noopener">
+              Ödeme Sayfasını Aç
+            </a>
+            <button className="btn btn-outline" type="button" onClick={() => setPaymentPageUrl(null)}>
+              Bilgileri Düzenle
+            </button>
+          </div>
+        </div>
       ) : (
         <form className="card checkout-page__form" onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
