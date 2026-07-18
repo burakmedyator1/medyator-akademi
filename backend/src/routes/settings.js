@@ -1,12 +1,15 @@
 import { Router } from 'express';
-import db from '../db.js';
+import prisma from '../prisma.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT key, value FROM site_settings').all();
-  const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  res.json(settings);
+router.get('/', async (req, res, next) => {
+  try {
+    const rows = await prisma.siteSetting.findMany();
+    res.json(Object.fromEntries(rows.map((r) => [r.key, r.value])));
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

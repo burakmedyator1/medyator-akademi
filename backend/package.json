@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node src/index.js",
     "start": "node src/index.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "postinstall": "prisma generate",
+    "migrate:sqlite": "node scripts/migrate-sqlite-to-postgres.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

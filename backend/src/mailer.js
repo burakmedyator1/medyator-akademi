@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import db from './db.js';
+import prisma from './prisma.js';
 
 let transporter = null;
 let transporterAttempted = false;
@@ -24,8 +24,8 @@ function getTransporter() {
   return transporter;
 }
 
-function getSetting(key, fallback) {
-  const row = db.prepare('SELECT value FROM site_settings WHERE key = ?').get(key);
+async function getSetting(key, fallback) {
+  const row = await prisma.siteSetting.findUnique({ where: { key } });
   return row?.value || fallback;
 }
 
@@ -38,11 +38,11 @@ export async function sendWelcomeEmail({ name, email }) {
   if (!transport) return;
 
   const subject = fillTemplate(
-    getSetting('welcome_email_subject', "Medyator Akademi'ye Hoş Geldin!"),
+    await getSetting('welcome_email_subject', "Medyator Akademi'ye Hoş Geldin!"),
     { name }
   );
   const body = fillTemplate(
-    getSetting(
+    await getSetting(
       'welcome_email_body',
       'Merhaba {{name}},\n\nMedyator Akademi ailesine hoş geldin! Kurslarını hemen keşfetmeye başlayabilirsin.'
     ),
@@ -72,11 +72,11 @@ export async function sendCartReminderEmail({ name, email, courseTitle, price, l
 
   const vars = { name, course: courseTitle, price, link };
   const subject = fillTemplate(
-    getSetting('cart_reminder_email_subject', 'Sepetini tamamlamayı unutma, {{name}}!'),
+    await getSetting('cart_reminder_email_subject', 'Sepetini tamamlamayı unutma, {{name}}!'),
     vars
   );
   const body = fillTemplate(
-    getSetting(
+    await getSetting(
       'cart_reminder_email_body',
       'Merhaba {{name}},\n\n{{course}} kursunu sepetine eklemiştin ama satın alma işlemini tamamlamamışsın. ' +
         '{{price}} TL karşılığında hemen kaydını tamamlayabilirsin:\n{{link}}\n\nSeni aramızda görmek isteriz!'

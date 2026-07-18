@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import db from './db.js';
+import prisma from './prisma.js';
 
 // Fail fast, before touching the database, if production is about to seed
 // with the publicly-known default admin password.
@@ -12,22 +12,6 @@ if (!process.env.ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@medyatorakademi.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123!';
-
-db.exec(`
-  DELETE FROM enrollments;
-  DELETE FROM lessons;
-  DELETE FROM courses;
-  DELETE FROM instructors;
-  DELETE FROM testimonials;
-  DELETE FROM contact_requests;
-  DELETE FROM users;
-  DELETE FROM site_settings;
-`);
-
-db.prepare(
-  `INSERT INTO users (email, password_hash, name, role, phone, instagram)
-   VALUES (?, ?, ?, 'admin', ?, ?)`
-).run(ADMIN_EMAIL, bcrypt.hashSync(ADMIN_PASSWORD, 10), 'Medyator Akademi Admin', '+90 555 000 0000', 'medyatorakademi');
 
 const DEFAULT_SETTINGS = {
   'bg-cream': '#f5f1e8',
@@ -107,60 +91,46 @@ const DEFAULT_SETTINGS = {
     '{{price}} TL karşılığında hemen kaydını tamamlayabilirsin:\n{{link}}\n\nSeni aramızda görmek isteriz!',
 };
 
-const insertSetting = db.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?)');
-Object.entries(DEFAULT_SETTINGS).forEach(([key, value]) => insertSetting.run(key, value));
-
-const instructors = [
-  { name: 'Elif Demir', title: 'Kıdemli Pazarlama Eğitmeni', bio: '10 yıllık dijital pazarlama deneyimiyle marka stratejisi ve içerik pazarlaması üzerine dersler veriyor.', avatar_color: '#F0653C' },
-  { name: 'Kaan Yılmaz', title: 'Yazılım Geliştirme Eğitmeni', bio: 'Full-stack geliştirici, React ve Node.js ekosistemi üzerine uygulamalı eğitimler hazırlıyor.', avatar_color: '#6C63B5' },
-  { name: 'Zeynep Arslan', title: 'Psikolog & Eğitmen', bio: 'Klinik psikolog, iletişim ve liderlik becerileri üzerine kurumsal atölyeler düzenliyor.', avatar_color: '#3B9AB4' },
-  { name: 'Mert Kaya', title: 'Kurumsal Eğitim Danışmanı', bio: 'Şirketlere özel ekip gelişimi ve satış eğitimleri tasarlıyor, saha deneyimi 12 yıl.', avatar_color: '#F0653C' },
+const INSTRUCTORS = [
+  { name: 'Elif Demir', title: 'Kıdemli Pazarlama Eğitmeni', bio: '10 yıllık dijital pazarlama deneyimiyle marka stratejisi ve içerik pazarlaması üzerine dersler veriyor.', avatarColor: '#F0653C' },
+  { name: 'Kaan Yılmaz', title: 'Yazılım Geliştirme Eğitmeni', bio: 'Full-stack geliştirici, React ve Node.js ekosistemi üzerine uygulamalı eğitimler hazırlıyor.', avatarColor: '#6C63B5' },
+  { name: 'Zeynep Arslan', title: 'Psikolog & Eğitmen', bio: 'Klinik psikolog, iletişim ve liderlik becerileri üzerine kurumsal atölyeler düzenliyor.', avatarColor: '#3B9AB4' },
+  { name: 'Mert Kaya', title: 'Kurumsal Eğitim Danışmanı', bio: 'Şirketlere özel ekip gelişimi ve satış eğitimleri tasarlıyor, saha deneyimi 12 yıl.', avatarColor: '#F0653C' },
 ];
 
-const insertInstructor = db.prepare(
-  'INSERT INTO instructors (name, title, bio, avatar_color) VALUES (@name, @title, @bio, @avatar_color)'
-);
-const instructorIds = instructors.map((i) => insertInstructor.run(i).lastInsertRowid);
-
-const testimonials = [
+const TESTIMONIALS = [
   {
-    student_name: 'Deniz Yıldız',
-    student_title: 'Sosyal Medya Kursu Mezunu',
+    studentName: 'Deniz Yıldız',
+    studentTitle: 'Sosyal Medya Kursu Mezunu',
     quote: 'Kursu bitirdikten sonra edindiğim bilgilerle ilk müşterimi kazandım. Anlatım çok akıcı ve uygulamalıydı.',
     rating: 5,
-    avatar_color: '#F0653C',
+    avatarColor: '#F0653C',
   },
   {
-    student_name: 'Cem Aydın',
-    student_title: 'Yazılım Geliştirme Kursu Mezunu',
+    studentName: 'Cem Aydın',
+    studentTitle: 'Yazılım Geliştirme Kursu Mezunu',
     quote: 'Sıfırdan başlayıp kendi projemi geliştirebilecek seviyeye geldim. Eğitmenin geri bildirimleri çok değerliydi.',
     rating: 5,
-    avatar_color: '#6C63B5',
+    avatarColor: '#6C63B5',
   },
   {
-    student_name: 'Selin Koç',
-    student_title: 'Kurumsal Eğitim Katılımcısı',
+    studentName: 'Selin Koç',
+    studentTitle: 'Kurumsal Eğitim Katılımcısı',
     quote: 'Ekibimizle katıldığımız atölye sonrası iletişimimiz ve iş birliğimiz gözle görülür şekilde iyileşti.',
     rating: 5,
-    avatar_color: '#3B9AB4',
+    avatarColor: '#3B9AB4',
   },
 ];
 
-const insertTestimonial = db.prepare(
-  `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, display_order)
-   VALUES (@student_name, @student_title, @quote, @rating, @avatar_color, @display_order)`
-);
-testimonials.forEach((t, i) => insertTestimonial.run({ ...t, display_order: i }));
-
-const courses = [
+const COURSES = [
   {
     title: 'Yeni Başlayanlar için Yaratıcı Yazarlık',
     category: 'Pazarlama',
-    delivery_type: 'online',
+    deliveryType: 'online',
     description: 'İçerik pazarlaması ve marka hikayeciliği için temel yazarlık becerilerini öğrenin.',
-    cover_color: 'yellow',
+    coverColor: 'yellow',
     price: 1499,
-    instructor_id: instructorIds[0],
+    instructorIndex: 0,
     lessons: [
       'Yaratıcı Yazarlığa Giriş',
       'Hedef Kitleyi Anlamak',
@@ -170,14 +140,14 @@ const courses = [
     ],
   },
   {
-    title: "Adobe Illustrator ile Dijital İllüstrasyon",
+    title: 'Adobe Illustrator ile Dijital İllüstrasyon',
     category: 'Bilgisayar Bilimi',
-    delivery_type: 'online',
+    deliveryType: 'online',
     description: 'Sıfırdan Illustrator araçlarını öğrenip kendi dijital illüstrasyonlarınızı oluşturun.',
-    cover_color: 'purple',
-    instructor_id: instructorIds[1],
+    coverColor: 'purple',
+    instructorIndex: 1,
     lessons: [
-      "Illustrator Aracını Tanımak",
+      'Illustrator Aracını Tanımak',
       'Vektör Çizim Temelleri',
       'Renk ve Degrade Kullanımı',
       'Katmanlarla Çalışmak',
@@ -188,10 +158,10 @@ const courses = [
   {
     title: 'Topluluk Önünde Konuşma ve Liderlik',
     category: 'Psikoloji',
-    delivery_type: 'online',
+    deliveryType: 'online',
     description: 'Sahne korkusunu yenin, ikna edici konuşma ve liderlik becerilerinizi geliştirin.',
-    cover_color: 'blue',
-    instructor_id: instructorIds[2],
+    coverColor: 'blue',
+    instructorIndex: 2,
     lessons: [
       'Topluluk Önünde Konuşmaya Giriş',
       'Beden Dili ve Ses Tonu',
@@ -204,76 +174,127 @@ const courses = [
   {
     title: 'Etkili Satış Teknikleri',
     category: 'Pazarlama',
-    delivery_type: 'online',
+    deliveryType: 'online',
     description: 'Müşteri ihtiyaçlarını analiz ederek satış kapama oranınızı artırın.',
-    cover_color: 'yellow',
-    instructor_id: instructorIds[0],
+    coverColor: 'yellow',
+    instructorIndex: 0,
     lessons: ['Satış Sürecine Genel Bakış', 'İhtiyaç Analizi', 'İtirazları Yönetmek', 'Satışı Kapatmak'],
   },
   {
     title: 'Kurumlar için Ekip Gelişimi Programı',
     category: 'Kurumsal',
-    delivery_type: 'corporate',
+    deliveryType: 'corporate',
     description: 'Şirket içi ekiplerin iletişim ve iş birliğini güçlendiren özelleştirilebilir program.',
-    cover_color: 'purple',
-    instructor_id: instructorIds[3],
+    coverColor: 'purple',
+    instructorIndex: 3,
     lessons: [],
   },
   {
     title: 'Yöneticiler için Liderlik Atölyesi (Kurumsal)',
     category: 'Kurumsal',
-    delivery_type: 'corporate',
+    deliveryType: 'corporate',
     description: 'Orta ve üst düzey yöneticilere yönelik, şirket lokasyonunda uygulanan liderlik atölyesi.',
-    cover_color: 'blue',
-    instructor_id: instructorIds[2],
+    coverColor: 'blue',
+    instructorIndex: 2,
     lessons: [],
   },
   {
     title: 'Yüz Yüze Dijital Pazarlama Bootcamp',
     category: 'Yüz Yüze',
-    delivery_type: 'in_person',
+    deliveryType: 'in_person',
     description: 'Hafta sonu yoğunlaştırılmış, sınıf ortamında uygulamalı dijital pazarlama eğitimi.',
-    cover_color: 'yellow',
-    instructor_id: instructorIds[0],
+    coverColor: 'yellow',
+    instructorIndex: 0,
     lessons: [],
   },
   {
     title: 'Yüz Yüze Yazılım Geliştirme Kampı',
     category: 'Yüz Yüze',
-    delivery_type: 'in_person',
+    deliveryType: 'in_person',
     description: '4 haftalık, ofiste düzenlenen, mentörlük destekli yazılım geliştirme kampı.',
-    cover_color: 'purple',
-    instructor_id: instructorIds[1],
+    coverColor: 'purple',
+    instructorIndex: 1,
     lessons: [],
   },
 ];
 
-const insertCourse = db.prepare(
-  `INSERT INTO courses (title, category, delivery_type, description, cover_color, price, instructor_id)
-   VALUES (@title, @category, @delivery_type, @description, @cover_color, @price, @instructor_id)`
-);
-const insertLesson = db.prepare(
-  `INSERT INTO lessons (course_id, title, duration_minutes, lesson_order, video_provider, video_id)
-   VALUES (@course_id, @title, @duration_minutes, @lesson_order, @video_provider, @video_id)`
-);
+async function main() {
+  // Bağımlı tablolardan ana tablolara doğru temizle (FK sırası).
+  await prisma.questionMessage.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.enrollment.deleteMany();
+  await prisma.lesson.deleteMany();
+  await prisma.testimonial.deleteMany();
+  await prisma.course.deleteMany();
+  await prisma.instructor.deleteMany();
+  await prisma.contactRequest.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.siteSetting.deleteMany();
 
-courses.forEach((course) => {
-  const courseId = insertCourse.run({ ...course, price: course.price ?? 999 }).lastInsertRowid;
-  course.lessons.forEach((title, index) => {
-    insertLesson.run({
-      course_id: courseId,
-      title,
-      duration_minutes: 15 + ((index * 7) % 40),
-      lesson_order: index + 1,
-      video_provider: index % 2 === 0 ? 'youtube' : 'vimeo',
-      video_id: 'REPLACE_WITH_REAL_VIDEO_ID',
-    });
+  await prisma.user.create({
+    data: {
+      email: ADMIN_EMAIL,
+      passwordHash: bcrypt.hashSync(ADMIN_PASSWORD, 10),
+      name: 'Medyator Akademi Admin',
+      role: 'admin',
+      phone: '+90 555 000 0000',
+      instagram: 'medyatorakademi',
+    },
   });
-});
 
-console.log('Seed tamamlandı:', {
-  instructors: instructors.length,
-  courses: courses.length,
-  lessons: courses.reduce((sum, c) => sum + c.lessons.length, 0),
-  admin: `${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`,
-});
+  await prisma.siteSetting.createMany({
+    data: Object.entries(DEFAULT_SETTINGS).map(([key, value]) => ({ key, value })),
+  });
+
+  const instructorIds = [];
+  for (const instructor of INSTRUCTORS) {
+    const created = await prisma.instructor.create({ data: instructor });
+    instructorIds.push(created.id);
+  }
+
+  await prisma.testimonial.createMany({
+    data: TESTIMONIALS.map((t, i) => ({ ...t, displayOrder: i })),
+  });
+
+  let lessonCount = 0;
+  for (const course of COURSES) {
+    const created = await prisma.course.create({
+      data: {
+        title: course.title,
+        category: course.category,
+        deliveryType: course.deliveryType,
+        description: course.description,
+        coverColor: course.coverColor,
+        price: course.price ?? 999,
+        instructorId: instructorIds[course.instructorIndex],
+      },
+    });
+    for (const [index, title] of course.lessons.entries()) {
+      await prisma.lesson.create({
+        data: {
+          courseId: created.id,
+          title,
+          durationMinutes: 15 + ((index * 7) % 40),
+          lessonOrder: index + 1,
+          videoProvider: index % 2 === 0 ? 'youtube' : 'vimeo',
+          videoId: 'REPLACE_WITH_REAL_VIDEO_ID',
+        },
+      });
+      lessonCount++;
+    }
+  }
+
+  console.log('Seed tamamlandı:', {
+    instructors: INSTRUCTORS.length,
+    courses: COURSES.length,
+    lessons: lessonCount,
+    admin: `${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`,
+  });
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

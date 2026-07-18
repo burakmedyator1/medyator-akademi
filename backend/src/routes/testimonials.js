@@ -1,18 +1,27 @@
 import { Router } from 'express';
-import db from '../db.js';
+import prisma from '../prisma.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.json(
-    db
-      .prepare(
-        `SELECT id, student_name AS studentName, student_title AS studentTitle, quote, rating,
-                avatar_color AS avatarColor, photo_url AS photoUrl
-         FROM testimonials WHERE status = 'approved' ORDER BY display_order ASC, id ASC`
-      )
-      .all()
-  );
+router.get('/', async (req, res, next) => {
+  try {
+    const rows = await prisma.testimonial.findMany({
+      where: { status: 'approved' },
+      orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        studentName: true,
+        studentTitle: true,
+        quote: true,
+        rating: true,
+        avatarColor: true,
+        photoUrl: true,
+      },
+    });
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

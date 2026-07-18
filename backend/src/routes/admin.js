@@ -1,11 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import path from 'node:path';
-import db from '../db.js';
+import prisma from '../prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
-import { STORAGE_DIR } from '../storagePath.js';
 import { imageUpload as upload } from '../imageUpload.js';
 import { slugify } from '../slugify.js';
 import { extractVideoId } from '../videoId.js';
@@ -15,165 +13,268 @@ function generateRandomPassword() {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
 }
 
+function toId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+async function upsertSetting(key, value) {
+  await prisma.siteSetting.upsert({ where: { key }, create: { key, value }, update: { value } });
+}
+
 const router = Router();
 router.use(requireAuth, requireAdmin);
 
 // ---------- Site logo ----------
 
 router.post('/settings/logo', (req, res) => {
-  upload.single('logo')(req, res, (err) => {
+  upload.single('logo')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
 
     const url = `/uploads/${req.file.filename}`;
-    db.prepare(
-      'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run('logo_url', url);
+    await upsertSetting('logo_url', url);
     res.status(201).json({ url });
   });
 });
 
 router.post('/settings/logo-dark', (req, res) => {
-  upload.single('logo')(req, res, (err) => {
+  upload.single('logo')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
 
     const url = `/uploads/${req.file.filename}`;
-    db.prepare(
-      'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run('logo_url_dark', url);
+    await upsertSetting('logo_url_dark', url);
     res.status(201).json({ url });
   });
 });
 
 router.post('/settings/splash-image', (req, res) => {
-  upload.single('splashImage')(req, res, (err) => {
+  upload.single('splashImage')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
 
     const url = `/uploads/${req.file.filename}`;
-    db.prepare(
-      'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run('splash_image_url', url);
+    await upsertSetting('splash_image_url', url);
     res.status(201).json({ url });
   });
 });
 
 // ---------- Database backup ----------
 
-router.get('/backup', (req, res) => {
-  const dbPath = path.join(STORAGE_DIR, 'data.db');
-  const stamp = new Date().toISOString().slice(0, 10);
-  res.download(dbPath, `medyator-akademi-yedek-${stamp}.db`);
+// SQLite döneminde tek dosya indiriliyordu; PostgreSQL'de veritabanı bir
+// dosya değil, bu yüzden yedek tüm tabloların JSON dökümü olarak verilir.
+router.get('/backup', async (req, res, next) => {
+  try {
+    const [
+      users,
+      instructors,
+      courses,
+      lessons,
+      enrollments,
+      contactRequests,
+      siteSettings,
+      categories,
+      testimonials,
+      applications,
+      questions,
+      questionMessages,
+      blogPosts,
+      notifications,
+    ] = await Promise.all([
+      prisma.user.findMany(),
+      prisma.instructor.findMany(),
+      prisma.course.findMany(),
+      prisma.lesson.findMany(),
+      prisma.enrollment.findMany(),
+      prisma.contactRequest.findMany(),
+      prisma.siteSetting.findMany(),
+      prisma.category.findMany(),
+      prisma.testimonial.findMany(),
+      prisma.application.findMany(),
+      prisma.question.findMany(),
+      prisma.questionMessage.findMany(),
+      prisma.blogPost.findMany(),
+      prisma.notification.findMany(),
+    ]);
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Disposition', `attachment; filename="medyator-akademi-yedek-${stamp}.json"`);
+    res.json({
+      exportedAt: new Date().toISOString(),
+      users,
+      instructors,
+      courses,
+      lessons,
+      enrollments,
+      contactRequests,
+      siteSettings,
+      categories,
+      testimonials,
+      applications,
+      questions,
+      questionMessages,
+      blogPosts,
+      notifications,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Categories ----------
 
-router.get('/categories', (req, res) => {
-  res.json(db.prepare('SELECT * FROM categories ORDER BY name').all());
-});
-
-router.post('/categories', (req, res) => {
-  const { name } = req.body;
-  if (!name || !name.trim()) return res.status(400).json({ error: 'Kategori adı zorunlu' });
+router.get('/categories', async (req, res, next) => {
   try {
-    const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(name.trim());
-    res.status(201).json({ id: result.lastInsertRowid });
-  } catch {
-    res.status(409).json({ error: 'Bu kategori zaten var' });
+    res.json(await prisma.category.findMany({ orderBy: { name: 'asc' } }));
+  } catch (err) {
+    next(err);
   }
 });
 
-router.put('/categories/:id', (req, res) => {
-  const { name } = req.body;
-  if (!name || !name.trim()) return res.status(400).json({ error: 'Kategori adı zorunlu' });
-  const existing = db.prepare('SELECT name FROM categories WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Kategori bulunamadı' });
-
-  const tx = db.transaction(() => {
-    db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(name.trim(), req.params.id);
-    db.prepare('UPDATE courses SET category = ? WHERE category = ?').run(name.trim(), existing.name);
-  });
-  tx();
-  res.json({ updated: true });
+router.post('/categories', async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Kategori adı zorunlu' });
+    try {
+      const created = await prisma.category.create({ data: { name: name.trim() } });
+      res.status(201).json({ id: created.id });
+    } catch {
+      res.status(409).json({ error: 'Bu kategori zaten var' });
+    }
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.delete('/categories/:id', (req, res) => {
-  db.prepare('DELETE FROM categories WHERE id = ?').run(req.params.id);
-  res.json({ deleted: true });
+router.put('/categories/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Kategori adı zorunlu' });
+    const existing = id ? await prisma.category.findUnique({ where: { id } }) : null;
+    if (!existing) return res.status(404).json({ error: 'Kategori bulunamadı' });
+
+    await prisma.$transaction([
+      prisma.category.update({ where: { id }, data: { name: name.trim() } }),
+      prisma.course.updateMany({ where: { category: existing.name }, data: { category: name.trim() } }),
+    ]);
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/categories/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.category.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Testimonials ----------
 
-router.get('/testimonials', (req, res) => {
-  const rows = db
-    .prepare(
-      `SELECT testimonials.id, student_name AS studentName, student_title AS studentTitle, quote, rating,
-              avatar_color AS avatarColor, photo_url AS photoUrl, testimonials.display_order AS displayOrder,
-              status, testimonials.user_id AS userId, courses.title AS courseTitle,
-              testimonials.created_at AS createdAt
-       FROM testimonials
-       LEFT JOIN courses ON courses.id = testimonials.course_id
-       ORDER BY (status = 'pending') DESC, testimonials.display_order ASC, testimonials.id DESC`
-    )
-    .all();
-  res.json(rows);
-});
-
-router.post('/testimonials', (req, res) => {
-  const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
-  if (!studentName || !quote) {
-    return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
-  }
-  const result = db
-    .prepare(
-      `INSERT INTO testimonials (student_name, student_title, quote, rating, avatar_color, photo_url, display_order, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'approved')`
-    )
-    .run(
-      studentName,
-      studentTitle || '',
-      quote,
-      rating || 5,
-      avatarColor || '#f0653c',
-      photoUrl || null,
-      displayOrder || 0
+router.get('/testimonials', async (req, res, next) => {
+  try {
+    const rows = await prisma.testimonial.findMany({
+      include: { course: { select: { title: true } } },
+    });
+    // Eski sıralama: bekleyenler önce, sonra display_order ASC, sonra id DESC.
+    rows.sort((a, b) => {
+      const pendingDiff = Number(b.status === 'pending') - Number(a.status === 'pending');
+      if (pendingDiff !== 0) return pendingDiff;
+      if (a.displayOrder !== b.displayOrder) return a.displayOrder - b.displayOrder;
+      return b.id - a.id;
+    });
+    res.json(
+      rows.map((t) => ({
+        id: t.id,
+        studentName: t.studentName,
+        studentTitle: t.studentTitle,
+        quote: t.quote,
+        rating: t.rating,
+        avatarColor: t.avatarColor,
+        photoUrl: t.photoUrl,
+        displayOrder: t.displayOrder,
+        status: t.status,
+        userId: t.userId,
+        courseTitle: t.course?.title ?? null,
+        createdAt: t.createdAt,
+      }))
     );
-  res.status(201).json({ id: result.lastInsertRowid });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.put('/testimonials/:id', (req, res) => {
-  const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
-  if (!studentName || !quote) {
-    return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
+router.post('/testimonials', async (req, res, next) => {
+  try {
+    const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
+    if (!studentName || !quote) {
+      return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
+    }
+    const created = await prisma.testimonial.create({
+      data: {
+        studentName,
+        studentTitle: studentTitle || '',
+        quote,
+        rating: rating || 5,
+        avatarColor: avatarColor || '#f0653c',
+        photoUrl: photoUrl || null,
+        displayOrder: displayOrder || 0,
+        status: 'approved',
+      },
+    });
+    res.status(201).json({ id: created.id });
+  } catch (err) {
+    next(err);
   }
-  const existing = db.prepare('SELECT id FROM testimonials WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Yorum bulunamadı' });
-
-  db.prepare(
-    `UPDATE testimonials SET student_name = ?, student_title = ?, quote = ?, rating = ?,
-     avatar_color = ?, photo_url = ?, display_order = ? WHERE id = ?`
-  ).run(
-    studentName,
-    studentTitle || '',
-    quote,
-    rating || 5,
-    avatarColor || '#f0653c',
-    photoUrl || null,
-    displayOrder || 0,
-    req.params.id
-  );
-  res.json({ updated: true });
 });
 
-router.patch('/testimonials/:id/status', (req, res) => {
-  const { status } = req.body;
-  if (!['pending', 'approved', 'rejected'].includes(status)) {
-    return res.status(400).json({ error: 'Geçersiz durum' });
+router.put('/testimonials/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { studentName, studentTitle, quote, rating, avatarColor, photoUrl, displayOrder } = req.body;
+    if (!studentName || !quote) {
+      return res.status(400).json({ error: 'Öğrenci adı ve yorum metni zorunlu' });
+    }
+    const existing = id ? await prisma.testimonial.findUnique({ where: { id }, select: { id: true } }) : null;
+    if (!existing) return res.status(404).json({ error: 'Yorum bulunamadı' });
+
+    await prisma.testimonial.update({
+      where: { id },
+      data: {
+        studentName,
+        studentTitle: studentTitle || '',
+        quote,
+        rating: rating || 5,
+        avatarColor: avatarColor || '#f0653c',
+        photoUrl: photoUrl || null,
+        displayOrder: displayOrder || 0,
+      },
+    });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
   }
-  const result = db.prepare('UPDATE testimonials SET status = ? WHERE id = ?').run(status, req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Yorum bulunamadı' });
-  res.json({ updated: true });
+});
+
+router.patch('/testimonials/:id/status', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Geçersiz durum' });
+    }
+    const result = id ? await prisma.testimonial.updateMany({ where: { id }, data: { status } }) : { count: 0 };
+    if (result.count === 0) return res.status(404).json({ error: 'Yorum bulunamadı' });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/testimonials/photo', (req, res) => {
@@ -184,74 +285,97 @@ router.post('/testimonials/photo', (req, res) => {
   });
 });
 
-router.delete('/testimonials/:id', (req, res) => {
-  db.prepare('DELETE FROM testimonials WHERE id = ?').run(req.params.id);
-  res.json({ deleted: true });
+router.delete('/testimonials/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.testimonial.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Courses ----------
 
-router.get('/courses', (req, res) => {
-  const courses = db
-    .prepare(
-      `SELECT courses.id, courses.title, courses.category, courses.delivery_type AS deliveryType,
-              courses.description, courses.cover_color AS coverColor, courses.cover_image_url AS coverImageUrl,
-              courses.price AS price, courses.display_order AS displayOrder,
-              courses.instructor_id AS instructorId, instructors.name AS instructorName
-       FROM courses JOIN instructors ON instructors.id = courses.instructor_id
-       ORDER BY courses.display_order ASC, courses.id ASC`
-    )
-    .all();
-  res.json(courses);
-});
-
-router.post('/courses', (req, res) => {
-  const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
-    req.body;
-  if (!title || !category || !deliveryType || !description || !instructorId) {
-    return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
+router.get('/courses', async (req, res, next) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: { instructorId: { not: null } },
+      include: { instructor: { select: { name: true } } },
+      orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
+    });
+    res.json(
+      courses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        category: c.category,
+        deliveryType: c.deliveryType,
+        description: c.description,
+        coverColor: c.coverColor,
+        coverImageUrl: c.coverImageUrl,
+        price: c.price,
+        displayOrder: c.displayOrder,
+        instructorId: c.instructorId,
+        instructorName: c.instructor?.name,
+      }))
+    );
+  } catch (err) {
+    next(err);
   }
-  const result = db
-    .prepare(
-      `INSERT INTO courses (title, category, delivery_type, description, cover_color, cover_image_url, price, display_order, instructor_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      title,
-      category,
-      deliveryType,
-      description,
-      coverColor || 'yellow',
-      coverImageUrl || null,
-      price || 0,
-      displayOrder || 0,
-      instructorId
-    );
-  res.status(201).json({ id: result.lastInsertRowid });
 });
 
-router.put('/courses/:id', (req, res) => {
-  const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
-    req.body;
-  const result = db
-    .prepare(
-      `UPDATE courses SET title = ?, category = ?, delivery_type = ?, description = ?,
-       cover_color = ?, cover_image_url = ?, price = ?, display_order = ?, instructor_id = ? WHERE id = ?`
-    )
-    .run(
-      title,
-      category,
-      deliveryType,
-      description,
-      coverColor,
-      coverImageUrl || null,
-      price,
-      displayOrder || 0,
-      instructorId,
-      req.params.id
-    );
-  if (result.changes === 0) return res.status(404).json({ error: 'Kurs bulunamadı' });
-  res.json({ updated: true });
+router.post('/courses', async (req, res, next) => {
+  try {
+    const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
+      req.body;
+    if (!title || !category || !deliveryType || !description || !instructorId) {
+      return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
+    }
+    const created = await prisma.course.create({
+      data: {
+        title,
+        category,
+        deliveryType,
+        description,
+        coverColor: coverColor || 'yellow',
+        coverImageUrl: coverImageUrl || null,
+        price: price || 0,
+        displayOrder: displayOrder || 0,
+        instructorId: Number(instructorId),
+      },
+    });
+    res.status(201).json({ id: created.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/courses/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { title, category, deliveryType, description, coverColor, coverImageUrl, price, displayOrder, instructorId } =
+      req.body;
+    const result = id
+      ? await prisma.course.updateMany({
+          where: { id },
+          data: {
+            title,
+            category,
+            deliveryType,
+            description,
+            coverColor,
+            coverImageUrl: coverImageUrl || null,
+            price,
+            displayOrder: displayOrder || 0,
+            instructorId: Number(instructorId),
+          },
+        })
+      : { count: 0 };
+    if (result.count === 0) return res.status(404).json({ error: 'Kurs bulunamadı' });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/courses/cover', (req, res) => {
@@ -262,148 +386,205 @@ router.post('/courses/cover', (req, res) => {
   });
 });
 
-router.delete('/courses/:id', (req, res) => {
-  const tx = db.transaction((id) => {
-    const questionIds = db.prepare('SELECT id FROM questions WHERE course_id = ?').all(id).map((q) => q.id);
-    for (const questionId of questionIds) {
-      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
+router.delete('/courses/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) {
+      await prisma.$transaction([
+        prisma.questionMessage.deleteMany({ where: { question: { courseId: id } } }),
+        prisma.question.deleteMany({ where: { courseId: id } }),
+        prisma.testimonial.deleteMany({ where: { courseId: id } }),
+        prisma.enrollment.deleteMany({ where: { courseId: id } }),
+        prisma.lesson.deleteMany({ where: { courseId: id } }),
+        prisma.course.deleteMany({ where: { id } }),
+      ]);
     }
-    db.prepare('DELETE FROM questions WHERE course_id = ?').run(id);
-    db.prepare('DELETE FROM testimonials WHERE course_id = ?').run(id);
-    db.prepare('DELETE FROM enrollments WHERE course_id = ?').run(id);
-    db.prepare('DELETE FROM lessons WHERE course_id = ?').run(id);
-    db.prepare('DELETE FROM courses WHERE id = ?').run(id);
-  });
-  tx(req.params.id);
-  res.json({ deleted: true });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Lessons (nested under a course) ----------
 
-router.get('/courses/:courseId/lessons', (req, res) => {
-  const lessons = db
-    .prepare(
-      `SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_,
-              video_provider AS videoProvider, video_id AS videoId, is_preview AS isPreview
-       FROM lessons WHERE course_id = ? ORDER BY lesson_order`
-    )
-    .all(req.params.courseId);
-  res.json(lessons.map((l) => ({ ...l, isPreview: Boolean(l.isPreview) })));
-});
-
-router.post('/courses/:courseId/lessons', (req, res) => {
-  const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
-  if (!title || !durationMinutes || !order || !videoProvider || !videoId) {
-    return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
+router.get('/courses/:courseId/lessons', async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.courseId);
+    if (!courseId) return res.json([]);
+    const lessons = await prisma.lesson.findMany({
+      where: { courseId },
+      orderBy: { lessonOrder: 'asc' },
+    });
+    res.json(
+      lessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        durationMinutes: l.durationMinutes,
+        order_: l.lessonOrder,
+        videoProvider: l.videoProvider,
+        videoId: l.videoId,
+        isPreview: l.isPreview,
+      }))
+    );
+  } catch (err) {
+    next(err);
   }
-  const result = db
-    .prepare(
-      `INSERT INTO lessons (course_id, title, description, duration_minutes, lesson_order, video_provider, video_id, is_preview)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
-      req.params.courseId,
-      title,
-      description || '',
-      durationMinutes,
-      order,
-      videoProvider,
-      extractVideoId(videoId, videoProvider),
-      isPreview ? 1 : 0
-    );
-  res.status(201).json({ id: result.lastInsertRowid });
 });
 
-router.put('/courses/:courseId/lessons/:id', (req, res) => {
-  const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
-  const result = db
-    .prepare(
-      `UPDATE lessons SET title = ?, description = ?, duration_minutes = ?, lesson_order = ?, video_provider = ?, video_id = ?, is_preview = ?
-       WHERE id = ? AND course_id = ?`
-    )
-    .run(
-      title,
-      description || '',
-      durationMinutes,
-      order,
-      videoProvider,
-      extractVideoId(videoId, videoProvider),
-      isPreview ? 1 : 0,
-      req.params.id,
-      req.params.courseId
-    );
-  if (result.changes === 0) return res.status(404).json({ error: 'Ders bulunamadı' });
-  res.json({ updated: true });
+router.post('/courses/:courseId/lessons', async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.courseId);
+    const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
+    if (!title || !durationMinutes || !order || !videoProvider || !videoId) {
+      return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun' });
+    }
+    const created = await prisma.lesson.create({
+      data: {
+        courseId,
+        title,
+        description: description || '',
+        durationMinutes: Number(durationMinutes),
+        lessonOrder: Number(order),
+        videoProvider,
+        videoId: extractVideoId(videoId, videoProvider),
+        isPreview: Boolean(isPreview),
+      },
+    });
+    res.status(201).json({ id: created.id });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.delete('/courses/:courseId/lessons/:id', (req, res) => {
-  db.prepare('DELETE FROM lessons WHERE id = ? AND course_id = ?').run(req.params.id, req.params.courseId);
-  res.json({ deleted: true });
+router.put('/courses/:courseId/lessons/:id', async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.courseId);
+    const id = toId(req.params.id);
+    const { title, description, durationMinutes, order, videoProvider, videoId, isPreview } = req.body;
+    const result =
+      courseId && id
+        ? await prisma.lesson.updateMany({
+            where: { id, courseId },
+            data: {
+              title,
+              description: description || '',
+              durationMinutes: Number(durationMinutes),
+              lessonOrder: Number(order),
+              videoProvider,
+              videoId: extractVideoId(videoId, videoProvider),
+              isPreview: Boolean(isPreview),
+            },
+          })
+        : { count: 0 };
+    if (result.count === 0) return res.status(404).json({ error: 'Ders bulunamadı' });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/courses/:courseId/lessons/:id', async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.courseId);
+    const id = toId(req.params.id);
+    if (courseId && id) await prisma.lesson.deleteMany({ where: { id, courseId } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Instructors ----------
 
-router.get('/instructors', (req, res) => {
-  res.json(
-    db
-      .prepare(
-        'SELECT id, name, title, bio, avatar_color, photo_url, email FROM instructors ORDER BY id DESC'
-      )
-      .all()
-  );
-});
-
-router.post('/instructors', (req, res) => {
-  const { name, title, bio, avatarColor, photoUrl, email } = req.body;
-  if (!name || !title || !bio || !email) {
-    return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun (e-posta dahil)' });
-  }
-  const emailTaken =
-    db.prepare('SELECT id FROM instructors WHERE email = ?').get(email) ||
-    db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (emailTaken) {
-    return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
-  }
-
-  const password = generateRandomPassword();
-  const passwordHash = bcrypt.hashSync(password, 10);
-  const result = db
-    .prepare(
-      'INSERT INTO instructors (name, title, bio, avatar_color, photo_url, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    )
-    .run(name, title, bio, avatarColor || '#F0653C', photoUrl || null, email, passwordHash);
-  res.status(201).json({ id: result.lastInsertRowid, email, password });
-});
-
-router.put('/instructors/:id', (req, res) => {
-  const { name, title, bio, avatarColor, photoUrl, email } = req.body;
-  if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
-
-  const existing = db.prepare('SELECT password_hash FROM instructors WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
-
-  const emailTaken =
-    db.prepare('SELECT id FROM instructors WHERE email = ? AND id != ?').get(email, req.params.id) ||
-    db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (emailTaken) {
-    return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
-  }
-
-  // Older instructors created before login accounts existed have no password yet;
-  // generate one the first time an email is attached so they gain access immediately.
-  let password;
-  if (!existing.password_hash) {
-    password = generateRandomPassword();
-    db.prepare('UPDATE instructors SET password_hash = ? WHERE id = ?').run(
-      bcrypt.hashSync(password, 10),
-      req.params.id
+router.get('/instructors', async (req, res, next) => {
+  try {
+    const instructors = await prisma.instructor.findMany({ orderBy: { id: 'desc' } });
+    // Frontend bu uçta ham kolon adlarını (avatar_color, photo_url) bekliyor.
+    res.json(
+      instructors.map((i) => ({
+        id: i.id,
+        name: i.name,
+        title: i.title,
+        bio: i.bio,
+        avatar_color: i.avatarColor,
+        photo_url: i.photoUrl,
+        email: i.email,
+      }))
     );
+  } catch (err) {
+    next(err);
   }
+});
 
-  db.prepare(
-    'UPDATE instructors SET name = ?, title = ?, bio = ?, avatar_color = ?, photo_url = ?, email = ? WHERE id = ?'
-  ).run(name, title, bio, avatarColor, photoUrl || null, email, req.params.id);
-  res.json({ updated: true, password });
+router.post('/instructors', async (req, res, next) => {
+  try {
+    const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+    if (!name || !title || !bio || !email) {
+      return res.status(400).json({ error: 'Tüm zorunlu alanları doldurun (e-posta dahil)' });
+    }
+    const emailTaken =
+      (await prisma.instructor.findFirst({ where: { email }, select: { id: true } })) ||
+      (await prisma.user.findUnique({ where: { email }, select: { id: true } }));
+    if (emailTaken) {
+      return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
+    }
+
+    const password = generateRandomPassword();
+    const created = await prisma.instructor.create({
+      data: {
+        name,
+        title,
+        bio,
+        avatarColor: avatarColor || '#F0653C',
+        photoUrl: photoUrl || null,
+        email,
+        passwordHash: bcrypt.hashSync(password, 10),
+      },
+    });
+    res.status(201).json({ id: created.id, email, password });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/instructors/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { name, title, bio, avatarColor, photoUrl, email } = req.body;
+    if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
+
+    const existing = id
+      ? await prisma.instructor.findUnique({ where: { id }, select: { passwordHash: true } })
+      : null;
+    if (!existing) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
+
+    const emailTaken =
+      (await prisma.instructor.findFirst({ where: { email, id: { not: id } }, select: { id: true } })) ||
+      (await prisma.user.findUnique({ where: { email }, select: { id: true } }));
+    if (emailTaken) {
+      return res.status(409).json({ error: 'Bu e-posta zaten kullanılıyor' });
+    }
+
+    // Older instructors created before login accounts existed have no password yet;
+    // generate one the first time an email is attached so they gain access immediately.
+    let password;
+    if (!existing.passwordHash) {
+      password = generateRandomPassword();
+      await prisma.instructor.update({
+        where: { id },
+        data: { passwordHash: bcrypt.hashSync(password, 10) },
+      });
+    }
+
+    await prisma.instructor.update({
+      where: { id },
+      data: { name, title, bio, avatarColor, photoUrl: photoUrl || null, email },
+    });
+    res.json({ updated: true, password });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/instructors/photo', (req, res) => {
@@ -414,230 +595,350 @@ router.post('/instructors/photo', (req, res) => {
   });
 });
 
-router.post('/instructors/:id/reset-password', (req, res) => {
-  const instructor = db.prepare('SELECT id FROM instructors WHERE id = ?').get(req.params.id);
-  if (!instructor) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
+router.post('/instructors/:id/reset-password', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const instructor = id ? await prisma.instructor.findUnique({ where: { id }, select: { id: true } }) : null;
+    if (!instructor) return res.status(404).json({ error: 'Eğitmen bulunamadı' });
 
-  const password = generateRandomPassword();
-  db.prepare('UPDATE instructors SET password_hash = ? WHERE id = ?').run(
-    bcrypt.hashSync(password, 10),
-    req.params.id
-  );
-  res.json({ password });
+    const password = generateRandomPassword();
+    await prisma.instructor.update({ where: { id }, data: { passwordHash: bcrypt.hashSync(password, 10) } });
+    res.json({ password });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.delete('/instructors/:id', (req, res) => {
-  const inUse = db.prepare('SELECT COUNT(*) AS count FROM courses WHERE instructor_id = ?').get(req.params.id);
-  if (inUse.count > 0) {
-    return res.status(400).json({ error: 'Bu eğitmene bağlı kurslar var, önce onları başka eğitmene atayın' });
-  }
+router.delete('/instructors/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.json({ deleted: true });
 
-  const tx = db.transaction((id) => {
+    const inUse = await prisma.course.count({ where: { instructorId: id } });
+    if (inUse > 0) {
+      return res.status(400).json({ error: 'Bu eğitmene bağlı kurslar var, önce onları başka eğitmene atayın' });
+    }
+
     // Stale Q&A threads can outlive a course reassignment (question rows keep
     // their original instructor_id even after the course moves to someone else).
-    const questionIds = db.prepare('SELECT id FROM questions WHERE instructor_id = ?').all(id).map((q) => q.id);
-    for (const questionId of questionIds) {
-      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
-    }
-    db.prepare('DELETE FROM questions WHERE instructor_id = ?').run(id);
-    db.prepare('UPDATE blog_posts SET instructor_id = NULL WHERE instructor_id = ?').run(id);
-    db.prepare('DELETE FROM instructors WHERE id = ?').run(id);
-  });
-  tx(req.params.id);
-  res.json({ deleted: true });
+    await prisma.$transaction([
+      prisma.questionMessage.deleteMany({ where: { question: { instructorId: id } } }),
+      prisma.question.deleteMany({ where: { instructorId: id } }),
+      prisma.blogPost.updateMany({ where: { instructorId: id }, data: { instructorId: null } }),
+      prisma.instructor.deleteMany({ where: { id } }),
+    ]);
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Students ----------
 
-router.get('/students', (req, res) => {
-  const students = db
-    .prepare(
-      `SELECT users.id, users.name, users.email, users.phone, users.created_at AS createdAt,
-              COUNT(enrollments.id) AS enrollmentCount
-       FROM users
-       LEFT JOIN enrollments ON enrollments.user_id = users.id
-       WHERE users.role = 'student'
-       GROUP BY users.id
-       ORDER BY users.id DESC`
-    )
-    .all();
-  res.json(students);
+router.get('/students', async (req, res, next) => {
+  try {
+    const students = await prisma.user.findMany({
+      where: { role: 'student' },
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+        _count: { select: { enrollments: true } },
+      },
+    });
+    res.json(
+      students.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        createdAt: s.createdAt,
+        enrollmentCount: s._count.enrollments,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.get('/students/:id', (req, res) => {
-  const student = db
-    .prepare(
-      `SELECT id, name, email, phone, birth_date AS birthDate, instagram, tiktok, youtube, linkedin, twitter,
-              created_at AS createdAt
-       FROM users WHERE id = ? AND role = 'student'`
-    )
-    .get(req.params.id);
-  if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
+router.get('/students/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const student = id
+      ? await prisma.user.findFirst({
+          where: { id, role: 'student' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            birthDate: true,
+            instagram: true,
+            tiktok: true,
+            youtube: true,
+            linkedin: true,
+            twitter: true,
+            createdAt: true,
+          },
+        })
+      : null;
+    if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
 
-  const enrollments = db
-    .prepare(
-      `SELECT enrollments.id, enrollments.progress, enrollments.payment_status AS paymentStatus,
-              courses.id AS courseId, courses.title AS courseTitle, courses.category AS category
-       FROM enrollments JOIN courses ON courses.id = enrollments.course_id
-       WHERE enrollments.user_id = ?`
-    )
-    .all(req.params.id);
+    const enrollments = await prisma.enrollment.findMany({
+      where: { userId: id },
+      include: { course: { select: { id: true, title: true, category: true } } },
+    });
 
-  res.json({ ...student, enrollments });
+    res.json({
+      ...student,
+      enrollments: enrollments.map((e) => ({
+        id: e.id,
+        progress: e.progress,
+        paymentStatus: e.paymentStatus,
+        courseId: e.course.id,
+        courseTitle: e.course.title,
+        category: e.course.category,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.delete('/students/:id', (req, res) => {
-  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
-  if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
+router.delete('/students/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const student = id
+      ? await prisma.user.findFirst({ where: { id, role: 'student' }, select: { id: true } })
+      : null;
+    if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
 
-  const tx = db.transaction((id) => {
-    const questionIds = db.prepare('SELECT id FROM questions WHERE user_id = ?').all(id).map((q) => q.id);
-    for (const questionId of questionIds) {
-      db.prepare('DELETE FROM question_messages WHERE question_id = ?').run(questionId);
-    }
-    db.prepare('DELETE FROM questions WHERE user_id = ?').run(id);
     // Reviews the student already left stay visible (they're already public,
     // approved content) — just detach the author instead of deleting them.
-    db.prepare('UPDATE testimonials SET user_id = NULL WHERE user_id = ?').run(id);
-    db.prepare('DELETE FROM enrollments WHERE user_id = ?').run(id);
-    db.prepare('DELETE FROM users WHERE id = ?').run(id);
-  });
-  tx(req.params.id);
-  res.json({ deleted: true });
+    await prisma.$transaction([
+      prisma.questionMessage.deleteMany({ where: { question: { userId: id } } }),
+      prisma.question.deleteMany({ where: { userId: id } }),
+      prisma.testimonial.updateMany({ where: { userId: id }, data: { userId: null } }),
+      prisma.enrollment.deleteMany({ where: { userId: id } }),
+      prisma.user.deleteMany({ where: { id } }),
+    ]);
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/students/:id/reset-password', (req, res) => {
-  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
-  if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
+router.post('/students/:id/reset-password', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const student = id
+      ? await prisma.user.findFirst({ where: { id, role: 'student' }, select: { id: true } })
+      : null;
+    if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
 
-  const password = generateRandomPassword();
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), req.params.id);
-  res.json({ password });
+    const password = generateRandomPassword();
+    await prisma.user.update({ where: { id }, data: { passwordHash: bcrypt.hashSync(password, 10) } });
+    res.json({ password });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/students/:id/enroll', (req, res) => {
-  const { courseId, paymentStatus } = req.body;
-  if (!courseId) return res.status(400).json({ error: 'courseId zorunlu' });
+router.post('/students/:id/enroll', async (req, res, next) => {
+  try {
+    const userId = toId(req.params.id);
+    const { courseId, paymentStatus } = req.body;
+    if (!courseId) return res.status(400).json({ error: 'courseId zorunlu' });
 
-  const existing = db
-    .prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?')
-    .get(req.params.id, courseId);
-
-  if (existing) {
-    db.prepare('UPDATE enrollments SET payment_status = ? WHERE id = ?').run(
-      paymentStatus || 'approved',
-      existing.id
-    );
-  } else {
-    db.prepare(
-      'INSERT INTO enrollments (user_id, course_id, progress, payment_status) VALUES (?, ?, 0, ?)'
-    ).run(req.params.id, courseId, paymentStatus || 'approved');
+    await prisma.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId: Number(courseId) } },
+      create: {
+        userId,
+        courseId: Number(courseId),
+        progress: 0,
+        paymentStatus: paymentStatus || 'approved',
+      },
+      update: { paymentStatus: paymentStatus || 'approved' },
+    });
+    res.status(201).json({ assigned: true });
+  } catch (err) {
+    next(err);
   }
-  res.status(201).json({ assigned: true });
 });
 
-router.patch('/enrollments/:id', (req, res) => {
-  const { progress, paymentStatus } = req.body;
-  const fields = [];
-  const values = [];
-  if (progress !== undefined) {
-    fields.push('progress = ?');
-    values.push(progress);
-  }
-  if (paymentStatus !== undefined) {
-    fields.push('payment_status = ?');
-    values.push(paymentStatus);
-  }
-  if (fields.length === 0) return res.status(400).json({ error: 'Güncellenecek alan yok' });
+router.patch('/enrollments/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { progress, paymentStatus } = req.body;
+    const data = {};
+    if (progress !== undefined) data.progress = Number(progress);
+    if (paymentStatus !== undefined) data.paymentStatus = paymentStatus;
+    if (Object.keys(data).length === 0) return res.status(400).json({ error: 'Güncellenecek alan yok' });
 
-  values.push(req.params.id);
-  db.prepare(`UPDATE enrollments SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-  res.json({ updated: true });
+    if (id) await prisma.enrollment.updateMany({ where: { id }, data });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Orders (read-only — no cancel/refund action by design) ----------
 
-router.get('/orders', (req, res) => {
-  const orders = db
-    .prepare(
-      `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
-              enrollments.payment_provider AS paymentProvider, enrollments.payment_reference AS paymentReference,
-              enrollments.created_at AS createdAt,
-              enrollments.reminder_sent_at AS reminderSentAt,
-              users.id AS studentId, users.name AS studentName, users.email AS studentEmail,
-              courses.id AS courseId, courses.title AS courseTitle
-       FROM enrollments
-       JOIN users ON users.id = enrollments.user_id
-       JOIN courses ON courses.id = enrollments.course_id
-       WHERE enrollments.amount IS NOT NULL
-       ORDER BY enrollments.created_at DESC`
-    )
-    .all();
-  res.json(orders);
+router.get('/orders', async (req, res, next) => {
+  try {
+    const orders = await prisma.enrollment.findMany({
+      where: { amount: { not: null } },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        course: { select: { id: true, title: true } },
+      },
+    });
+    res.json(
+      orders.map((o) => ({
+        id: o.id,
+        amount: o.amount,
+        paymentStatus: o.paymentStatus,
+        paymentProvider: o.paymentProvider,
+        paymentReference: o.paymentReference,
+        createdAt: o.createdAt,
+        reminderSentAt: o.reminderSentAt,
+        studentId: o.user.id,
+        studentName: o.user.name,
+        studentEmail: o.user.email,
+        courseId: o.course.id,
+        courseTitle: o.course.title,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/orders/:id/remind', async (req, res) => {
-  const order = db
-    .prepare(
-      `SELECT enrollments.id, enrollments.amount, enrollments.payment_status AS paymentStatus,
-              enrollments.course_id AS courseId,
-              users.name AS studentName, users.email AS studentEmail,
-              courses.title AS courseTitle
-       FROM enrollments
-       JOIN users ON users.id = enrollments.user_id
-       JOIN courses ON courses.id = enrollments.course_id
-       WHERE enrollments.id = ?`
-    )
-    .get(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
-  if (order.paymentStatus !== 'pending') {
-    return res.status(400).json({ error: 'Hatırlatma sadece sepette bekleyen siparişler için gönderilebilir' });
-  }
-
-  const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+router.post('/orders/:id/remind', async (req, res, next) => {
   try {
-    await sendCartReminderEmail({
-      name: order.studentName,
-      email: order.studentEmail,
-      courseTitle: order.courseTitle,
-      price: order.amount,
-      link: `${baseUrl}/odeme/${order.courseId}`,
-    });
-    db.prepare("UPDATE enrollments SET reminder_sent_at = datetime('now') WHERE id = ?").run(req.params.id);
-    res.json({ sent: true });
+    const id = toId(req.params.id);
+    const order = id
+      ? await prisma.enrollment.findUnique({
+          where: { id },
+          include: {
+            user: { select: { name: true, email: true } },
+            course: { select: { id: true, title: true } },
+          },
+        })
+      : null;
+    if (!order) return res.status(404).json({ error: 'Sipariş bulunamadı' });
+    if (order.paymentStatus !== 'pending') {
+      return res.status(400).json({ error: 'Hatırlatma sadece sepette bekleyen siparişler için gönderilebilir' });
+    }
+
+    const baseUrl = process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    try {
+      await sendCartReminderEmail({
+        name: order.user.name,
+        email: order.user.email,
+        courseTitle: order.course.title,
+        price: order.amount,
+        link: `${baseUrl}/odeme/${order.course.id}`,
+      });
+      await prisma.enrollment.update({ where: { id }, data: { reminderSentAt: new Date() } });
+      res.json({ sent: true });
+    } catch (err) {
+      res.status(502).json({ error: err.message });
+    }
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    next(err);
   }
 });
 
 // ---------- Contact requests ----------
 
-router.get('/contact-requests', (req, res) => {
-  res.json(db.prepare('SELECT * FROM contact_requests ORDER BY id DESC').all());
+router.get('/contact-requests', async (req, res, next) => {
+  try {
+    const rows = await prisma.contactRequest.findMany({ orderBy: { id: 'desc' } });
+    // Frontend bu uçta ham kolon adlarını (created_at) bekliyor.
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        type: r.type,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        company: r.company,
+        category: r.category,
+        subject: r.subject,
+        message: r.message,
+        created_at: r.createdAt,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.get('/applications', (req, res) => {
-  res.json(db.prepare('SELECT * FROM applications ORDER BY id DESC').all());
+router.get('/applications', async (req, res, next) => {
+  try {
+    const rows = await prisma.application.findMany({ orderBy: { id: 'desc' } });
+    res.json(
+      rows.map((a) => ({
+        id: a.id,
+        type: a.type,
+        name: a.name,
+        email: a.email,
+        phone: a.phone,
+        description: a.description,
+        cv_file_url: a.cvFileUrl,
+        created_at: a.createdAt,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.delete('/applications/:id', (req, res) => {
-  db.prepare('DELETE FROM applications WHERE id = ?').run(req.params.id);
-  res.json({ deleted: true });
+router.delete('/applications/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.application.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Blog ----------
 
-router.get('/blog', (req, res) => {
-  res.json(
-    db
-      .prepare(
-        `SELECT blog_posts.*, instructors.name AS instructorName
-         FROM blog_posts
-         LEFT JOIN instructors ON instructors.id = blog_posts.instructor_id
-         ORDER BY (blog_posts.status = 'pending') DESC, blog_posts.created_at DESC`
-      )
-      .all()
-  );
+router.get('/blog', async (req, res, next) => {
+  try {
+    const posts = await prisma.blogPost.findMany({
+      include: { instructor: { select: { name: true } } },
+    });
+    // Eski sıralama: bekleyenler önce, sonra created_at DESC.
+    posts.sort((a, b) => {
+      const pendingDiff = Number(b.status === 'pending') - Number(a.status === 'pending');
+      if (pendingDiff !== 0) return pendingDiff;
+      return b.createdAt - a.createdAt;
+    });
+    res.json(
+      posts.map((p) => ({
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        excerpt: p.excerpt,
+        content: p.content,
+        cover_image_url: p.coverImageUrl,
+        status: p.status,
+        instructor_id: p.instructorId,
+        created_at: p.createdAt,
+        instructorName: p.instructor?.name ?? null,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post('/blog/cover', (req, res) => {
@@ -648,190 +949,258 @@ router.post('/blog/cover', (req, res) => {
   });
 });
 
-router.post('/blog', (req, res) => {
-  const { title, excerpt, content, coverImageUrl, status } = req.body;
-  if (!title || !title.trim() || !content || !content.trim()) {
-    return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
-  }
-  let slug = slugify(title);
-  const existing = db.prepare('SELECT id FROM blog_posts WHERE slug = ?').get(slug);
-  if (existing) slug = `${slug}-${Date.now()}`;
+router.post('/blog', async (req, res, next) => {
+  try {
+    const { title, excerpt, content, coverImageUrl, status } = req.body;
+    if (!title || !title.trim() || !content || !content.trim()) {
+      return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+    }
+    let slug = slugify(title);
+    const existing = await prisma.blogPost.findUnique({ where: { slug }, select: { id: true } });
+    if (existing) slug = `${slug}-${Date.now()}`;
 
-  const result = db
-    .prepare(
-      'INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, status) VALUES (?, ?, ?, ?, ?, ?)'
-    )
-    .run(
-      title.trim(),
-      slug,
-      excerpt || '',
-      content.trim(),
-      coverImageUrl || null,
-      status === 'pending' ? 'pending' : 'published'
-    );
-  res.status(201).json({ id: result.lastInsertRowid, slug });
+    const created = await prisma.blogPost.create({
+      data: {
+        title: title.trim(),
+        slug,
+        excerpt: excerpt || '',
+        content: content.trim(),
+        coverImageUrl: coverImageUrl || null,
+        status: status === 'pending' ? 'pending' : 'published',
+      },
+    });
+    res.status(201).json({ id: created.id, slug });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.put('/blog/:id', (req, res) => {
-  const { title, excerpt, content, coverImageUrl, status } = req.body;
-  if (!title || !title.trim() || !content || !content.trim()) {
-    return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+router.put('/blog/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { title, excerpt, content, coverImageUrl, status } = req.body;
+    if (!title || !title.trim() || !content || !content.trim()) {
+      return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
+    }
+    if (id) {
+      await prisma.blogPost.updateMany({
+        where: { id },
+        data: {
+          title: title.trim(),
+          excerpt: excerpt || '',
+          content: content.trim(),
+          coverImageUrl: coverImageUrl || null,
+          status: status === 'pending' || status === 'rejected' ? status : 'published',
+        },
+      });
+    }
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
   }
-  db.prepare(
-    'UPDATE blog_posts SET title = ?, excerpt = ?, content = ?, cover_image_url = ?, status = ? WHERE id = ?'
-  ).run(
-    title.trim(),
-    excerpt || '',
-    content.trim(),
-    coverImageUrl || null,
-    status === 'pending' || status === 'rejected' ? status : 'published',
-    req.params.id
-  );
-  res.json({ updated: true });
 });
 
-router.patch('/blog/:id/status', (req, res) => {
-  const { status } = req.body;
-  if (!['published', 'rejected'].includes(status)) {
-    return res.status(400).json({ error: "Durum 'published' veya 'rejected' olmalı" });
+router.patch('/blog/:id/status', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const { status } = req.body;
+    if (!['published', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: "Durum 'published' veya 'rejected' olmalı" });
+    }
+    const result = id ? await prisma.blogPost.updateMany({ where: { id }, data: { status } }) : { count: 0 };
+    if (result.count === 0) return res.status(404).json({ error: 'Yazı bulunamadı' });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
   }
-  const result = db.prepare('UPDATE blog_posts SET status = ? WHERE id = ?').run(status, req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Yazı bulunamadı' });
-  res.json({ updated: true });
 });
 
-router.delete('/blog/:id', (req, res) => {
-  db.prepare('DELETE FROM blog_posts WHERE id = ?').run(req.params.id);
-  res.json({ deleted: true });
+router.delete('/blog/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.blogPost.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Site settings ----------
 
-router.get('/settings', (req, res) => {
-  const rows = db.prepare('SELECT key, value FROM site_settings').all();
-  res.json(Object.fromEntries(rows.map((r) => [r.key, r.value])));
+router.get('/settings', async (req, res, next) => {
+  try {
+    const rows = await prisma.siteSetting.findMany();
+    res.json(Object.fromEntries(rows.map((r) => [r.key, r.value])));
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.put('/settings', (req, res) => {
-  const body = { ...req.body };
-  if (body.landing_hero_video_id) {
-    body.landing_hero_video_id = extractVideoId(body.landing_hero_video_id, body.landing_hero_video_provider);
-  }
+router.put('/settings', async (req, res, next) => {
+  try {
+    const body = { ...req.body };
+    if (body.landing_hero_video_id) {
+      body.landing_hero_video_id = extractVideoId(body.landing_hero_video_id, body.landing_hero_video_provider);
+    }
 
-  const entries = Object.entries(body || {});
-  const upsert = db.prepare(
-    'INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-  );
-  const tx = db.transaction((rows) => {
-    rows.forEach(([key, value]) => upsert.run(key, String(value)));
-  });
-  tx(entries);
-  res.json({ updated: true });
+    const entries = Object.entries(body || {});
+    await prisma.$transaction(
+      entries.map(([key, value]) =>
+        prisma.siteSetting.upsert({
+          where: { key },
+          create: { key, value: String(value) },
+          update: { value: String(value) },
+        })
+      )
+    );
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Questions (admin görünümü — eğitmenlere sorulan tüm sorular) ----------
 
-router.get('/questions', (req, res) => {
-  res.json(
-    db
-      .prepare(
-        `SELECT questions.id, questions.question_text AS questionText,
-                COALESCE(
-                  (SELECT qm.message_text FROM question_messages qm
-                   WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor'
-                   ORDER BY qm.created_at DESC LIMIT 1),
-                  questions.answer_text
-                ) AS answerText,
-                questions.created_at AS createdAt,
-                COALESCE(
-                  (SELECT qm.created_at FROM question_messages qm
-                   WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor'
-                   ORDER BY qm.created_at DESC LIMIT 1),
-                  questions.answered_at
-                ) AS answeredAt,
-                courses.title AS courseTitle, users.name AS studentName, instructors.name AS instructorName
-         FROM questions
-         JOIN courses ON courses.id = questions.course_id
-         JOIN users ON users.id = questions.user_id
-         JOIN instructors ON instructors.id = questions.instructor_id
-         ORDER BY (
-           EXISTS (SELECT 1 FROM question_messages qm WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor')
-           OR questions.answer_text IS NOT NULL
-         ), questions.created_at DESC`
-      )
-      .all()
-  );
+router.get('/questions', async (req, res, next) => {
+  try {
+    const questions = await prisma.question.findMany({
+      include: {
+        course: { select: { title: true } },
+        user: { select: { name: true } },
+        instructor: { select: { name: true } },
+        messages: {
+          where: { senderRole: 'instructor' },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { messageText: true, createdAt: true },
+        },
+      },
+    });
+
+    const rows = questions.map((q) => {
+      const lastInstructorMessage = q.messages[0] || null;
+      return {
+        id: q.id,
+        questionText: q.questionText,
+        answerText: lastInstructorMessage?.messageText ?? q.answerText,
+        createdAt: q.createdAt,
+        answeredAt: lastInstructorMessage?.createdAt ?? q.answeredAt,
+        courseTitle: q.course.title,
+        studentName: q.user.name,
+        instructorName: q.instructor.name,
+      };
+    });
+    // Eski sıralama: cevaplanmamışlar önce, sonra created_at DESC.
+    rows.sort((a, b) => {
+      const answeredDiff = Number(Boolean(a.answerText)) - Number(Boolean(b.answerText));
+      if (answeredDiff !== 0) return answeredDiff;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Overview (admin dashboard özet istatistikleri) ----------
 
-router.get('/overview', (req, res) => {
-  const c = (sql) => db.prepare(sql).get().c;
-  res.json({
-    students: c("SELECT COUNT(*) AS c FROM users WHERE role = 'student'"),
-    courses: c('SELECT COUNT(*) AS c FROM courses'),
-    instructors: c('SELECT COUNT(*) AS c FROM instructors'),
-    contactRequests: c('SELECT COUNT(*) AS c FROM contact_requests'),
-    applications: c('SELECT COUNT(*) AS c FROM applications'),
-    pendingBlog: c("SELECT COUNT(*) AS c FROM blog_posts WHERE status = 'pending'"),
-    unansweredQuestions: c(
-      `SELECT COUNT(*) AS c FROM questions
-       WHERE NOT EXISTS (SELECT 1 FROM question_messages qm WHERE qm.question_id = questions.id AND qm.sender_role = 'instructor')
-         AND answer_text IS NULL`
-    ),
-    sales: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'approved'"),
-    cart: c("SELECT COUNT(*) AS c FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'pending'"),
-    revenue: db
-      .prepare("SELECT COALESCE(SUM(amount), 0) AS s FROM enrollments WHERE amount IS NOT NULL AND payment_status = 'approved'")
-      .get().s,
-  });
+router.get('/overview', async (req, res, next) => {
+  try {
+    const [students, courses, instructors, contactRequests, applications, pendingBlog, unansweredQuestions, sales, cart, revenue] =
+      await Promise.all([
+        prisma.user.count({ where: { role: 'student' } }),
+        prisma.course.count(),
+        prisma.instructor.count(),
+        prisma.contactRequest.count(),
+        prisma.application.count(),
+        prisma.blogPost.count({ where: { status: 'pending' } }),
+        prisma.question.count({
+          where: { answerText: null, messages: { none: { senderRole: 'instructor' } } },
+        }),
+        prisma.enrollment.count({ where: { amount: { not: null }, paymentStatus: 'approved' } }),
+        prisma.enrollment.count({ where: { amount: { not: null }, paymentStatus: 'pending' } }),
+        prisma.enrollment.aggregate({
+          where: { amount: { not: null }, paymentStatus: 'approved' },
+          _sum: { amount: true },
+        }),
+      ]);
+
+    res.json({
+      students,
+      courses,
+      instructors,
+      contactRequests,
+      applications,
+      pendingBlog,
+      unansweredQuestions,
+      sales,
+      cart,
+      revenue: revenue._sum.amount || 0,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Bildirimler (push) ----------
 
-router.get('/notifications', (req, res) => {
-  res.json(
-    db
-      .prepare('SELECT id, title, body, recipient_count AS recipientCount, created_at AS createdAt FROM notifications ORDER BY created_at DESC')
-      .all()
-  );
+router.get('/notifications', async (req, res, next) => {
+  try {
+    const rows = await prisma.notification.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json(
+      rows.map((n) => ({
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        recipientCount: n.recipientCount,
+        createdAt: n.createdAt,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/notifications', async (req, res) => {
-  const { title, body } = req.body;
-  if (!title || !title.trim() || !body || !body.trim()) {
-    return res.status(400).json({ error: 'Başlık ve mesaj zorunlu' });
-  }
-  const tokens = db
-    .prepare("SELECT expo_push_token AS t FROM users WHERE expo_push_token IS NOT NULL AND expo_push_token != ''")
-    .all()
-    .map((r) => r.t);
-
-  // Expo Push servisi üzerinden gönder (token varsa). Hata olsa da kayıt tutulur.
-  let sent = 0;
+router.post('/notifications', async (req, res, next) => {
   try {
-    for (let i = 0; i < tokens.length; i += 100) {
-      const batch = tokens.slice(i, i + 100).map((to) => ({
-        to,
-        title: title.trim(),
-        body: body.trim(),
-        sound: 'default',
-      }));
-      const resp = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(batch),
-      });
-      if (resp.ok) sent += batch.length;
+    const { title, body } = req.body;
+    if (!title || !title.trim() || !body || !body.trim()) {
+      return res.status(400).json({ error: 'Başlık ve mesaj zorunlu' });
     }
-  } catch (err) {
-    console.error('Push gönderim hatası:', err.message);
-  }
+    const users = await prisma.user.findMany({
+      where: { expoPushToken: { not: null } },
+      select: { expoPushToken: true },
+    });
+    const tokens = users.map((u) => u.expoPushToken).filter(Boolean);
 
-  const result = db
-    .prepare('INSERT INTO notifications (title, body, recipient_count) VALUES (?, ?, ?)')
-    .run(title.trim(), body.trim(), tokens.length);
-  res.status(201).json({ id: result.lastInsertRowid, recipientCount: tokens.length, sent });
+    // Expo Push servisi üzerinden gönder (token varsa). Hata olsa da kayıt tutulur.
+    let sent = 0;
+    try {
+      for (let i = 0; i < tokens.length; i += 100) {
+        const batch = tokens.slice(i, i + 100).map((to) => ({
+          to,
+          title: title.trim(),
+          body: body.trim(),
+          sound: 'default',
+        }));
+        const resp = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(batch),
+        });
+        if (resp.ok) sent += batch.length;
+      }
+    } catch (err) {
+      console.error('Push gönderim hatası:', err.message);
+    }
+
+    const created = await prisma.notification.create({
+      data: { title: title.trim(), body: body.trim(), recipientCount: tokens.length },
+    });
+    res.status(201).json({ id: created.id, recipientCount: tokens.length, sent });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

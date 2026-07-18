@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
-import db from '../db.js';
+import prisma from '../prisma.js';
 import { STORAGE_DIR } from '../storagePath.js';
 
 const uploadsDir = path.join(STORAGE_DIR, 'uploads');
@@ -26,32 +26,40 @@ const upload = multer({
 
 const router = Router();
 
-router.post('/intern', (req, res) => {
-  upload.single('cv')(req, res, (err) => {
+router.post('/intern', (req, res, next) => {
+  upload.single('cv')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
 
+    try {
+      const { name, email, phone, description } = req.body;
+      if (!name || !email || !phone) {
+        return res.status(400).json({ error: 'İsim, e-posta ve telefon zorunlu' });
+      }
+
+      const cvUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      await prisma.application.create({
+        data: { type: 'intern', name, email, phone, description: description || '', cvFileUrl: cvUrl },
+      });
+      res.status(201).json({ ok: true });
+    } catch (e) {
+      next(e);
+    }
+  });
+});
+
+router.post('/instructor', async (req, res, next) => {
+  try {
     const { name, email, phone, description } = req.body;
     if (!name || !email || !phone) {
       return res.status(400).json({ error: 'İsim, e-posta ve telefon zorunlu' });
     }
-
-    const cvUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    db.prepare(
-      'INSERT INTO applications (type, name, email, phone, description, cv_file_url) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run('intern', name, email, phone, description || '', cvUrl);
+    await prisma.application.create({
+      data: { type: 'instructor', name, email, phone, description: description || '' },
+    });
     res.status(201).json({ ok: true });
-  });
-});
-
-router.post('/instructor', (req, res) => {
-  const { name, email, phone, description } = req.body;
-  if (!name || !email || !phone) {
-    return res.status(400).json({ error: 'İsim, e-posta ve telefon zorunlu' });
+  } catch (err) {
+    next(err);
   }
-  db.prepare(
-    'INSERT INTO applications (type, name, email, phone, description) VALUES (?, ?, ?, ?, ?)'
-  ).run('instructor', name, email, phone, description || '');
-  res.status(201).json({ ok: true });
 });
 
 export default router;

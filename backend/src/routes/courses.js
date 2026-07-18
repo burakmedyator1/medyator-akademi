@@ -1,204 +1,288 @@
 import { Router } from 'express';
-import db from '../db.js';
+import prisma from '../prisma.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { rejectInstructor } from '../middleware/instructor.js';
 
 const router = Router();
 
-const COURSE_FIELDS = `
-  courses.id, courses.title, courses.category, courses.delivery_type AS deliveryType,
-  courses.description, courses.cover_color AS coverColor, courses.cover_image_url AS coverImageUrl,
-  courses.price AS price, courses.display_order AS displayOrder,
-  courses.instructor_id AS instructorId, instructors.name AS instructorName,
-  instructors.title AS instructorTitle, instructors.photo_url AS instructorPhotoUrl,
-  instructors.avatar_color AS instructorAvatarColor
-`;
+const DELIVERY_TYPES = ['online', 'corporate', 'in_person'];
 
-router.get('/', (req, res) => {
-  const { deliveryType, category } = req.query;
-  let query = `SELECT ${COURSE_FIELDS} FROM courses JOIN instructors ON instructors.id = courses.instructor_id WHERE 1=1`;
-  const params = [];
+// Route param/query değerleri metin gelir; Prisma Int/enum alanlarında tip
+// uyuşmazlığı fırlatır. Geçersiz id eski SQLite davranışıyla uyumlu şekilde
+// "bulunamadı" muamelesi görür.
+function toId(value) {
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
-  if (deliveryType) {
-    query += ' AND courses.delivery_type = ?';
-    params.push(deliveryType);
+const COURSE_INCLUDE = {
+  instructor: { select: { name: true, title: true, photoUrl: true, avatarColor: true } },
+};
+
+// Eski SQL çıktısıyla birebir aynı JSON şekli (düz alanlar) korunuyor.
+function mapCourse(course) {
+  return {
+    id: course.id,
+    title: course.title,
+    category: course.category,
+    deliveryType: course.deliveryType,
+    description: course.description,
+    coverColor: course.coverColor,
+    coverImageUrl: course.coverImageUrl,
+    price: course.price,
+    displayOrder: course.displayOrder,
+    instructorId: course.instructorId,
+    instructorName: course.instructor?.name,
+    instructorTitle: course.instructor?.title,
+    instructorPhotoUrl: course.instructor?.photoUrl,
+    instructorAvatarColor: course.instructor?.avatarColor,
+  };
+}
+
+router.get('/', async (req, res, next) => {
+  try {
+    const { deliveryType, category } = req.query;
+    const where = { instructorId: { not: null } };
+    if (deliveryType && DELIVERY_TYPES.includes(deliveryType)) where.deliveryType = deliveryType;
+    if (category) where.category = category;
+
+    const courses = await prisma.course.findMany({
+      where,
+      include: { ...COURSE_INCLUDE, _count: { select: { lessons: true } } },
+      orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }],
+    });
+
+    res.json(courses.map((c) => ({ ...mapCourse(c), lessonCount: c._count.lessons })));
+  } catch (err) {
+    next(err);
   }
-  if (category) {
-    query += ' AND courses.category = ?';
-    params.push(category);
-  }
-  query += ' ORDER BY courses.display_order ASC, courses.id ASC';
-
-  const courses = db.prepare(query).all(...params);
-  const withLessonCount = courses.map((course) => ({
-    ...course,
-    lessonCount: db
-      .prepare('SELECT COUNT(*) AS count FROM lessons WHERE course_id = ?')
-      .get(course.id).count,
-  }));
-
-  res.json(withLessonCount);
 });
 
-router.get('/:id', (req, res) => {
-  const course = db
-    .prepare(`SELECT ${COURSE_FIELDS} FROM courses JOIN instructors ON instructors.id = courses.instructor_id WHERE courses.id = ?`)
-    .get(req.params.id);
+router.get('/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-  if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
+    const course = await prisma.course.findUnique({
+      where: { id },
+      include: {
+        ...COURSE_INCLUDE,
+        lessons: {
+          orderBy: { lessonOrder: 'asc' },
+          select: { id: true, title: true, description: true, durationMinutes: true, lessonOrder: true, isPreview: true },
+        },
+      },
+    });
+    if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-  const lessons = db
-    .prepare(
-      'SELECT id, title, description, duration_minutes AS durationMinutes, lesson_order AS order_, is_preview AS isPreview FROM lessons WHERE course_id = ? ORDER BY lesson_order'
-    )
-    .all(req.params.id);
-
-  res.json({ ...course, lessons: lessons.map((l) => ({ ...l, isPreview: Boolean(l.isPreview) })) });
+    res.json({
+      ...mapCourse(course),
+      lessons: course.lessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        durationMinutes: l.durationMinutes,
+        order_: l.lessonOrder,
+        isPreview: l.isPreview,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/:id/enroll', requireAuth, rejectInstructor, (req, res) => {
-  const course = db.prepare('SELECT id FROM courses WHERE id = ?').get(req.params.id);
-  if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
+router.post('/:id/enroll', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-  const existing = db
-    .prepare('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?')
-    .get(req.user.id, req.params.id);
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-  if (!existing) {
-    db.prepare('INSERT INTO enrollments (user_id, course_id, progress) VALUES (?, ?, 0)').run(
-      req.user.id,
-      req.params.id
-    );
+    const existing = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId: req.user.id, courseId } },
+      select: { id: true },
+    });
+    if (!existing) {
+      await prisma.enrollment.create({ data: { userId: req.user.id, courseId, progress: 0 } });
+    }
+
+    res.status(201).json({ enrolled: true });
+  } catch (err) {
+    next(err);
   }
-
-  res.status(201).json({ enrolled: true });
 });
 
 // Protection point: video_id/provider only ever leave the server for either
 // (a) a lesson the admin has explicitly marked as a free preview — anyone can
 // watch, no account needed — or (b) an authenticated user who holds an
 // approved enrollment row for this course.
-router.get('/:id/lessons/:lessonId/video', optionalAuth, (req, res) => {
-  const lesson = db
-    .prepare(
-      'SELECT video_provider AS provider, video_id AS videoId, title, is_preview AS isPreview FROM lessons WHERE id = ? AND course_id = ?'
-    )
-    .get(req.params.lessonId, req.params.id);
+router.get('/:id/lessons/:lessonId/video', optionalAuth, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    const lessonId = toId(req.params.lessonId);
+    if (!courseId || !lessonId) return res.status(404).json({ error: 'Ders bulunamadı' });
 
-  if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
+    const lesson = await prisma.lesson.findFirst({
+      where: { id: lessonId, courseId },
+      select: { videoProvider: true, videoId: true, title: true, isPreview: true },
+    });
+    if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
 
-  if (lesson.isPreview) {
-    const { isPreview, ...videoInfo } = lesson;
-    return res.json(videoInfo);
+    const videoInfo = { provider: lesson.videoProvider, videoId: lesson.videoId, title: lesson.title };
+    if (lesson.isPreview) return res.json(videoInfo);
+
+    if (!req.user) {
+      return res.status(403).json({ error: 'Bu derse erişmek için giriş yapmalısınız' });
+    }
+    if (req.user.role === 'instructor') {
+      return res.status(403).json({ error: 'Bu işlem eğitmen hesapları için kullanılamaz' });
+    }
+
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { userId: req.user.id, courseId, paymentStatus: 'approved' },
+      select: { id: true },
+    });
+    if (!enrollment) {
+      return res.status(403).json({ error: 'Bu derse erişmek için kursa kayıtlı ve onaylı olmalısınız' });
+    }
+
+    res.json(videoInfo);
+  } catch (err) {
+    next(err);
   }
-
-  if (!req.user) {
-    return res.status(403).json({ error: 'Bu derse erişmek için giriş yapmalısınız' });
-  }
-  if (req.user.role === 'instructor') {
-    return res.status(403).json({ error: 'Bu işlem eğitmen hesapları için kullanılamaz' });
-  }
-
-  const enrollment = db
-    .prepare("SELECT id FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
-    .get(req.user.id, req.params.id);
-
-  if (!enrollment) {
-    return res.status(403).json({ error: 'Bu derse erişmek için kursa kayıtlı ve onaylı olmalısınız' });
-  }
-
-  const { isPreview, ...videoInfo } = lesson;
-  res.json(videoInfo);
 });
 
-router.get('/:id/enrollment', requireAuth, rejectInstructor, (req, res) => {
-  const enrollment = db
-    .prepare(
-      "SELECT progress, payment_status AS paymentStatus FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'"
-    )
-    .get(req.user.id, req.params.id);
-  if (!enrollment) return res.status(404).json({ error: 'Kayıt bulunamadı' });
-  res.json(enrollment);
+router.get('/:id/enrollment', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.status(404).json({ error: 'Kayıt bulunamadı' });
+
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { userId: req.user.id, courseId, paymentStatus: 'approved' },
+      select: { progress: true, paymentStatus: true },
+    });
+    if (!enrollment) return res.status(404).json({ error: 'Kayıt bulunamadı' });
+    res.json(enrollment);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Marks a lesson watched: progress only ever moves forward (a student
 // re-watching an earlier lesson shouldn't un-complete later ones).
-router.post('/:id/lessons/:lessonId/complete', requireAuth, rejectInstructor, (req, res) => {
-  const enrollment = db
-    .prepare("SELECT id, progress FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
-    .get(req.user.id, req.params.id);
-  if (!enrollment) {
-    return res.status(403).json({ error: 'Bu derse erişmek için kursa kayıtlı ve onaylı olmalısınız' });
+router.post('/:id/lessons/:lessonId/complete', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    const lessonId = toId(req.params.lessonId);
+    if (!courseId || !lessonId) return res.status(404).json({ error: 'Ders bulunamadı' });
+
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { userId: req.user.id, courseId, paymentStatus: 'approved' },
+      select: { id: true, progress: true },
+    });
+    if (!enrollment) {
+      return res.status(403).json({ error: 'Bu derse erişmek için kursa kayıtlı ve onaylı olmalısınız' });
+    }
+
+    const lesson = await prisma.lesson.findFirst({
+      where: { id: lessonId, courseId },
+      select: { lessonOrder: true },
+    });
+    if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
+
+    const progress = Math.max(enrollment.progress, lesson.lessonOrder);
+    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { progress } });
+    res.json({ progress });
+  } catch (err) {
+    next(err);
   }
-
-  const lesson = db
-    .prepare('SELECT lesson_order AS order_ FROM lessons WHERE id = ? AND course_id = ?')
-    .get(req.params.lessonId, req.params.id);
-  if (!lesson) return res.status(404).json({ error: 'Ders bulunamadı' });
-
-  const progress = Math.max(enrollment.progress, lesson.order_);
-  db.prepare('UPDATE enrollments SET progress = ? WHERE id = ?').run(progress, enrollment.id);
-  res.json({ progress });
 });
 
 // ---------- Course reviews (only after the student has finished the course) ----------
 
-router.get('/:id/reviews', (req, res) => {
-  const reviews = db
-    .prepare(
-      `SELECT student_name AS studentName, quote, rating, avatar_color AS avatarColor, photo_url AS photoUrl
-       FROM testimonials WHERE course_id = ? AND status = 'approved' ORDER BY created_at DESC`
-    )
-    .all(req.params.id);
-  res.json(reviews);
+router.get('/:id/reviews', async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.json([]);
+
+    const reviews = await prisma.testimonial.findMany({
+      where: { courseId, status: 'approved' },
+      orderBy: { createdAt: 'desc' },
+      select: { studentName: true, quote: true, rating: true, avatarColor: true, photoUrl: true },
+    });
+    res.json(reviews);
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.get('/:id/review', requireAuth, rejectInstructor, (req, res) => {
-  const review = db
-    .prepare(
-      `SELECT id, rating, quote, status FROM testimonials WHERE user_id = ? AND course_id = ?`
-    )
-    .get(req.user.id, req.params.id);
-  res.json(review || null);
+router.get('/:id/review', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.json(null);
+
+    const review = await prisma.testimonial.findFirst({
+      where: { userId: req.user.id, courseId },
+      select: { id: true, rating: true, quote: true, status: true },
+    });
+    res.json(review || null);
+  } catch (err) {
+    next(err);
+  }
 });
 
-router.post('/:id/review', requireAuth, rejectInstructor, (req, res) => {
-  const { rating, quote } = req.body;
-  const ratingNum = Number(rating);
-  if (!ratingNum || ratingNum < 1 || ratingNum > 5 || !quote || !quote.trim()) {
-    return res.status(400).json({ error: 'Puan (1-5) ve yorum metni zorunlu' });
-  }
+router.post('/:id/review', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-  const enrollment = db
-    .prepare("SELECT progress FROM enrollments WHERE user_id = ? AND course_id = ? AND payment_status = 'approved'")
-    .get(req.user.id, req.params.id);
-  if (!enrollment) {
-    return res.status(403).json({ error: 'Değerlendirme yapabilmek için bu kursa kayıtlı ve onaylı olmalısın' });
-  }
+    const { rating, quote } = req.body;
+    const ratingNum = Number(rating);
+    if (!ratingNum || ratingNum < 1 || ratingNum > 5 || !quote || !quote.trim()) {
+      return res.status(400).json({ error: 'Puan (1-5) ve yorum metni zorunlu' });
+    }
 
-  const lessonCount = db
-    .prepare('SELECT COUNT(*) AS count FROM lessons WHERE course_id = ?')
-    .get(req.params.id).count;
-  if (lessonCount === 0 || enrollment.progress < lessonCount) {
-    return res.status(403).json({ error: 'Değerlendirme yapabilmek için kursu tamamlamış olmalısın' });
-  }
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { userId: req.user.id, courseId, paymentStatus: 'approved' },
+      select: { progress: true },
+    });
+    if (!enrollment) {
+      return res.status(403).json({ error: 'Değerlendirme yapabilmek için bu kursa kayıtlı ve onaylı olmalısın' });
+    }
 
-  const user = db.prepare('SELECT name FROM users WHERE id = ?').get(req.user.id);
-  const existing = db
-    .prepare('SELECT id FROM testimonials WHERE user_id = ? AND course_id = ?')
-    .get(req.user.id, req.params.id);
+    const lessonCount = await prisma.lesson.count({ where: { courseId } });
+    if (lessonCount === 0 || enrollment.progress < lessonCount) {
+      return res.status(403).json({ error: 'Değerlendirme yapabilmek için kursu tamamlamış olmalısın' });
+    }
 
-  if (existing) {
-    db.prepare(
-      "UPDATE testimonials SET rating = ?, quote = ?, status = 'pending' WHERE id = ?"
-    ).run(ratingNum, quote.trim(), existing.id);
-  } else {
-    db.prepare(
-      `INSERT INTO testimonials (student_name, quote, rating, user_id, course_id, status)
-       VALUES (?, ?, ?, ?, ?, 'pending')`
-    ).run(user.name, quote.trim(), ratingNum, req.user.id, req.params.id);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
+    const existing = await prisma.testimonial.findFirst({
+      where: { userId: req.user.id, courseId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await prisma.testimonial.update({
+        where: { id: existing.id },
+        data: { rating: ratingNum, quote: quote.trim(), status: 'pending' },
+      });
+    } else {
+      await prisma.testimonial.create({
+        data: {
+          studentName: user.name,
+          quote: quote.trim(),
+          rating: ratingNum,
+          userId: req.user.id,
+          courseId,
+          status: 'pending',
+        },
+      });
+    }
+    res.status(201).json({ submitted: true });
+  } catch (err) {
+    next(err);
   }
-  res.status(201).json({ submitted: true });
 });
 
 export default router;
