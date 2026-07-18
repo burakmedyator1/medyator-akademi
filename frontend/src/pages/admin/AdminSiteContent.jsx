@@ -63,6 +63,7 @@ const GROUPS = [
   {
     title: 'Footer / Sosyal Medya',
     fields: [
+      { key: 'footer_address', label: 'Adres (footer\'da görünür)', textarea: true },
       { key: 'footer_instagram', label: 'Instagram Linki' },
       { key: 'footer_tiktok', label: 'TikTok Linki' },
       { key: 'footer_youtube', label: 'YouTube Linki' },
@@ -74,7 +75,7 @@ const GROUPS = [
     title: 'Yasal Bilgiler (Sözleşme)',
     fields: [
       { key: 'company_legal_name', label: 'Şirket / Şahıs Ünvanı' },
-      { key: 'company_address', label: 'Açık Adres', textarea: true },
+      { key: 'company_address', label: 'Açık Adres (sözleşme, iletişim ve destek sayfalarında görünür)', textarea: true },
       { key: 'company_tax_office', label: 'Vergi Dairesi' },
       { key: 'company_tax_no', label: 'Vergi No / TC Kimlik No' },
       { key: 'company_mersis', label: 'MERSİS No (varsa)' },

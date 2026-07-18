@@ -48,6 +48,7 @@ const DEFAULT_SETTINGS = {
   landing_delivery_inperson_desc:
     "Sınıf ortamında, mentörlük destekli uygulamalı atölyeler ve bootcamp'ler.",
 
+  footer_address: '',
   footer_instagram: '',
   footer_tiktok: '',
   footer_youtube: '',

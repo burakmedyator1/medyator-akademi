@@ -68,13 +68,13 @@ export default function Footer() {
           <Link to="/iletisim">İletişim</Link>
         </div>
 
-        {(settings.company_address || settings.company_email) && (
+        {(settings.footer_address || settings.company_address || settings.company_email) && (
           <div className="footer__contact">
             <strong>İletişim Bilgilerimiz</strong>
-            {settings.company_address && (
+            {(settings.footer_address || settings.company_address) && (
               <div className="footer__contact-row">
                 <MapPin size={18} />
-                <span>{settings.company_address}</span>
+                <span>{settings.footer_address || settings.company_address}</span>
               </div>
             )}
             {settings.company_email && (
