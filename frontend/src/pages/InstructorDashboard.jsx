@@ -47,6 +47,21 @@ export default function InstructorDashboard() {
     loadPosts();
   }, []);
 
+  // Öğrenciden yeni mesaj geldiğinde sayfayı yenilemeye gerek kalmadan
+  // görünmesi için sohbeti ve cevaplanmamış soru rozetlerini periyodik
+  // tazele. Taslak cevaplar ayrı state'te olduğundan yazılan metin
+  // etkilenmez; sekme arka plandayken istek atılmaz. loadStudents mevcut
+  // öğrenci seçimini korur (yalnızca hiç seçim yokken ilk öğrenciyi seçer).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadQuestions();
+        loadStudents();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function handleReply(questionId) {
     const messageText = replyDrafts[questionId];
     if (!messageText || !messageText.trim()) return;

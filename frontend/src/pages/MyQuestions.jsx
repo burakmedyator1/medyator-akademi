@@ -22,6 +22,19 @@ export default function MyQuestions() {
 
   useEffect(load, []);
 
+  // Eğitmenden yeni cevap geldiğinde sayfayı yenilemeye gerek kalmadan
+  // görünmesi için sohbeti periyodik tazele. Taslak mesajlar ayrı state'te
+  // tutulduğundan yenileme yazılmakta olan metne dokunmaz; sekme arka
+  // plandayken de boşuna istek atılmaz.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        api.getMyQuestions().then(setQuestions);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!courseId) {
