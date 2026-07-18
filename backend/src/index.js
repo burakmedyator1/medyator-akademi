@@ -54,6 +54,7 @@ app.use(
           'https://player.vimeo.com',
           'https://sandbox-cpp.iyzipay.com',
           'https://cpp.iyzipay.com',
+          'https://ode.iyzico.com',
         ],
         // The YouTube IFrame Player API and iyzico's checkout form are loaded as external scripts.
         // iyzico serves the checkout form's actual JS bundle from its *-static domain,
@@ -70,12 +71,22 @@ app.use(
         imgSrc: ["'self'", 'data:', 'https:'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        // The widget submits the actual card payment via XHR/fetch straight to
+        // iyzico's gateway domains — separate again from the API/static
+        // domains above. Without these, the browser silently blocks the
+        // payment request itself: the widget shows a generic error and
+        // iyzico's own servers never see the attempt at all.
         connectSrc: [
           "'self'",
           'https://sandbox-api.iyzipay.com',
           'https://api.iyzipay.com',
           'https://sandbox-static.iyzipay.com',
           'https://static.iyzipay.com',
+          'https://merchant-gateway.iyzipay.com',
+          'https://consumerapigw.iyzipay.com',
+          'https://cpp.iyzipay.com',
+          'https://sandbox-cpp.iyzipay.com',
+          'https://ode.iyzico.com',
         ],
       },
     },

@@ -132,17 +132,10 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
          payment_status = 'pending', amount = excluded.amount, payment_provider = 'iyzico', payment_reference = excluded.payment_reference`
     ).run(req.user.id, courseId, course.price, conversationId);
 
-    res.json({
-      checkoutFormContent: result.checkoutFormContent,
-      token: result.token,
-      debugRequest: request,
-      debugResult: result,
-    });
+    res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
   } catch (err) {
     console.error('iyzico checkout başlatma hatası:', err.message);
-    res
-      .status(502)
-      .json({ error: 'Ödeme başlatılamadı, lütfen tekrar deneyin', debug: err.message, debugStack: err.stack });
+    res.status(502).json({ error: 'Ödeme başlatılamadı, lütfen tekrar deneyin' });
   }
 });
 
