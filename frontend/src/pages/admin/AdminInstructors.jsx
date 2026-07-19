@@ -88,7 +88,10 @@ export default function AdminInstructors() {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id, name) {
+    if (!window.confirm(`${name ? `"${name}" adlı eğitmeni` : 'Bu eğitmeni'} silmek istediğine emin misin? Bu işlem geri alınamaz.`)) {
+      return;
+    }
     try {
       await api.admin.deleteInstructor(id);
       load();
@@ -149,7 +152,7 @@ export default function AdminInstructors() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(instructor.id);
+                          handleDelete(instructor.id, instructor.name);
                         }}
                       >
                         <Trash2 size={16} />
@@ -253,6 +256,16 @@ export default function AdminInstructors() {
             {editingId && (
               <button className="btn btn-outline" type="button" onClick={resetForm}>
                 Vazgeç
+              </button>
+            )}
+            {editingId && (
+              <button
+                className="btn btn-outline"
+                type="button"
+                style={{ color: '#c0392b', borderColor: '#c0392b', marginLeft: 'auto' }}
+                onClick={() => handleDelete(editingId, form.name)}
+              >
+                <Trash2 size={16} /> Eğitmeni Sil
               </button>
             )}
           </div>
