@@ -38,7 +38,9 @@ export default function SplashScreen() {
         {showImage && splashImage && (
           <img src={splashImage} alt="Medyator Akademi" className="splash__logo" />
         )}
-        <p className="splash__tagline">{settings.splash_tagline || 'Öğrenmenin yeni adresi'}</p>
+        {loaded && (
+          <p className="splash__tagline">{settings.splash_tagline || 'Öğrenmenin yeni adresi'}</p>
+        )}
       </div>
     </div>
   );
