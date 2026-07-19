@@ -12,7 +12,7 @@ import './Landing.css';
 const DASHBOARD_PATH = { admin: '/admin', instructor: '/egitmen-panel' };
 
 export default function Landing() {
-  const { settings } = useSettings();
+  const { settings, loaded } = useSettings();
   const { isAuthenticated, user } = useAuth();
   const [featured, setFeatured] = useState([]);
   const [instructors, setInstructors] = useState([]);
@@ -58,13 +58,17 @@ export default function Landing() {
     <div className="landing">
       <section className="landing__hero container">
         <div className="landing__hero-text">
-          <h1>
-            {settings.landing_hero_title || 'Öğrenmenin yeni adresi'} <span>Medyator Akademi</span>
-          </h1>
-          <p>
-            {settings.landing_hero_subtitle ||
-              'Eğitmenlerinden video dersler al, ilerlemeni takip et. Online, kurumsal veya yüz yüze — sana uygun formatı seç.'}
-          </p>
+          {loaded && (
+            <>
+              <h1>
+                {settings.landing_hero_title || 'Öğrenmenin yeni adresi'} <span>Medyator Akademi</span>
+              </h1>
+              <p>
+                {settings.landing_hero_subtitle ||
+                  'Eğitmenlerinden video dersler al, ilerlemeni takip et. Online, kurumsal veya yüz yüze — sana uygun formatı seç.'}
+              </p>
+            </>
+          )}
           <div className="landing__hero-actions">
             {isAuthenticated ? (
               <Link to={DASHBOARD_PATH[user.role] || '/panel'} className="btn btn-primary">
@@ -81,18 +85,19 @@ export default function Landing() {
           </div>
         </div>
         <div className="landing__hero-visual">
-          {settings.landing_hero_video_id ? (
-            <div className="landing__hero-video">
-              <VideoPlayer
-                key={settings.landing_hero_video_id}
-                provider={settings.landing_hero_video_provider || 'youtube'}
-                videoId={settings.landing_hero_video_id}
-                title="Medyator Akademi"
-              />
-            </div>
-          ) : (
-            <HeroPreview />
-          )}
+          {loaded &&
+            (settings.landing_hero_video_id ? (
+              <div className="landing__hero-video">
+                <VideoPlayer
+                  key={settings.landing_hero_video_id}
+                  provider={settings.landing_hero_video_provider || 'youtube'}
+                  videoId={settings.landing_hero_video_id}
+                  title="Medyator Akademi"
+                />
+              </div>
+            ) : (
+              <HeroPreview />
+            ))}
         </div>
       </section>
 
