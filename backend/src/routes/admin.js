@@ -7,7 +7,7 @@ import { requireAdmin } from '../middleware/admin.js';
 import { imageUpload as upload } from '../imageUpload.js';
 import { slugify } from '../slugify.js';
 import { extractVideoId } from '../videoId.js';
-import { sendCartReminderEmail, sendAdminEmail } from '../mailer.js';
+import { sendCartReminderEmail } from '../mailer.js';
 import { fetchVideoDurationSeconds } from '../videoDuration.js';
 
 function generateRandomPassword() {
@@ -765,26 +765,6 @@ router.get('/students/:id', async (req, res, next) => {
   }
 });
 
-router.post('/students/:id/send-email', async (req, res, next) => {
-  try {
-    const id = toId(req.params.id);
-    const student = id
-      ? await prisma.user.findFirst({ where: { id, role: 'student' }, select: { name: true, email: true } })
-      : null;
-    if (!student) return res.status(404).json({ error: 'Öğrenci bulunamadı' });
-
-    const { subject, body } = req.body;
-    if (!subject || !subject.trim() || !body || !body.trim()) {
-      return res.status(400).json({ error: 'Konu ve içerik zorunlu' });
-    }
-
-    await sendAdminEmail({ name: student.name, email: student.email, subject, body });
-    res.json({ sent: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.delete('/students/:id', async (req, res, next) => {
   try {
     const id = toId(req.params.id);
@@ -1131,55 +1111,6 @@ router.put('/settings', async (req, res, next) => {
       )
     );
     res.json({ updated: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ---------- E-posta şablonları (öğrencilere admin panelden gönderilen hazır mailler) ----------
-
-router.get('/email-templates', async (req, res, next) => {
-  try {
-    const templates = await prisma.emailTemplate.findMany({ orderBy: { id: 'asc' } });
-    res.json(templates);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/email-templates', async (req, res, next) => {
-  try {
-    const { name, subject, body } = req.body;
-    if (!name || !name.trim() || !subject || !subject.trim() || !body || !body.trim()) {
-      return res.status(400).json({ error: 'Ad, konu ve içerik zorunlu' });
-    }
-    const created = await prisma.emailTemplate.create({ data: { name, subject, body } });
-    res.status(201).json(created);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.put('/email-templates/:id', async (req, res, next) => {
-  try {
-    const id = toId(req.params.id);
-    if (!id) return res.status(404).json({ error: 'Şablon bulunamadı' });
-    const { name, subject, body } = req.body;
-    if (!name || !name.trim() || !subject || !subject.trim() || !body || !body.trim()) {
-      return res.status(400).json({ error: 'Ad, konu ve içerik zorunlu' });
-    }
-    const updated = await prisma.emailTemplate.update({ where: { id }, data: { name, subject, body } });
-    res.json(updated);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.delete('/email-templates/:id', async (req, res, next) => {
-  try {
-    const id = toId(req.params.id);
-    if (id) await prisma.emailTemplate.deleteMany({ where: { id } });
-    res.json({ deleted: true });
   } catch (err) {
     next(err);
   }

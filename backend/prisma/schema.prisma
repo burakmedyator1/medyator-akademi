@@ -272,16 +272,6 @@ model BlogPost {
   @@map("blog_posts")
 }
 
-model EmailTemplate {
-  id        Int      @id @default(autoincrement())
-  name      String
-  subject   String
-  body      String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("email_templates")
-}
-
 model Notification {
   id             Int      @id @default(autoincrement())
   title          String

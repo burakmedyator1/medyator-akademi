@@ -194,16 +194,6 @@ export const api = {
       request(`/admin/students/${id}/reset-password`, { method: 'POST', auth: true }),
     updateEnrollment: (id, payload) =>
       request(`/admin/enrollments/${id}`, { method: 'PATCH', body: payload, auth: true }),
-    sendStudentEmail: (id, payload) =>
-      request(`/admin/students/${id}/send-email`, { method: 'POST', body: payload, auth: true }),
-
-    getEmailTemplates: () => request('/admin/email-templates', { auth: true }),
-    createEmailTemplate: (payload) =>
-      request('/admin/email-templates', { method: 'POST', body: payload, auth: true }),
-    updateEmailTemplate: (id, payload) =>
-      request(`/admin/email-templates/${id}`, { method: 'PUT', body: payload, auth: true }),
-    deleteEmailTemplate: (id) =>
-      request(`/admin/email-templates/${id}`, { method: 'DELETE', auth: true }),
 
     getOrders: () => request('/admin/orders', { auth: true }),
     sendOrderReminder: (id) => request(`/admin/orders/${id}/remind`, { method: 'POST', auth: true }),

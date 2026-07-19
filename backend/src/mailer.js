@@ -91,22 +91,3 @@ export async function sendCartReminderEmail({ name, email, courseTitle, price, l
     text: body,
   });
 }
-
-// Admin panelden bir öğrenciye tek seferlik gönderilen serbest (hazır şablon
-// veya sıfırdan yazılmış) e-posta. Hata, cart-reminder ile aynı sebeple
-// çağırana fırlatılıyor: admin panelde gönderimin gerçekten gidip gitmediği
-// görülebilsin.
-export async function sendAdminEmail({ name, email, subject, body }) {
-  const transport = getTransporter();
-  if (!transport) {
-    throw new Error('E-posta gönderimi yapılandırılmamış (SMTP ayarları eksik)');
-  }
-
-  const vars = { name };
-  await transport.sendMail({
-    from: process.env.MAIL_FROM || 'Medyator Akademi <no-reply@medyagency.co>',
-    to: email,
-    subject: fillTemplate(subject, vars),
-    text: fillTemplate(body, vars),
-  });
-}

@@ -4,8 +4,6 @@ import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const MANUAL_TEMPLATE_ID = 'manual';
-
 export default function AdminStudentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -17,47 +15,12 @@ export default function AdminStudentDetail() {
   const [generatedPassword, setGeneratedPassword] = useState(null);
   const [resettingPassword, setResettingPassword] = useState(false);
 
-  const [emailTemplates, setEmailTemplates] = useState([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState(MANUAL_TEMPLATE_ID);
-  const [emailForm, setEmailForm] = useState({ subject: '', body: '' });
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailError, setEmailError] = useState('');
-  const [emailSent, setEmailSent] = useState(false);
-
   function load() {
     api.admin.getStudent(id).then(setStudent);
     api.admin.getCourses().then(setAllCourses);
-    api.admin.getEmailTemplates().then(setEmailTemplates);
   }
 
   useEffect(load, [id]);
-
-  function handleTemplateSelect(templateId) {
-    setSelectedTemplateId(templateId);
-    setEmailSent(false);
-    setEmailError('');
-    if (templateId === MANUAL_TEMPLATE_ID) {
-      setEmailForm({ subject: '', body: '' });
-      return;
-    }
-    const template = emailTemplates.find((t) => String(t.id) === templateId);
-    if (template) setEmailForm({ subject: template.subject, body: template.body });
-  }
-
-  async function handleSendEmail(e) {
-    e.preventDefault();
-    setSendingEmail(true);
-    setEmailError('');
-    setEmailSent(false);
-    try {
-      await api.admin.sendStudentEmail(id, emailForm);
-      setEmailSent(true);
-    } catch (err) {
-      setEmailError(err.message);
-    } finally {
-      setSendingEmail(false);
-    }
-  }
 
   async function handleAssign(e) {
     e.preventDefault();
@@ -246,45 +209,6 @@ export default function AdminStudentDetail() {
           {resettingPassword ? 'Oluşturuluyor...' : 'Yeni Şifre Oluştur'}
         </button>
       </div>
-
-      <form className="admin-form" style={{ maxWidth: 560, marginTop: 20 }} onSubmit={handleSendEmail}>
-        <h2>Mail Gönder</h2>
-        {emailError && <div className="auth-error">{emailError}</div>}
-        {emailSent && <div style={{ color: '#2f8a4e', fontSize: '0.85rem' }}>E-posta gönderildi.</div>}
-
-        <div className="admin-field">
-          <label>Şablon</label>
-          <select value={selectedTemplateId} onChange={(e) => handleTemplateSelect(e.target.value)}>
-            <option value={MANUAL_TEMPLATE_ID}>Manuel mail yaz</option>
-            {emailTemplates.map((t) => (
-              <option key={t.id} value={String(t.id)}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="admin-field">
-          <label>Konu</label>
-          <input
-            required
-            value={emailForm.subject}
-            onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-          />
-        </div>
-        <div className="admin-field">
-          <label>İçerik</label>
-          <textarea
-            required
-            rows={6}
-            value={emailForm.body}
-            onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
-          />
-        </div>
-
-        <button className="btn btn-primary" type="submit" disabled={sendingEmail}>
-          {sendingEmail ? 'Gönderiliyor...' : 'Gönder'}
-        </button>
-      </form>
     </AdminLayout>
   );
 }
