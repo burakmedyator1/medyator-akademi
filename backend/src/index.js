@@ -27,12 +27,13 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Render sits behind a reverse proxy, and the custom domain adds Cloudflare
-// in front of that — two hops, not one. Trusting the whole chain (rather than
-// a fixed hop count) keeps req.ip resolving to the real visitor regardless of
-// how many proxies sit in front; a fixed count of 1 was resolving to the
-// first proxy's IP instead of the visitor's once Cloudflare was added, which
-// iyzico's live fraud checks were rejecting as an invalid buyer IP.
-app.set('trust proxy', true);
+// in front of that — two hops, not one. A fixed count of 1 was resolving to
+// the first proxy's IP instead of the visitor's once Cloudflare was added,
+// which iyzico's live fraud checks were rejecting as an invalid buyer IP.
+// Trusting a fixed hop count (rather than `true`, which trusts an arbitrarily
+// long attacker-suppliable X-Forwarded-For chain) keeps req.ip resolving to
+// the real visitor while still letting express-rate-limit key off it safely.
+app.set('trust proxy', 2);
 
 app.use(
   helmet({
