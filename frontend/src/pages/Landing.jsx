@@ -114,22 +114,6 @@ export default function Landing() {
       </section>
 
       <section className="container landing__section">
-        <h2>Sana uygun eğitim formatını seç</h2>
-        <div className="landing__delivery-grid">
-          {deliveryTypes.map(({ icon: Icon, title, description, href, cta }) => (
-            <div className="landing__delivery-card" key={title}>
-              <Icon size={28} color="var(--orange)" />
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <Link to={href} className="btn btn-dark">
-                {cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="container landing__section">
         <div className="landing__section-head">
           <h2>Eğitmenlerimizle tanışın</h2>
           <Link to="/egitmenler">Tümünü gör →</Link>
@@ -150,6 +134,22 @@ export default function Landing() {
               <strong>{instructor.name}</strong>
               <span>{instructor.title}</span>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="container landing__section">
+        <h2>Sana uygun eğitim formatını seç</h2>
+        <div className="landing__delivery-grid">
+          {deliveryTypes.map(({ icon: Icon, title, description, href, cta }) => (
+            <div className="landing__delivery-card" key={title}>
+              <Icon size={28} color="var(--orange)" />
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <Link to={href} className="btn btn-dark">
+                {cta}
+              </Link>
+            </div>
           ))}
         </div>
       </section>
