@@ -66,6 +66,7 @@ export default function Navbar() {
           <NavLink to="/egitmenler">Eğitmenler</NavLink>
           <NavLink to="/kurumsal-egitim">Kurumsal Eğitim</NavLink>
           <NavLink to="/yuz-yuze-egitim">Yüz Yüze Eğitim</NavLink>
+          <NavLink to="/blog">Blog</NavLink>
         </nav>
 
         <div className="navbar__actions">
