@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
@@ -53,12 +53,22 @@ import AdminAccount from './pages/admin/AdminAccount';
 
 function Layout({ children }) {
   const location = useLocation();
+  const { loaded } = useSettings();
   const hideNavbar =
     location.pathname === '/panel' ||
     location.pathname === '/sorularim' ||
     location.pathname === '/egitmen-panel' ||
     location.pathname.startsWith('/admin');
   const showSplash = location.pathname === '/';
+
+  // Site renk teması (--orange, --bg-cream vb.) ayarlar API'sinden gelince
+  // document.documentElement üzerine yazılıyor. Bu satır beklenmeden sayfa
+  // render olursa, önce tokens.css'teki varsayılan renklerle boyanıp bir an
+  // sonra gerçek temaya geçiyor — her sayfa yüklemesinde fark edilen bir
+  // renk/içerik titremesine sebep oluyordu. Tema uygulanana kadar hiçbir şey
+  // render etmemek bunu kökten engelliyor.
+  if (!loaded) return null;
+
   return (
     <>
       <CursorGlow />
