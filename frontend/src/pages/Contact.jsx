@@ -9,8 +9,11 @@ export default function Contact() {
   return (
     <div className="delivery-page">
       <section className="delivery-page__hero container">
-        <h1>İletişim</h1>
-        <p>Sorularınız için bize aşağıdaki formdan ya da doğrudan ulaşabilirsiniz.</p>
+        <h1>{settings.contact_hero_title || 'İletişim'}</h1>
+        <p>
+          {settings.contact_hero_subtitle ||
+            'Sorularınız için bize aşağıdaki formdan ya da doğrudan ulaşabilirsiniz.'}
+        </p>
       </section>
 
       <section className="container delivery-page__section">

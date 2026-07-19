@@ -12,11 +12,15 @@ export default function HelpSupport() {
   return (
     <div className="delivery-page">
       <section className="delivery-page__hero container">
-        <h1>Yardım & Destek</h1>
+        <h1>{settings.help_hero_title || 'Yardım & Destek'}</h1>
         <p>
-          Bir sorun mu yaşıyorsunuz? Aşağıdaki formu doldurarak destek talebi oluşturun; ekibimiz en kısa sürede
-          size dönüş yapar. Alternatif olarak <Link to="/sss">Sıkça Sorulan Sorular</Link> sayfasını ziyaret
-          edebilirsiniz.
+          {settings.help_hero_subtitle || (
+            <>
+              Bir sorun mu yaşıyorsunuz? Aşağıdaki formu doldurarak destek talebi oluşturun; ekibimiz en kısa
+              sürede size dönüş yapar. Alternatif olarak <Link to="/sss">Sıkça Sorulan Sorular</Link> sayfasını
+              ziyaret edebilirsiniz.
+            </>
+          )}
         </p>
       </section>
 

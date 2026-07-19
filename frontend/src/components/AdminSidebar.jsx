@@ -14,6 +14,7 @@ import {
   FileUser,
   Quote,
   ShoppingCart,
+  HelpCircle,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const ITEMS = [
   { icon: Newspaper, href: '/admin/blog', label: 'Blog' },
   { icon: FileUser, href: '/admin/basvurular', label: 'Başvurular' },
   { icon: Mail, href: '/admin/iletisim-talepleri', label: 'İletişim Talepleri' },
+  { icon: HelpCircle, href: '/admin/sss', label: 'SSS' },
   { icon: FileText, href: '/admin/site-icerigi', label: 'Site İçeriği' },
   { icon: Palette, href: '/admin/gorunum', label: 'Görünüm' },
   { icon: UserCog, href: '/admin/hesabim', label: 'Hesabım' },

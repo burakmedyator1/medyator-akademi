@@ -1185,6 +1185,60 @@ router.delete('/email-templates/:id', async (req, res, next) => {
   }
 });
 
+// ---------- SSS (Sıkça Sorulan Sorular) ----------
+
+router.get('/faq', async (req, res, next) => {
+  try {
+    const items = await prisma.faqItem.findMany({ orderBy: [{ displayOrder: 'asc' }, { id: 'asc' }] });
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/faq', async (req, res, next) => {
+  try {
+    const { question, answer, displayOrder } = req.body;
+    if (!question || !question.trim() || !answer || !answer.trim()) {
+      return res.status(400).json({ error: 'Soru ve cevap zorunlu' });
+    }
+    const created = await prisma.faqItem.create({
+      data: { question, answer, displayOrder: displayOrder || 0 },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/faq/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.status(404).json({ error: 'Soru bulunamadı' });
+    const { question, answer, displayOrder } = req.body;
+    if (!question || !question.trim() || !answer || !answer.trim()) {
+      return res.status(400).json({ error: 'Soru ve cevap zorunlu' });
+    }
+    const updated = await prisma.faqItem.update({
+      where: { id },
+      data: { question, answer, displayOrder: displayOrder || 0 },
+    });
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/faq/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.faqItem.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- Questions (admin görünümü — eğitmenlere sorulan tüm sorular) ----------
 
 router.get('/questions', async (req, res, next) => {

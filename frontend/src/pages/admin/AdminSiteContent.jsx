@@ -84,6 +84,24 @@ const GROUPS = [
     ],
   },
   {
+    title: 'Destek Sayfaları',
+    fields: [
+      { key: 'faq_hero_title', label: 'SSS Sayfası - Başlık' },
+      { key: 'faq_hero_subtitle', label: 'SSS Sayfası - Alt Başlık', textarea: true },
+      { key: 'help_hero_title', label: 'Yardım & Destek Sayfası - Başlık' },
+      { key: 'help_hero_subtitle', label: 'Yardım & Destek Sayfası - Alt Başlık', textarea: true, rows: 3 },
+      { key: 'contact_hero_title', label: 'İletişim Sayfası - Başlık' },
+      { key: 'contact_hero_subtitle', label: 'İletişim Sayfası - Alt Başlık', textarea: true },
+      {
+        key: 'legal_agreement_body',
+        label:
+          "Mesafeli Satış Sözleşmesi - Madde 2 ve sonrası (Madde 1'deki taraf bilgileri yukarıdaki şirket bilgilerinden otomatik doldurulur; her madde başlığını yeni bir satıra yaz, maddeler arasına bir boş satır bırak)",
+        textarea: true,
+        rows: 14,
+      },
+    ],
+  },
+  {
     title: 'E-posta',
     fields: [
       { key: 'welcome_email_subject', label: 'Hoş Geldin E-postası - Konu' },

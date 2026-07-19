@@ -45,6 +45,7 @@ import AdminStudents from './pages/admin/AdminStudents';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
+import AdminFaq from './pages/admin/AdminFaq';
 import AdminSiteContent from './pages/admin/AdminSiteContent';
 import AdminBlog from './pages/admin/AdminBlog';
 import AdminApplications from './pages/admin/AdminApplications';
@@ -224,6 +225,14 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminContactRequests />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/sss"
+              element={
+                <AdminProtectedRoute>
+                  <AdminFaq />
                 </AdminProtectedRoute>
               }
             />

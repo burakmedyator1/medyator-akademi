@@ -62,6 +62,8 @@ export const api = {
 
   getTestimonials: () => request('/testimonials'),
 
+  getFaq: () => request('/faq'),
+
   getDashboard: () => request('/me/dashboard', { auth: true }),
   getProfile: () => request('/me/profile', { auth: true }),
   changePassword: (payload) => request('/me/password', { method: 'PUT', body: payload, auth: true }),
@@ -142,6 +144,11 @@ export const api = {
     updateCategory: (id, payload) =>
       request(`/admin/categories/${id}`, { method: 'PUT', body: payload, auth: true }),
     deleteCategory: (id) => request(`/admin/categories/${id}`, { method: 'DELETE', auth: true }),
+
+    getFaq: () => request('/admin/faq', { auth: true }),
+    createFaq: (payload) => request('/admin/faq', { method: 'POST', body: payload, auth: true }),
+    updateFaq: (id, payload) => request(`/admin/faq/${id}`, { method: 'PUT', body: payload, auth: true }),
+    deleteFaq: (id) => request(`/admin/faq/${id}`, { method: 'DELETE', auth: true }),
 
     getTestimonials: () => request('/admin/testimonials', { auth: true }),
     createTestimonial: (payload) =>

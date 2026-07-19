@@ -18,6 +18,7 @@ import instructorPanelRoutes from './routes/instructorPanel.js';
 import paymentRoutes from './routes/payments.js';
 import locationRoutes from './routes/locations.js';
 import testimonialRoutes from './routes/testimonials.js';
+import faqRoutes from './routes/faq.js';
 import adminRoutes from './routes/admin.js';
 import { STORAGE_DIR } from './storagePath.js';
 import { runStartupImportIfNeeded } from './sqliteImport.js';
@@ -122,6 +123,7 @@ app.use('/api/instructor', instructorPanelRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/faq', faqRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
