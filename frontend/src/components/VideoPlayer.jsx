@@ -32,19 +32,31 @@ function formatTime(seconds) {
 
 // Custom-controlled YouTube player: native controls are disabled so no
 // "Watch on YouTube" link or channel branding is ever shown in the UI.
+// The actual YouTube iframe is only mounted after the viewer presses play —
+// before that, YouTube's own embed shows its title bar/channel avatar/share
+// overlay on the paused frame regardless of player params, so we cover that
+// entirely with our own plain thumbnail + play button instead.
 function YouTubePlayer({ videoId, title, onEnded }) {
   const mountRef = useRef(null);
   const wrapperRef = useRef(null);
   const playerRef = useRef(null);
   const onEndedRef = useRef(onEnded);
   onEndedRef.current = onEnded;
+  const [started, setStarted] = useState(false);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [thumbnail, setThumbnail] = useState(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
 
   useEffect(() => {
+    setStarted(false);
+    setThumbnail(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
+  }, [videoId]);
+
+  useEffect(() => {
+    if (!started) return undefined;
     let destroyed = false;
     let pollId;
 
@@ -58,6 +70,7 @@ function YouTubePlayer({ videoId, title, onEnded }) {
       playerRef.current = new YT.Player(mountRef.current, {
         videoId,
         playerVars: {
+          autoplay: 1,
           controls: 0,
           disablekb: 1,
           rel: 0,
@@ -97,14 +110,18 @@ function YouTubePlayer({ videoId, title, onEnded }) {
       playerRef.current?.destroy?.();
       playerRef.current = null;
     };
-  }, [videoId]);
+  }, [videoId, started]);
 
   const togglePlay = useCallback(() => {
+    if (!started) {
+      setStarted(true);
+      return;
+    }
     const player = playerRef.current;
     if (!player) return;
     if (playing) player.pauseVideo();
     else player.playVideo();
-  }, [playing]);
+  }, [started, playing]);
 
   const toggleMute = useCallback(() => {
     const player = playerRef.current;
@@ -141,29 +158,43 @@ function YouTubePlayer({ videoId, title, onEnded }) {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="video-player__frame">
-        <div ref={mountRef} />
+        {started && <div ref={mountRef} />}
+        {!started && (
+          <button className="video-player__thumb" onClick={togglePlay} aria-label={title}>
+            <img
+              src={thumbnail}
+              alt={title}
+              onError={() => setThumbnail(`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`)}
+            />
+            <span className="video-player__thumb-play">
+              <Play size={28} fill="currentColor" />
+            </span>
+          </button>
+        )}
       </div>
-      {!ready && <div className="video-player__loading">Video yükleniyor...</div>}
+      {started && !ready && <div className="video-player__loading">Video yükleniyor...</div>}
 
-      <button className="video-player__cover" onClick={togglePlay} aria-label={title} tabIndex={-1} />
+      {started && <button className="video-player__cover" onClick={togglePlay} aria-label={title} tabIndex={-1} />}
 
-      <div className="video-player__controls">
-        <button onClick={togglePlay} aria-label={playing ? 'Duraklat' : 'Oynat'}>
-          {playing ? <Pause size={18} /> : <Play size={18} />}
-        </button>
-        <span className="video-player__time">
-          {formatTime(current)} / {formatTime(duration)}
-        </span>
-        <div className="video-player__seek" onClick={handleSeek}>
-          <div className="video-player__seek-fill" style={{ width: `${progressPct}%` }} />
+      {started && (
+        <div className="video-player__controls">
+          <button onClick={togglePlay} aria-label={playing ? 'Duraklat' : 'Oynat'}>
+            {playing ? <Pause size={18} /> : <Play size={18} />}
+          </button>
+          <span className="video-player__time">
+            {formatTime(current)} / {formatTime(duration)}
+          </span>
+          <div className="video-player__seek" onClick={handleSeek}>
+            <div className="video-player__seek-fill" style={{ width: `${progressPct}%` }} />
+          </div>
+          <button onClick={toggleMute} aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+          <button onClick={toggleFullscreen} aria-label="Tam ekran">
+            <Maximize size={18} />
+          </button>
         </div>
-        <button onClick={toggleMute} aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
-          {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
-        <button onClick={toggleFullscreen} aria-label="Tam ekran">
-          <Maximize size={18} />
-        </button>
-      </div>
+      )}
     </div>
   );
 }
