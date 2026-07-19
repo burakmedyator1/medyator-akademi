@@ -105,6 +105,8 @@ const GROUPS = [
   },
 ];
 
+const EMPTY_TEMPLATE = { name: '', subject: '', body: '' };
+
 export default function AdminSiteContent() {
   const { reload } = useSettings();
   const [form, setForm] = useState({});
@@ -112,9 +114,20 @@ export default function AdminSiteContent() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [templates, setTemplates] = useState([]);
+  const [templateForm, setTemplateForm] = useState(EMPTY_TEMPLATE);
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
+  const [templateError, setTemplateError] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
   useEffect(() => {
     api.admin.getSettings().then(setForm);
+    loadTemplates();
   }, []);
+
+  function loadTemplates() {
+    api.admin.getEmailTemplates().then(setTemplates);
+  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -127,6 +140,43 @@ export default function AdminSiteContent() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function startEditTemplate(template) {
+    setEditingTemplateId(template.id);
+    setTemplateForm({ name: template.name, subject: template.subject, body: template.body });
+    setTemplateError('');
+  }
+
+  function resetTemplateForm() {
+    setEditingTemplateId(null);
+    setTemplateForm(EMPTY_TEMPLATE);
+    setTemplateError('');
+  }
+
+  async function handleTemplateSubmit(e) {
+    e.preventDefault();
+    setSavingTemplate(true);
+    setTemplateError('');
+    try {
+      if (editingTemplateId) {
+        await api.admin.updateEmailTemplate(editingTemplateId, templateForm);
+      } else {
+        await api.admin.createEmailTemplate(templateForm);
+      }
+      resetTemplateForm();
+      loadTemplates();
+    } catch (err) {
+      setTemplateError(err.message);
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
+
+  async function handleDeleteTemplate(id) {
+    await api.admin.deleteEmailTemplate(id);
+    if (editingTemplateId === id) resetTemplateForm();
+    loadTemplates();
   }
 
   return (
@@ -186,6 +236,101 @@ export default function AdminSiteContent() {
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </button>
       </form>
+
+      {GROUPS[activeGroup].title === 'E-posta' && (
+        <>
+          <div className="admin-page-head" style={{ marginTop: 32 }}>
+            <h2 style={{ margin: 0 }}>Hazır Mail Şablonları</h2>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+            Burada oluşturduğun şablonlar, Öğrenciler sayfasında bir öğrenciye mail gönderirken
+            hazır seçenek olarak çıkar. {'{{name}}'} yazarsan gönderdiğin öğrencinin adıyla değişir.
+          </p>
+
+          <div className="admin-split">
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Ad</th>
+                    <th>Konu</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {templates.map((t) => (
+                    <tr key={t.id} className="clickable" onClick={() => startEditTemplate(t)}>
+                      <td>{t.name}</td>
+                      <td>{t.subject}</td>
+                      <td>
+                        <div className="admin-table__actions">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTemplate(t.id);
+                            }}
+                          >
+                            Sil
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {templates.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="admin-empty">
+                        Henüz hazır mail şablonu yok.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <form className="admin-form" onSubmit={handleTemplateSubmit}>
+              <h2>{editingTemplateId ? 'Şablonu Düzenle' : 'Yeni Şablon'}</h2>
+              {templateError && <div className="auth-error">{templateError}</div>}
+
+              <div className="admin-field">
+                <label>Şablon Adı (sadece admin panelinde görünür)</label>
+                <input
+                  required
+                  value={templateForm.name}
+                  onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
+                />
+              </div>
+              <div className="admin-field">
+                <label>Konu</label>
+                <input
+                  required
+                  value={templateForm.subject}
+                  onChange={(e) => setTemplateForm({ ...templateForm, subject: e.target.value })}
+                />
+              </div>
+              <div className="admin-field">
+                <label>İçerik ({'{{name}}'} kullanılabilir)</label>
+                <textarea
+                  required
+                  rows={6}
+                  value={templateForm.body}
+                  onChange={(e) => setTemplateForm({ ...templateForm, body: e.target.value })}
+                />
+              </div>
+
+              <div className="admin-form__actions">
+                <button className="btn btn-primary" type="submit" disabled={savingTemplate}>
+                  {savingTemplate ? 'Kaydediliyor...' : editingTemplateId ? 'Güncelle' : 'Ekle'}
+                </button>
+                {editingTemplateId && (
+                  <button className="btn btn-outline" type="button" onClick={resetTemplateForm}>
+                    Vazgeç
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </>
+      )}
     </AdminLayout>
   );
 }
