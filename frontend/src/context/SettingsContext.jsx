@@ -45,6 +45,15 @@ function applySettings(settings) {
     const pct = parseFloat(settings['cursor-glow-intensity']);
     if (!Number.isNaN(pct)) document.documentElement.style.setProperty('--cursor-glow-intensity', String(pct / 100));
   }
+  if (settings.favicon_url) {
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = settings.favicon_url;
+  }
 }
 
 export function SettingsProvider({ children }) {

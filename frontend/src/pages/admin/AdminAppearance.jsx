@@ -43,6 +43,12 @@ export default function AdminAppearance() {
   const [splashUploading, setSplashUploading] = useState(false);
   const [splashError, setSplashError] = useState('');
 
+  const faviconInputRef = useRef(null);
+  const [faviconFile, setFaviconFile] = useState(null);
+  const [faviconPreview, setFaviconPreview] = useState(null);
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const [faviconError, setFaviconError] = useState('');
+
   useEffect(() => {
     api.admin.getSettings().then(setForm);
   }, []);
@@ -137,6 +143,31 @@ export default function AdminAppearance() {
     }
   }
 
+  function handleFaviconChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFaviconFile(file);
+    setFaviconPreview(URL.createObjectURL(file));
+    setFaviconError('');
+  }
+
+  async function handleFaviconUpload() {
+    if (!faviconFile) return;
+    setFaviconUploading(true);
+    setFaviconError('');
+    try {
+      await api.admin.uploadFavicon(faviconFile);
+      await reload();
+      setFaviconFile(null);
+      setFaviconPreview(null);
+      if (faviconInputRef.current) faviconInputRef.current.value = '';
+    } catch (err) {
+      setFaviconError(err.message);
+    } finally {
+      setFaviconUploading(false);
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="admin-page-head">
@@ -189,6 +220,33 @@ export default function AdminAppearance() {
           Ziyaretçi karanlık moda geçtiğinde navbar ve footer'da normal logo yerine bunu gösterir — koyu
           arkaplanda okunaklı kalması için genelde açık renkli bir logo yüklemen gerekir. Yüklemezsen normal
           logo kullanılmaya devam eder.
+        </p>
+      </div>
+
+      <div className="admin-form" style={{ maxWidth: 480, marginBottom: 24 }}>
+        <h2>Sekme Simgesi (Favicon)</h2>
+        {faviconError && <div className="auth-error">{faviconError}</div>}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img
+            src={faviconPreview || settings.favicon_url || '/favicon.png'}
+            alt="Sekme simgesi"
+            style={{ width: 44, height: 44, background: '#fff', borderRadius: 8, padding: 6, objectFit: 'contain' }}
+          />
+          <input ref={faviconInputRef} type="file" accept="image/*" onChange={handleFaviconChange} />
+        </div>
+
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={handleFaviconUpload}
+          disabled={!faviconFile || faviconUploading}
+        >
+          {faviconUploading ? 'Yükleniyor...' : 'Simgeyi Yükle'}
+        </button>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+          Tarayıcı sekmesinde görünen küçük simgeyi değiştirir. En iyi sonuç için kare (örn. 64x64 veya 512x512 px)
+          bir PNG kullan.
         </p>
       </div>
 

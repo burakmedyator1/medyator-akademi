@@ -61,6 +61,17 @@ router.post('/settings/splash-image', (req, res) => {
   });
 });
 
+router.post('/settings/favicon', (req, res) => {
+  upload.single('favicon')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Dosya bulunamadı' });
+
+    const url = `/uploads/${req.file.filename}`;
+    await upsertSetting('favicon_url', url);
+    res.status(201).json({ url });
+  });
+});
+
 // ---------- Database backup ----------
 
 // SQLite döneminde tek dosya indiriliyordu; PostgreSQL'de veritabanı bir
