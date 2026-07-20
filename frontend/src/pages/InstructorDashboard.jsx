@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import './InstructorDashboard.css';
@@ -136,9 +138,14 @@ export default function InstructorDashboard() {
           <h1>Eğitmen Paneli</h1>
           <p>Hoş geldin, {user.name}</p>
         </div>
-        <button className="btn btn-outline" onClick={logout}>
-          Çıkış Yap
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link to="/" className="btn btn-outline">
+            <ArrowLeft size={16} /> Siteye Dön
+          </Link>
+          <button className="btn btn-outline" onClick={logout}>
+            Çıkış Yap
+          </button>
+        </div>
       </div>
 
       <div className="instructor-dashboard__tabs">
