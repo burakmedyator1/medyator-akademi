@@ -81,6 +81,20 @@
   background: var(--surface);
 }
 
+.lesson-page__lesson-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.lesson-page__lesson-nav .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .lesson-page__head-row {
   display: flex;
   align-items: flex-start;

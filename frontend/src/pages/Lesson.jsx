@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
+  ChevronRight,
   PlayCircle,
   CheckCircle2,
   Circle,
@@ -133,6 +134,9 @@ export default function Lesson() {
   const currentLesson = course.lessons.find((l) => String(l.id) === lessonId);
   const isCompleted = currentLesson && progress >= currentLesson.order_;
   const totalMinutes = course.lessons.reduce((sum, l) => sum + l.durationMinutes, 0);
+  const currentIndex = course.lessons.findIndex((l) => String(l.id) === lessonId);
+  const prevLesson = currentIndex > 0 ? course.lessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex >= 0 && currentIndex < course.lessons.length - 1 ? course.lessons[currentIndex + 1] : null;
 
   return (
     <div className="container lesson-page">
@@ -175,6 +179,23 @@ export default function Lesson() {
                 title={video.title}
                 onEnded={handleComplete}
               />
+            )}
+          </div>
+
+          <div className="lesson-page__lesson-nav">
+            {prevLesson ? (
+              <Link to={`/kurslar/${course.id}/ders/${prevLesson.id}`} className="btn btn-outline">
+                <ChevronLeft size={16} /> Önceki Ders
+              </Link>
+            ) : (
+              <span />
+            )}
+            {nextLesson ? (
+              <Link to={`/kurslar/${course.id}/ders/${nextLesson.id}`} className="btn btn-outline">
+                Sonraki Ders <ChevronRight size={16} />
+              </Link>
+            ) : (
+              <span />
             )}
           </div>
 
