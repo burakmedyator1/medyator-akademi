@@ -43,7 +43,8 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     return res.status(503).json({ error: 'Ödeme altyapısı henüz yapılandırılmadı' });
   }
 
-  const { courseId, email, phone, identityNumber, address, city, district, neighborhood, zipCode } = req.body;
+  const { courseId, email, phone, identityNumber, address, city, district, neighborhood, zipCode, earlyOrder } =
+    req.body;
   if (!courseId || !email || !phone || !identityNumber || !address || !city || !district || !neighborhood) {
     return res.status(400).json({ error: 'Tüm alanları doldurun' });
   }
@@ -59,12 +60,20 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     select: { id: true, title: true, category: true, price: true, comingSoon: true },
   });
   if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
-  if (course.comingSoon) {
+  // Coming-soon courses aren't purchasable at full price yet — the only paid
+  // path before launch is the discounted early-order flow, opted into
+  // explicitly via `earlyOrder`. Everyone else still gets the usual block.
+  const isEarlyOrder = Boolean(course.comingSoon && earlyOrder);
+  if (course.comingSoon && !isEarlyOrder) {
     return res.status(403).json({ error: 'Bu kurs yakında satışa sunulacak, henüz kayıt alınmıyor' });
   }
   if (!course.price || course.price <= 0) {
     return res.status(400).json({ error: 'Bu kurs ücretsiz, doğrudan kayıt olabilirsiniz' });
   }
+
+  // Erken sipariş fiyatı her zaman sunucuda, kurs fiyatı üzerinden yeniden
+  // hesaplanır — istekten gelen bir fiyat asla güvenilmez.
+  const unitPrice = isEarlyOrder ? Math.round(course.price * 0.7) : course.price;
 
   const existing = await prisma.enrollment.findFirst({
     where: { userId: req.user.id, courseId: course.id, paymentStatus: 'approved' },
@@ -77,7 +86,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     select: { name: true, createdAt: true },
   });
   const conversationId = crypto.randomUUID();
-  const price = Number(course.price).toFixed(2);
+  const price = Number(unitPrice).toFixed(2);
   const [name, ...rest] = user.name.split(' ');
   const surname = rest.join(' ') || name;
 
@@ -143,17 +152,19 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
         courseId: course.id,
         progress: 0,
         paymentStatus: 'pending',
-        amount: course.price,
+        amount: unitPrice,
         paymentProvider: 'iyzico',
         paymentReference: conversationId,
         paymentToken: result.token,
+        isEarlyOrder,
       },
       update: {
         paymentStatus: 'pending',
-        amount: course.price,
+        amount: unitPrice,
         paymentProvider: 'iyzico',
         paymentReference: conversationId,
         paymentToken: result.token,
+        isEarlyOrder,
       },
     });
 

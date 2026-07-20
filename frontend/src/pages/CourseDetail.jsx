@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Lock, PlayCircle, CheckCircle2, Circle, Play, Star } from 'lucide-react';
+import { Lock, PlayCircle, CheckCircle2, Circle, Play, Star, Bell, Tag } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { coverColorValue } from '../components/colors';
@@ -29,6 +29,8 @@ export default function CourseDetail() {
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [preregistered, setPreregistered] = useState(false);
+  const [preregistering, setPreregistering] = useState(false);
 
   useEffect(() => {
     api.getCourse(id).then(setCourse);
@@ -61,6 +63,14 @@ export default function CourseDetail() {
       .catch(() => {});
   }, [id, isAuthenticated, isInstructor]);
 
+  useEffect(() => {
+    if (!isAuthenticated || isInstructor || !course?.comingSoon) return;
+    api
+      .getPreregistrationStatus(id)
+      .then((data) => setPreregistered(data.registered))
+      .catch(() => {});
+  }, [id, isAuthenticated, isInstructor, course?.comingSoon]);
+
   // Eğitmenler kayıtlı olmasalar da tüm derslere göz atabilmeli — bu bayrak
   // yalnızca müfredat listesinin kilit/erişim görünümünü etkiler; "enrolled"
   // gerçek öğrenci kaydı anlamına gelmeye devam ediyor (ilerleme, yorum vb.).
@@ -83,6 +93,32 @@ export default function CourseDetail() {
     } finally {
       setReviewSaving(false);
     }
+  }
+
+  async function handlePreregister() {
+    if (!isAuthenticated) {
+      navigate('/giris', { state: { from: { pathname: `/kurslar/${id}` } } });
+      return;
+    }
+    setPreregistering(true);
+    setError('');
+    try {
+      await api.preregisterCourse(id);
+      setPreregistered(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPreregistering(false);
+    }
+  }
+
+  function handleEarlyOrder() {
+    const from = { pathname: `/odeme/${id}?erkenSiparis=1` };
+    if (!isAuthenticated) {
+      navigate('/giris', { state: { from } });
+      return;
+    }
+    navigate(from.pathname);
   }
 
   async function handleEnroll() {
@@ -173,7 +209,32 @@ export default function CourseDetail() {
             {isInstructor ? (
               <span className="course-detail__coming-soon-badge">Eğitmen Erişimi</span>
             ) : course.comingSoon ? (
-              <span className="course-detail__coming-soon-badge">Yakında</span>
+              <>
+                <span className="course-detail__coming-soon-badge">Yakında</span>
+                <div className="course-detail__coming-soon-actions">
+                  <button
+                    className="btn btn-outline"
+                    onClick={handlePreregister}
+                    disabled={preregistering || preregistered}
+                  >
+                    <Bell size={16} />
+                    {preregistered ? 'Ön Kayıt Yapıldı' : preregistering ? 'Kaydediliyor...' : 'Ön Kayıt Yaptır'}
+                  </button>
+                  {isPaid && (
+                    <button className="btn btn-primary" onClick={handleEarlyOrder}>
+                      <Tag size={16} />
+                      Erken Sipariş · %30 İndirimli
+                    </button>
+                  )}
+                </div>
+                {isPaid && (
+                  <p className="course-detail__early-price">
+                    <span className="course-detail__early-price-original">{course.price} TL</span>
+                    {' '}
+                    <strong>{Math.round(course.price * 0.7)} TL</strong>
+                  </p>
+                )}
+              </>
             ) : enrolled ? (
               <button className="btn btn-outline course-detail__enrolled" onClick={() => navigate('/panel')}>
                 <CheckCircle2 size={18} />
@@ -189,7 +250,9 @@ export default function CourseDetail() {
               {isInstructor
                 ? 'Eğitmen hesabıyla bu kursun tüm ders videolarına erişimin var.'
                 : course.comingSoon
-                ? 'Bu kurs hazırlanıyor. Satışa açıldığında burada kayıt/satın alma seçeneği görünecek.'
+                ? isPaid
+                  ? 'Ön kayıt yaptırırsan kurs yayına girdiğinde haber veririz, erken sipariş verirsen %30 indirimli fiyatla şimdiden yerini ayırtırsın.'
+                  : 'Ön kayıt yaptırırsan kurs yayına girdiğinde haber veririz.'
                 : enrolled
                 ? 'Kurslarım sekmesinden derslerine devam edebilirsin.'
                 : isPaid

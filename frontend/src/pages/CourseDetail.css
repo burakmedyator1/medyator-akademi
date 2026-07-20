@@ -123,6 +123,28 @@
   font-weight: 700;
 }
 
+.course-detail__coming-soon-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.course-detail__coming-soon-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.course-detail__early-price {
+  font-size: 0.85rem;
+}
+
+.course-detail__early-price-original {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
 .course-detail__reviews {
   padding: 24px;
   margin-top: 16px;

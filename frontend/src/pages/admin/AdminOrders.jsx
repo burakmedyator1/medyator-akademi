@@ -93,6 +93,14 @@ export default function AdminOrders() {
                   </td>
                   <td>
                     <Link to={`/admin/kurslar/${order.courseId}`}>{order.courseTitle}</Link>
+                    {order.isEarlyOrder && (
+                      <>
+                        <br />
+                        <span className="admin-badge admin-badge--pending" style={{ marginTop: 4 }}>
+                          Erken Sipariş
+                        </span>
+                      </>
+                    )}
                   </td>
                   <td>{order.amount} TL</td>
                   <td>{order.paymentProvider || '—'}</td>

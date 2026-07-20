@@ -894,6 +894,7 @@ router.get('/orders', async (req, res, next) => {
         paymentReference: o.paymentReference,
         createdAt: o.createdAt,
         reminderSentAt: o.reminderSentAt,
+        isEarlyOrder: o.isEarlyOrder,
         studentId: o.user.id,
         studentName: o.user.name,
         studentEmail: o.user.email,

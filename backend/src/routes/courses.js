@@ -117,6 +117,44 @@ router.post('/:id/enroll', requireAuth, rejectInstructor, async (req, res, next)
   }
 });
 
+router.get('/:id/preregister/status', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
+
+    const existing = await prisma.preregistration.findUnique({
+      where: { userId_courseId: { userId: req.user.id, courseId } },
+      select: { id: true },
+    });
+    res.json({ registered: Boolean(existing) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/preregister', requireAuth, rejectInstructor, async (req, res, next) => {
+  try {
+    const courseId = toId(req.params.id);
+    if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
+
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true, comingSoon: true } });
+    if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
+    if (!course.comingSoon) {
+      return res.status(400).json({ error: 'Bu kurs zaten satışta, ön kayıt gerekmiyor' });
+    }
+
+    await prisma.preregistration.upsert({
+      where: { userId_courseId: { userId: req.user.id, courseId } },
+      create: { userId: req.user.id, courseId },
+      update: {},
+    });
+
+    res.status(201).json({ registered: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Protection point: video_id/provider only ever leave the server for either
 // (a) a lesson the admin has explicitly marked as a free preview — anyone can
 // watch, no account needed — or (b) an authenticated user who holds an

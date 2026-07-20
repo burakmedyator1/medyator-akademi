@@ -81,9 +81,10 @@ model User {
   expoPushToken String?  @map("expo_push_token")
   createdAt     DateTime @default(now()) @map("created_at")
 
-  enrollments  Enrollment[]
-  questions    Question[]
-  testimonials Testimonial[]
+  enrollments      Enrollment[]
+  questions        Question[]
+  testimonials     Testimonial[]
+  preregistrations Preregistration[]
 
   @@map("users")
 }
@@ -119,11 +120,12 @@ model Course {
   instructorId  Int?         @map("instructor_id")
   comingSoon    Boolean      @default(false) @map("coming_soon")
 
-  instructor   Instructor?   @relation(fields: [instructorId], references: [id])
-  lessons      Lesson[]
-  enrollments  Enrollment[]
-  questions    Question[]
-  testimonials Testimonial[]
+  instructor       Instructor?       @relation(fields: [instructorId], references: [id])
+  lessons          Lesson[]
+  enrollments      Enrollment[]
+  questions        Question[]
+  testimonials     Testimonial[]
+  preregistrations Preregistration[]
 
   @@map("courses")
 }
@@ -155,6 +157,7 @@ model Enrollment {
   paymentReference String?       @map("payment_reference")
   paymentToken     String?       @map("payment_token")
   reminderSentAt   DateTime?     @map("reminder_sent_at")
+  isEarlyOrder     Boolean       @default(false) @map("is_early_order")
   createdAt        DateTime      @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id])
@@ -162,6 +165,22 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@map("enrollments")
+}
+
+// A free "notify me" signal for a not-yet-launched (comingSoon) course —
+// distinct from Enrollment, which always implies either a purchase or a
+// free-course signup. No payment or course access is granted here.
+model Preregistration {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  courseId  Int      @map("course_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("preregistrations")
 }
 
 model ContactRequest {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import iyzicoIleOde from '../assets/payment/iyzico-ile-ode.svg';
 import logoBand from '../assets/payment/iyzico-logo-band.svg';
@@ -7,6 +7,7 @@ import './Checkout.css';
 
 export default function Checkout() {
   const { courseId } = useParams();
+  const [searchParams] = useSearchParams();
   const [course, setCourse] = useState(null);
   const [configured, setConfigured] = useState(true);
   const [form, setForm] = useState({
@@ -26,6 +27,9 @@ export default function Checkout() {
   const [paymentPageUrl, setPaymentPageUrl] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const isEarlyOrder = searchParams.get('erkenSiparis') === '1' && Boolean(course?.comingSoon);
+  const displayPrice = course ? (isEarlyOrder ? Math.round(course.price * 0.7) : course.price) : 0;
 
   useEffect(() => {
     api.getCourse(courseId).then(setCourse);
@@ -72,7 +76,11 @@ export default function Checkout() {
     }
 
     try {
-      const { paymentPageUrl: url } = await api.startCheckout({ courseId: Number(courseId), ...form });
+      const { paymentPageUrl: url } = await api.startCheckout({
+        courseId: Number(courseId),
+        earlyOrder: isEarlyOrder,
+        ...form,
+      });
       setPaymentPageUrl(url);
       if (paymentWindow) {
         paymentWindow.location = url;
@@ -107,10 +115,25 @@ export default function Checkout() {
 
   return (
     <div className="container checkout-page">
-      <h1>Ödeme</h1>
+      <h1>{isEarlyOrder ? 'Erken Sipariş' : 'Ödeme'}</h1>
       <p className="checkout-page__course">
-        {course.title} · <strong>{course.price} TL</strong>
+        {course.title} ·{' '}
+        {isEarlyOrder ? (
+          <>
+            <span className="checkout-page__price-original">{course.price} TL</span>{' '}
+            <strong>{displayPrice} TL</strong>
+            <span className="checkout-page__discount-badge">%30 İndirimli</span>
+          </>
+        ) : (
+          <strong>{displayPrice} TL</strong>
+        )}
       </p>
+      {isEarlyOrder && (
+        <p className="checkout-page__early-note">
+          Bu kurs henüz yayında değil. Erken sipariş vererek yerini indirimli fiyata ayırtıyorsun; kurs
+          yayına girdiğinde otomatik olarak erişimin açılacak.
+        </p>
+      )}
 
       {paymentPageUrl ? (
         <div className="card checkout-page__notice">
