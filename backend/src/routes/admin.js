@@ -1090,7 +1090,7 @@ router.post('/blog/cover', (req, res) => {
 
 router.post('/blog', async (req, res, next) => {
   try {
-    const { title, excerpt, content, coverImageUrl, status } = req.body;
+    const { title, excerpt, content, coverImageUrl, status, instructorId } = req.body;
     if (!title || !title.trim() || !content || !content.trim()) {
       return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
     }
@@ -1106,6 +1106,7 @@ router.post('/blog', async (req, res, next) => {
         content: content.trim(),
         coverImageUrl: coverImageUrl || null,
         status: status === 'pending' ? 'pending' : 'published',
+        instructorId: instructorId ? Number(instructorId) : null,
       },
     });
     res.status(201).json({ id: created.id, slug });
@@ -1117,7 +1118,7 @@ router.post('/blog', async (req, res, next) => {
 router.put('/blog/:id', async (req, res, next) => {
   try {
     const id = toId(req.params.id);
-    const { title, excerpt, content, coverImageUrl, status } = req.body;
+    const { title, excerpt, content, coverImageUrl, status, instructorId } = req.body;
     if (!title || !title.trim() || !content || !content.trim()) {
       return res.status(400).json({ error: 'Başlık ve içerik zorunlu' });
     }
@@ -1130,6 +1131,7 @@ router.put('/blog/:id', async (req, res, next) => {
           content: content.trim(),
           coverImageUrl: coverImageUrl || null,
           status: status === 'pending' || status === 'rejected' ? status : 'published',
+          instructorId: instructorId ? Number(instructorId) : null,
         },
       });
     }

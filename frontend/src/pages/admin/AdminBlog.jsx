@@ -4,7 +4,7 @@ import { api } from '../../api/client';
 import AdminLayout from './AdminLayout';
 import './AdminCommon.css';
 
-const EMPTY_FORM = { title: '', excerpt: '', content: '', coverImageUrl: '', status: 'published' };
+const EMPTY_FORM = { title: '', excerpt: '', content: '', coverImageUrl: '', status: 'published', instructorId: '' };
 
 const STATUS_LABELS = {
   published: 'Yayında',
@@ -14,6 +14,7 @@ const STATUS_LABELS = {
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
@@ -26,6 +27,9 @@ export default function AdminBlog() {
   }
 
   useEffect(load, []);
+  useEffect(() => {
+    api.admin.getInstructors().then(setInstructors);
+  }, []);
 
   function startEdit(post) {
     setEditingId(post.id);
@@ -35,6 +39,7 @@ export default function AdminBlog() {
       content: post.content,
       coverImageUrl: post.cover_image_url || '',
       status: post.status,
+      instructorId: post.instructor_id ? String(post.instructor_id) : '',
     });
   }
 
@@ -176,6 +181,20 @@ export default function AdminBlog() {
           <div className="admin-field">
             <label>Başlık</label>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          </div>
+          <div className="admin-field">
+            <label>Yazar</label>
+            <select
+              value={form.instructorId}
+              onChange={(e) => setForm({ ...form, instructorId: e.target.value })}
+            >
+              <option value="">Admin</option>
+              {instructors.map((instructor) => (
+                <option key={instructor.id} value={String(instructor.id)}>
+                  {instructor.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="admin-field">
             <label>Özet</label>

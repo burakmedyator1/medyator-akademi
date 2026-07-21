@@ -34,7 +34,10 @@ export default function BlogDetail() {
         <div className="blog-detail__cover" style={{ backgroundImage: `url(${post.cover_image_url})` }} />
       )}
       <h1>{post.title}</h1>
-      <span className="blog-detail__date">{new Date(post.created_at).toLocaleDateString('tr-TR')}</span>
+      <span className="blog-detail__date">
+        {post.author_name && <>Yazan {post.author_name} · </>}
+        {new Date(post.created_at).toLocaleDateString('tr-TR')}
+      </span>
       <div className="blog-detail__content">
         {post.content.split('\n').map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
