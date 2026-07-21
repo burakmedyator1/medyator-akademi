@@ -158,3 +158,21 @@
   padding-top: 0;
   flex: 1;
 }
+
+/* iPhone Safari eleman tam ekranını desteklemediği için CSS ile tüm ekranı
+   kaplayan yalancı tam ekran. 100dvh mobil tarayıcı çubuğunu hesaba katar. */
+.video-player--pseudo-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding-top: 0;
+  border-radius: 0;
+}
+
+.video-player--pseudo-fullscreen .video-player__frame {
+  padding-top: 0;
+  flex: 1;
+}

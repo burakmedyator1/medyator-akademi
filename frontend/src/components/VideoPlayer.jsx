@@ -48,6 +48,7 @@ function YouTubePlayer({ videoId, title, onEnded }) {
   const [muted, setMuted] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [pseudoFullscreen, setPseudoFullscreen] = useState(false);
   const [thumbnail, setThumbnail] = useState(`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`);
 
   useEffect(() => {
@@ -145,15 +146,56 @@ function YouTubePlayer({ videoId, title, onEnded }) {
   }
 
   function toggleFullscreen() {
-    if (!document.fullscreenElement) wrapperRef.current?.requestFullscreen?.();
-    else document.exitFullscreen?.();
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    // Zaten CSS ile tam ekransak (iPhone yolu) çık.
+    if (pseudoFullscreen) {
+      setPseudoFullscreen(false);
+      return;
+    }
+    // Gerçek tam ekrandaysak çık (masaüstü / Android / iPad).
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+      return;
+    }
+
+    // Önce gerçek tam ekranı dene (vendor önekleri dahil). iPhone Safari'de
+    // eleman tam ekranı desteklenmediği için bu metotlar yoktur — o zaman
+    // CSS ile tüm ekranı kaplayan yalancı tam ekrana düşeriz.
+    const request = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (request) {
+      const result = request.call(el);
+      if (result && typeof result.catch === 'function') {
+        result.catch(() => setPseudoFullscreen(true));
+      }
+      // Destekleyen cihazlarda yatay moda geçmeyi dene (zorunlu değil).
+      try {
+        const lock = window.screen?.orientation?.lock;
+        if (lock) lock.call(window.screen.orientation, 'landscape').catch(() => {});
+      } catch {
+        /* orientation kilidi desteklenmiyor — yoksay */
+      }
+    } else {
+      setPseudoFullscreen(true);
+    }
   }
+
+  // Yalancı tam ekran açıkken arka planın kaymasını engelle.
+  useEffect(() => {
+    if (!pseudoFullscreen) return undefined;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [pseudoFullscreen]);
 
   const progressPct = duration ? (current / duration) * 100 : 0;
 
   return (
     <div
-      className="video-player video-player--custom"
+      className={`video-player video-player--custom${pseudoFullscreen ? ' video-player--pseudo-fullscreen' : ''}`}
       ref={wrapperRef}
       onContextMenu={(e) => e.preventDefault()}
     >
