@@ -7,9 +7,18 @@
     "icon": "./assets/images/icon.png",
     "scheme": "medyatorakademi",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bbb833d8-f2f3-4a57-8ff5-2198857c395d"
+    },
     "ios": {
       "bundleIdentifier": "com.medyatorakademi.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
