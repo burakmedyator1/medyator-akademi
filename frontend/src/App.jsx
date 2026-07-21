@@ -43,6 +43,7 @@ import AdminInstructors from './pages/admin/AdminInstructors';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminStudents from './pages/admin/AdminStudents';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminPreregistrations from './pages/admin/AdminPreregistrations';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
 import AdminFaq from './pages/admin/AdminFaq';
@@ -209,6 +210,14 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminOrders />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/on-kayitlar"
+              element={
+                <AdminProtectedRoute>
+                  <AdminPreregistrations />
                 </AdminProtectedRoute>
               }
             />

@@ -943,6 +943,56 @@ router.post('/orders/:id/remind', async (req, res, next) => {
   }
 });
 
+// ---------- Preregistrations (coming-soon course "notify me" signups) ----------
+
+router.get('/preregistrations', async (req, res, next) => {
+  try {
+    const rows = await prisma.preregistration.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        course: { select: { id: true, title: true } },
+      },
+    });
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        createdAt: r.createdAt,
+        userId: r.user.id,
+        userName: r.user.name,
+        userEmail: r.user.email,
+        courseId: r.course.id,
+        courseTitle: r.course.title,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/preregistrations/:id/send-email', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    const preregistration = id
+      ? await prisma.preregistration.findUnique({
+          where: { id },
+          include: { user: { select: { name: true, email: true } } },
+        })
+      : null;
+    if (!preregistration) return res.status(404).json({ error: 'Ön kayıt bulunamadı' });
+
+    const { subject, body } = req.body;
+    if (!subject || !subject.trim() || !body || !body.trim()) {
+      return res.status(400).json({ error: 'Konu ve içerik zorunlu' });
+    }
+
+    await sendAdminEmail({ name: preregistration.user.name, email: preregistration.user.email, subject, body });
+    res.json({ sent: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- Contact requests ----------
 
 router.get('/contact-requests', async (req, res, next) => {

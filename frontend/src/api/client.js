@@ -217,6 +217,10 @@ export const api = {
     getOrders: () => request('/admin/orders', { auth: true }),
     sendOrderReminder: (id) => request(`/admin/orders/${id}/remind`, { method: 'POST', auth: true }),
 
+    getPreregistrations: () => request('/admin/preregistrations', { auth: true }),
+    sendPreregistrationEmail: (id, payload) =>
+      request(`/admin/preregistrations/${id}/send-email`, { method: 'POST', body: payload, auth: true }),
+
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
 
     getApplications: () => request('/admin/applications', { auth: true }),
