@@ -320,3 +320,13 @@ model Notification {
 
   @@map("notifications")
 }
+
+model Coupon {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  discountPercent Int      @map("discount_percent")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("coupons")
+}

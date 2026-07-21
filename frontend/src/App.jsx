@@ -45,6 +45,7 @@ import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminStudents from './pages/admin/AdminStudents';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminPreregistrations from './pages/admin/AdminPreregistrations';
+import AdminCoupons from './pages/admin/AdminCoupons';
 import AdminStudentDetail from './pages/admin/AdminStudentDetail';
 import AdminContactRequests from './pages/admin/AdminContactRequests';
 import AdminFaq from './pages/admin/AdminFaq';
@@ -220,6 +221,14 @@ export default function App() {
               element={
                 <AdminProtectedRoute>
                   <AdminPreregistrations />
+                </AdminProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/kampanya-kodlari"
+              element={
+                <AdminProtectedRoute>
+                  <AdminCoupons />
                 </AdminProtectedRoute>
               }
             />

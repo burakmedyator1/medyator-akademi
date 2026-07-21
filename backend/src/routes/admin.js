@@ -1303,6 +1303,81 @@ router.delete('/faq/:id', async (req, res, next) => {
   }
 });
 
+// ---------- Coupons (kampanya kodları) ----------
+
+function normalizeCouponCode(code) {
+  // Düz ASCII büyük harf (Türkçe i/İ karışıklığını önlemek için).
+  return (code || '').trim().toUpperCase();
+}
+
+function parseDiscountPercent(value) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 100) return null;
+  return n;
+}
+
+router.get('/coupons', async (req, res, next) => {
+  try {
+    const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json(coupons);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/coupons', async (req, res, next) => {
+  try {
+    const code = normalizeCouponCode(req.body?.code);
+    const discountPercent = parseDiscountPercent(req.body?.discountPercent);
+    if (!code) return res.status(400).json({ error: 'Kod zorunlu' });
+    if (discountPercent === null) return res.status(400).json({ error: 'İndirim oranı 1-100 arası olmalı' });
+
+    const existing = await prisma.coupon.findUnique({ where: { code }, select: { id: true } });
+    if (existing) return res.status(409).json({ error: 'Bu kod zaten var' });
+
+    const created = await prisma.coupon.create({
+      data: { code, discountPercent, active: req.body?.active !== false },
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/coupons/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (!id) return res.status(404).json({ error: 'Kod bulunamadı' });
+    const code = normalizeCouponCode(req.body?.code);
+    const discountPercent = parseDiscountPercent(req.body?.discountPercent);
+    if (!code) return res.status(400).json({ error: 'Kod zorunlu' });
+    if (discountPercent === null) return res.status(400).json({ error: 'İndirim oranı 1-100 arası olmalı' });
+
+    // Aynı kod başka bir kayıtta varsa çakışmayı engelle.
+    const clash = await prisma.coupon.findFirst({ where: { code, id: { not: id } }, select: { id: true } });
+    if (clash) return res.status(409).json({ error: 'Bu kod başka bir kampanyada kullanılıyor' });
+
+    const result = await prisma.coupon.updateMany({
+      where: { id },
+      data: { code, discountPercent, active: req.body?.active !== false },
+    });
+    if (result.count === 0) return res.status(404).json({ error: 'Kod bulunamadı' });
+    res.json({ updated: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/coupons/:id', async (req, res, next) => {
+  try {
+    const id = toId(req.params.id);
+    if (id) await prisma.coupon.deleteMany({ where: { id } });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- Questions (admin görünümü — eğitmenlere sorulan tüm sorular) ----------
 
 router.get('/questions', async (req, res, next) => {

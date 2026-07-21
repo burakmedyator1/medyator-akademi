@@ -44,7 +44,7 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     return res.status(503).json({ error: 'Ödeme altyapısı henüz yapılandırılmadı' });
   }
 
-  const { courseId, email, phone, identityNumber, address, city, district, neighborhood, zipCode, earlyOrder } =
+  const { courseId, email, phone, identityNumber, address, city, district, neighborhood, zipCode, earlyOrder, couponCode } =
     req.body;
   if (!courseId || !email || !phone || !identityNumber || !address || !city || !district || !neighborhood) {
     return res.status(400).json({ error: 'Tüm alanları doldurun' });
@@ -72,9 +72,22 @@ router.post('/checkout-form', requireAuth, rejectInstructor, async (req, res) =>
     return res.status(400).json({ error: 'Bu kurs ücretsiz, doğrudan kayıt olabilirsiniz' });
   }
 
-  // Erken sipariş fiyatı her zaman sunucuda, kurs fiyatı üzerinden yeniden
-  // hesaplanır — istekten gelen bir fiyat asla güvenilmez.
-  const unitPrice = isEarlyOrder ? Math.round(course.price * 0.7) : course.price;
+  // İndirim oranı her zaman sunucuda belirlenir — istekten gelen fiyat/oran
+  // asla güvenilmez. Erken sipariş sabit %30; ayrıca girilen kampanya kodu
+  // varsa doğrulanır. İkisi birden geçerliyse üst üste eklenmez, büyük olan
+  // tek indirim uygulanır (aşırı indirimi engellemek için).
+  let discountPercent = isEarlyOrder ? 30 : 0;
+  const normalizedCoupon = (couponCode || '').trim().toUpperCase();
+  if (normalizedCoupon) {
+    const coupon = await prisma.coupon.findUnique({ where: { code: normalizedCoupon } });
+    if (!coupon || !coupon.active) {
+      return res.status(400).json({ error: 'Geçersiz veya süresi geçmiş kampanya kodu' });
+    }
+    if (coupon.discountPercent > discountPercent) {
+      discountPercent = coupon.discountPercent;
+    }
+  }
+  const unitPrice = Math.max(0, Math.round((course.price * (100 - discountPercent)) / 100));
 
   const existing = await prisma.enrollment.findFirst({
     where: { userId: req.user.id, courseId: course.id, paymentStatus: 'approved' },

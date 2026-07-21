@@ -28,8 +28,39 @@ export default function Checkout() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState(null); // { code, discountPercent }
+  const [couponError, setCouponError] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
+
   const isEarlyOrder = searchParams.get('erkenSiparis') === '1' && Boolean(course?.comingSoon);
-  const displayPrice = course ? (isEarlyOrder ? Math.round(course.price * 0.7) : course.price) : 0;
+  const earlyPercent = isEarlyOrder ? 30 : 0;
+  // Sunucudaki mantıkla aynı: erken sipariş ile kupon üst üste eklenmez,
+  // büyük olan tek indirim uygulanır.
+  const discountPercent = Math.max(earlyPercent, coupon?.discountPercent || 0);
+  const displayPrice = course ? Math.max(0, Math.round((course.price * (100 - discountPercent)) / 100)) : 0;
+
+  async function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponChecking(true);
+    setCouponError('');
+    try {
+      const data = await api.validateCoupon(code);
+      setCoupon(data);
+    } catch (err) {
+      setCoupon(null);
+      setCouponError(err.message);
+    } finally {
+      setCouponChecking(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  }
 
   useEffect(() => {
     api.getCourse(courseId).then(setCourse);
@@ -79,6 +110,7 @@ export default function Checkout() {
       const { paymentPageUrl: url } = await api.startCheckout({
         courseId: Number(courseId),
         earlyOrder: isEarlyOrder,
+        couponCode: coupon?.code || '',
         ...form,
       });
       setPaymentPageUrl(url);
@@ -118,11 +150,11 @@ export default function Checkout() {
       <h1>{isEarlyOrder ? 'Erken Sipariş' : 'Ödeme'}</h1>
       <p className="checkout-page__course">
         {course.title} ·{' '}
-        {isEarlyOrder ? (
+        {discountPercent > 0 ? (
           <>
             <span className="checkout-page__price-original">{course.price} TL</span>{' '}
             <strong>{displayPrice} TL</strong>
-            <span className="checkout-page__discount-badge">%30 İndirimli</span>
+            <span className="checkout-page__discount-badge">%{discountPercent} İndirimli</span>
           </>
         ) : (
           <strong>{displayPrice} TL</strong>
@@ -247,6 +279,44 @@ export default function Checkout() {
               value={form.zipCode}
               onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
             />
+          </div>
+
+          <div className="auth-field">
+            <label htmlFor="coupon">Kampanya Kodu</label>
+            {coupon ? (
+              <div className="checkout-page__coupon-applied">
+                <span>
+                  <strong>{coupon.code}</strong> uygulandı · %{coupon.discountPercent} indirim
+                </span>
+                <button type="button" className="checkout-page__coupon-remove" onClick={handleRemoveCoupon}>
+                  Kaldır
+                </button>
+              </div>
+            ) : (
+              <div className="checkout-page__coupon-row">
+                <input
+                  id="coupon"
+                  value={couponInput}
+                  placeholder="Varsa kodunu gir"
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyCoupon();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={handleApplyCoupon}
+                  disabled={couponChecking || !couponInput.trim()}
+                >
+                  {couponChecking ? '...' : 'Uygula'}
+                </button>
+              </div>
+            )}
+            {couponError && <span className="checkout-page__coupon-error">{couponError}</span>}
           </div>
 
           <label className="checkout-page__agreement">

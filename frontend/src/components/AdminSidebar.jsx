@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   HelpCircle,
   Bell,
+  Ticket,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ const ITEMS = [
   { icon: Users, href: '/admin/ogrenciler', label: 'Öğrenciler' },
   { icon: ShoppingCart, href: '/admin/siparisler', label: 'Siparişler' },
   { icon: Bell, href: '/admin/on-kayitlar', label: 'Ön Kayıtlar' },
+  { icon: Ticket, href: '/admin/kampanya-kodlari', label: 'Kampanya Kodları' },
   { icon: Quote, href: '/admin/yorumlar', label: 'Öğrenci Yorumları' },
   { icon: Newspaper, href: '/admin/blog', label: 'Blog' },
   { icon: FileUser, href: '/admin/basvurular', label: 'Başvurular' },

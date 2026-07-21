@@ -53,6 +53,7 @@ export const api = {
 
   getPaymentStatus: () => request('/payments/status'),
   startCheckout: (payload) => request('/payments/checkout-form', { method: 'POST', body: payload, auth: true }),
+  validateCoupon: (code) => request('/coupons/validate', { method: 'POST', body: { code }, auth: true }),
 
   getCities: () => request('/locations/cities'),
   getDistricts: (city) => request(`/locations/districts?city=${encodeURIComponent(city)}`),
@@ -220,6 +221,11 @@ export const api = {
     getPreregistrations: () => request('/admin/preregistrations', { auth: true }),
     sendPreregistrationEmail: (id, payload) =>
       request(`/admin/preregistrations/${id}/send-email`, { method: 'POST', body: payload, auth: true }),
+
+    getCoupons: () => request('/admin/coupons', { auth: true }),
+    createCoupon: (payload) => request('/admin/coupons', { method: 'POST', body: payload, auth: true }),
+    updateCoupon: (id, payload) => request(`/admin/coupons/${id}`, { method: 'PUT', body: payload, auth: true }),
+    deleteCoupon: (id) => request(`/admin/coupons/${id}`, { method: 'DELETE', auth: true }),
 
     getContactRequests: () => request('/admin/contact-requests', { auth: true }),
 
