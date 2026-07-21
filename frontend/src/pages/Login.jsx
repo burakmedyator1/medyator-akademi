@@ -24,7 +24,7 @@ export default function Login() {
       } else if (loggedInUser.role === 'instructor') {
         navigate('/egitmen-panel', { replace: true });
       } else {
-        navigate('/panel', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err) {
       setError(err.message);
