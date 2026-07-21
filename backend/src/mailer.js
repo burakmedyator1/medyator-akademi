@@ -110,3 +110,29 @@ export async function sendAdminEmail({ name, email, subject, body }) {
     text: fillTemplate(body, vars),
   });
 }
+
+// Bir olaya bağlı (satın alma, ön kayıt) otomatik gönderilen e-posta.
+// İçeriğini admin panelindeki hazır şablonlardan `templateName` ile bulur;
+// admin şablonu silmiş/yeniden adlandırmışsa verilen yedek metne düşer.
+// Otomatik akışları kesmemek için hata yutulur (fire-and-forget).
+export async function sendTemplateEmail({ templateName, name, email, fallbackSubject, fallbackBody, vars = {} }) {
+  const transport = getTransporter();
+  if (!transport) return;
+
+  const template = await prisma.emailTemplate.findFirst({ where: { name: templateName } });
+  const subject = template?.subject || fallbackSubject;
+  const body = template?.body || fallbackBody;
+  if (!subject || !body) return;
+
+  const allVars = { name, ...vars };
+  try {
+    await transport.sendMail({
+      from: process.env.MAIL_FROM || 'Medyator Akademi <no-reply@medyagency.co>',
+      to: email,
+      subject: fillTemplate(subject, allVars),
+      text: fillTemplate(body, allVars),
+    });
+  } catch (err) {
+    console.error(`${templateName} otomatik e-postası gönderilemedi:`, err.message);
+  }
+}

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../prisma.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { rejectInstructor } from '../middleware/instructor.js';
+import { sendTemplateEmail } from '../mailer.js';
 
 const router = Router();
 
@@ -137,17 +138,36 @@ router.post('/:id/preregister', requireAuth, rejectInstructor, async (req, res, 
     const courseId = toId(req.params.id);
     if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true, comingSoon: true } });
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true, comingSoon: true },
+    });
     if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
     if (!course.comingSoon) {
       return res.status(400).json({ error: 'Bu kurs zaten satışta, ön kayıt gerekmiyor' });
     }
 
-    await prisma.preregistration.upsert({
+    const existing = await prisma.preregistration.findUnique({
       where: { userId_courseId: { userId: req.user.id, courseId } },
-      create: { userId: req.user.id, courseId },
-      update: {},
+      select: { id: true },
     });
+
+    if (!existing) {
+      await prisma.preregistration.create({ data: { userId: req.user.id, courseId } });
+      // İlk ön kayıtta otomatik teşekkür/bilgilendirme maili — tekrar
+      // tıklamalarda (existing) gönderilmez.
+      if (req.user.email) {
+        sendTemplateEmail({
+          templateName: 'Ön Sipariş Verenlere',
+          name: req.user.name,
+          email: req.user.email,
+          vars: { course: course.title },
+          fallbackSubject: 'Ön kaydın başarıyla alındı {{name}}! 🎉',
+          fallbackBody:
+            'Merhaba {{name}},\n\nÖn kaydın başarıyla alındı, aramıza hoş geldin! 🎉\n\nEğitim yayına alınır alınmaz sana e-posta ile haber vereceğim.\n\nSevgiler,\nBurak Işık\nMedyator Akademi',
+        }).catch(() => {});
+      }
+    }
 
     res.status(201).json({ registered: true });
   } catch (err) {

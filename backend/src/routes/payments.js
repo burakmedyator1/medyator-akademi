@@ -4,6 +4,7 @@ import prisma from '../prisma.js';
 import { requireAuth } from '../middleware/auth.js';
 import { rejectInstructor } from '../middleware/instructor.js';
 import { Iyzipay, initializeCheckoutForm, retrieveCheckoutForm, isPaymentConfigured } from '../payment.js';
+import { sendTemplateEmail } from '../mailer.js';
 
 const router = Router();
 
@@ -193,15 +194,21 @@ router.post('/callback', async (req, res) => {
     // güvenilmez: sorgu isteğinde conversationId göndermediğimiz için iyzico
     // yanıtında boş dönebiliyor. conversationId araması yalnızca token kolonu
     // boş olan eski kayıtlar için yedek.
+    const enrollmentSelect = {
+      id: true,
+      paymentStatus: true,
+      user: { select: { name: true, email: true } },
+      course: { select: { title: true } },
+    };
     const enrollment =
       (await prisma.enrollment.findFirst({
         where: { paymentToken: token },
-        select: { id: true, paymentStatus: true },
+        select: enrollmentSelect,
       })) ||
       (result.conversationId
         ? await prisma.enrollment.findFirst({
             where: { paymentReference: result.conversationId },
-            select: { id: true, paymentStatus: true },
+            select: enrollmentSelect,
           })
         : null);
 
@@ -216,7 +223,20 @@ router.post('/callback', async (req, res) => {
     }
 
     if (result.status === 'success' && result.paymentStatus === 'SUCCESS') {
+      // Zaten onaylıysa (callback iki kez tetiklenebilir) tekrar mail atma.
+      const alreadyApproved = enrollment.paymentStatus === 'approved';
       await prisma.enrollment.update({ where: { id: enrollment.id }, data: { paymentStatus: 'approved' } });
+      if (!alreadyApproved && enrollment.user?.email) {
+        sendTemplateEmail({
+          templateName: 'Satın Alma Başarılı',
+          name: enrollment.user.name,
+          email: enrollment.user.email,
+          vars: { course: enrollment.course?.title || '' },
+          fallbackSubject: '✅ Satın alman tamamlandı {{name}}!',
+          fallbackBody:
+            'Merhaba {{name}},\n\nSatın alman başarıyla tamamlandı. Artık tüm ders içeriklerine hesabından erişebilirsin.\n\nBaşarılar!\n\nSevgiler,\nBurak Işık\nMedyator Akademi',
+        }).catch(() => {});
+      }
       return res.redirect(`${baseUrl}/odeme/sonuc?durum=basarili`);
     }
 
