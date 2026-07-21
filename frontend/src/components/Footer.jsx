@@ -63,6 +63,7 @@ export default function Footer() {
         <div className="footer__links">
           <strong>Destek</strong>
           <Link to="/mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</Link>
+          <Link to="/gizlilik-politikasi">Gizlilik Politikası</Link>
           <Link to="/sss">Sıkça Sorulan Sorular</Link>
           <Link to="/yardim-destek">Yardım &amp; Destek</Link>
           <Link to="/iletisim">İletişim</Link>

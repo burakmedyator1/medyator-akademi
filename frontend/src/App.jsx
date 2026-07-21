@@ -31,6 +31,7 @@ import MyQuestions from './pages/MyQuestions';
 import Checkout from './pages/Checkout';
 import PaymentResult from './pages/PaymentResult';
 import DistanceSalesAgreement from './pages/DistanceSalesAgreement';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Faq from './pages/Faq';
 import HelpSupport from './pages/HelpSupport';
 import Contact from './pages/Contact';
@@ -145,6 +146,7 @@ export default function App() {
             />
             <Route path="/odeme/sonuc" element={<PaymentResult />} />
             <Route path="/mesafeli-satis-sozlesmesi" element={<DistanceSalesAgreement />} />
+            <Route path="/gizlilik-politikasi" element={<PrivacyPolicy />} />
             <Route path="/sss" element={<Faq />} />
             <Route path="/yardim-destek" element={<HelpSupport />} />
             <Route path="/iletisim" element={<Contact />} />

@@ -31,3 +31,14 @@
 .legal-page__content strong {
   color: var(--text-primary);
 }
+
+.legal-page__content ul {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+
+.legal-page__content li {
+  margin-bottom: 6px;
+}
