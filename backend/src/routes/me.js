@@ -82,6 +82,31 @@ router.put('/profile', async (req, res, next) => {
   }
 });
 
+// Hesabı ve ilişkili tüm kişisel verileri kalıcı olarak sil (App Store 5.1.1(v)
+// gereği: hesap oluşturulabilen uygulamada uygulama içinden hesap silme zorunlu).
+// Cascade tanımlı olmadığından ilişkili kayıtlar el ile, tek transaction'da silinir.
+router.delete('/account', async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    await prisma.$transaction(async (tx) => {
+      const questions = await tx.question.findMany({ where: { userId }, select: { id: true } });
+      const questionIds = questions.map((q) => q.id);
+      if (questionIds.length) {
+        await tx.questionMessage.deleteMany({ where: { questionId: { in: questionIds } } });
+      }
+      await tx.question.deleteMany({ where: { userId } });
+      await tx.enrollment.deleteMany({ where: { userId } });
+      await tx.preregistration.deleteMany({ where: { userId } });
+      // Yorumları silmeyip kişisel bağı kopar (site içeriği kalsın, kimlik gitsin).
+      await tx.testimonial.updateMany({ where: { userId }, data: { userId: null } });
+      await tx.user.delete({ where: { id: userId } });
+    });
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/dashboard', async (req, res, next) => {
   try {
     const enrollments = await prisma.enrollment.findMany({

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Card } from '@/components/ui/Card';
@@ -95,6 +95,7 @@ function StudentAccount() {
   const [next, setNext] = useState('');
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [savingPw, setSavingPw] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api
@@ -153,6 +154,29 @@ function StudentAccount() {
     router.replace('/(tabs)');
   }
 
+  async function doDelete() {
+    setDeleting(true);
+    try {
+      await api.deleteAccount();
+      await logout();
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      setDeleting(false);
+      Alert.alert('Hata', err.message || 'Hesap silinemedi. Lütfen tekrar dene.');
+    }
+  }
+
+  function confirmDelete() {
+    Alert.alert(
+      'Hesabını sil',
+      'Hesabın ve tüm verilerin (kayıtlı kurslar, ilerlemen, sorduğun sorular) kalıcı olarak silinecek. Bu işlem geri alınamaz.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Hesabımı Sil', style: 'destructive', onPress: doDelete },
+      ],
+    );
+  }
+
   if (loading || !form) {
     return (
       <Screen>
@@ -197,6 +221,27 @@ function StudentAccount() {
       </Card>
 
       <Button title="Çıkış Yap" variant="outline" onPress={handleLogout} />
+
+      <Pressable
+        onPress={confirmDelete}
+        disabled={deleting}
+        style={{
+          marginTop: 4,
+          height: 48,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: '#e0b0a4',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: deleting ? 0.6 : 1,
+        }}
+      >
+        {deleting ? (
+          <ActivityIndicator color="#d9542d" />
+        ) : (
+          <Text style={{ color: '#d9542d', fontSize: 15, fontWeight: '700' }}>Hesabımı Sil</Text>
+        )}
+      </Pressable>
     </Screen>
   );
 }

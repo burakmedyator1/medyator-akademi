@@ -84,6 +84,7 @@ export const api = {
   changePassword: (payload: any) => request('/me/password', { method: 'PUT', body: payload, auth: true }),
   getProfile: () => request('/me/profile', { auth: true }),
   updateProfile: (payload: any) => request('/me/profile', { method: 'PUT', body: payload, auth: true }),
+  deleteAccount: () => request('/me/account', { method: 'DELETE', auth: true }),
   registerPushToken: (token: string) => request('/push/token', { method: 'POST', body: { token }, auth: true }),
 
   sendContact: (payload: any) => request('/contact', { method: 'POST', body: payload }),
