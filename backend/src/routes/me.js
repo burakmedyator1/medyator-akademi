@@ -61,13 +61,10 @@ router.get('/profile', async (req, res, next) => {
 router.put('/profile', async (req, res, next) => {
   try {
     const { phone, birthDate, instagram, tiktok, youtube, linkedin, twitter } = req.body;
-    if (!phone || !phone.trim()) {
-      return res.status(400).json({ error: 'Telefon zorunlu' });
-    }
     await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        phone: phone.trim(),
+        phone: (phone || '').trim(),
         birthDate: birthDate || null,
         instagram: instagram || null,
         tiktok: tiktok || null,

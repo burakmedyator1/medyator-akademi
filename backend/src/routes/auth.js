@@ -23,16 +23,13 @@ router.post('/register', async (req, res, next) => {
   try {
     const { email, password, name, phone, birthDate, instagram, tiktok, youtube, linkedin, twitter } = req.body;
 
-    if (!email || !password || !name || !phone || !birthDate) {
-      return res.status(400).json({ error: 'İsim, e-posta, telefon, doğum tarihi ve şifre zorunlu' });
+    // App Store 5.1.1(v): yalnızca çekirdek işlev için gerekli alanlar zorunlu.
+    // Telefon ve doğum tarihi opsiyonel (verilirse kaydedilir).
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'İsim, e-posta ve şifre zorunlu' });
     }
     if (password.length < 6) {
       return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
-    }
-    const socials = { instagram, tiktok, youtube, linkedin, twitter };
-    const hasSocial = SOCIAL_FIELDS.some((field) => socials[field] && socials[field].trim());
-    if (!hasSocial) {
-      return res.status(400).json({ error: 'En az bir sosyal medya hesabı girmelisin' });
     }
 
     const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
@@ -45,8 +42,8 @@ router.post('/register', async (req, res, next) => {
         email,
         passwordHash: bcrypt.hashSync(password, 10),
         name,
-        phone,
-        birthDate,
+        phone: phone || '',
+        birthDate: birthDate || null,
         instagram: instagram || null,
         tiktok: tiktok || null,
         youtube: youtube || null,

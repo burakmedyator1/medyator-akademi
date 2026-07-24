@@ -120,7 +120,6 @@ function StudentAccount() {
 
   async function saveProfile() {
     setProfileMsg(null);
-    if (!form.phone.trim()) return setProfileMsg({ type: 'err', text: 'Telefon zorunlu' });
     setSavingProfile(true);
     try {
       await api.updateProfile(form);
@@ -197,7 +196,7 @@ function StudentAccount() {
 
       <Card style={{ gap: 12 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Bilgilerim</Text>
-        <Input label="Telefon" keyboardType="phone-pad" value={form.phone} onChangeText={(v) => set('phone', v)} />
+        <Input label="Telefon (opsiyonel)" keyboardType="phone-pad" value={form.phone} onChangeText={(v) => set('phone', v)} />
         <DateField label="Doğum tarihi" value={form.birthDate} onChange={(v) => set('birthDate', v)} />
         {SOCIALS.map(({ key, label }) => (
           <Input key={key} label={label} autoCapitalize="none" value={form[key]} onChangeText={(v) => set(key, v)} />

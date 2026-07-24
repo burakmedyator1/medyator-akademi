@@ -58,13 +58,10 @@ export default function Kayit() {
 
   async function handleSubmit() {
     setError('');
-    if (!form.birthDate) {
-      setError('Doğum tarihi zorunlu');
-      return;
-    }
-    const hasSocial = SOCIAL_FIELDS.some(({ key }) => form[key].trim());
-    if (!hasSocial) {
-      setError('En az bir sosyal medya hesabı girmelisin');
+    // App Store 5.1.1(v): yalnızca çekirdek işlev için gerekli alanlar zorunlu
+    // olabilir. Telefon, doğum tarihi ve sosyal hesaplar opsiyoneldir.
+    if (!form.name.trim() || !form.email.trim() || !form.password) {
+      setError('Ad soyad, e-posta ve şifre zorunlu');
       return;
     }
     setLoading(true);
@@ -96,18 +93,18 @@ export default function Kayit() {
           value={form.email}
           onChangeText={(v) => update('email', v)}
         />
+        <Input label="Şifre" secureTextEntry value={form.password} onChangeText={(v) => update('password', v)} />
         <Input
-          label="Telefon"
+          label="Telefon (opsiyonel)"
           keyboardType="phone-pad"
           placeholder="+90 5xx xxx xx xx"
           value={form.phone}
           onChangeText={(v) => update('phone', v)}
         />
-        <DateField label="Doğum tarihi" value={form.birthDate} onChange={(v) => update('birthDate', v)} />
-        <Input label="Şifre" secureTextEntry value={form.password} onChangeText={(v) => update('password', v)} />
+        <DateField label="Doğum tarihi (opsiyonel)" value={form.birthDate} onChange={(v) => update('birthDate', v)} />
 
         <Text style={[styles.socialTitle, { color: colors.textPrimary }]}>
-          Sosyal medya hesabın (en az biri zorunlu)
+          Sosyal medya hesabın (opsiyonel)
         </Text>
         {SOCIAL_FIELDS.map(({ key, label }) => (
           <Input
