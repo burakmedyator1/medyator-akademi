@@ -130,6 +130,11 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// TikTok geliştirici alan adı doğrulama dosyası (İçerik Planlayıcı uygulaması)
+app.get('/tiktokv6SlgVhpdxB1aGmODGC8DaiWUY1x2CuR.txt', (req, res) => {
+  res.type('text/plain').send('tiktok-developers-site-verification=v6SlgVhpdxB1aGmODGC8DaiWUY1x2CuR');
+});
+
 // İçerik Planlayıcı mobil uygulamasının OAuth köprüsü: Instagram/TikTok https
 // redirect ister; bu sayfa dönen code/state parametrelerini uygulamanın
 // icerikplanlayici:// şemasına aktarır.
