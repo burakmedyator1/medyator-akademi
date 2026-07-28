@@ -130,6 +130,23 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// İçerik Planlayıcı mobil uygulamasının OAuth köprüsü: Instagram/TikTok https
+// redirect ister; bu sayfa dönen code/state parametrelerini uygulamanın
+// icerikplanlayici:// şemasına aktarır.
+app.get('/oauth-bridge.html', (req, res) => {
+  res.type('html').send(`<!DOCTYPE html><html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Uygulamaya dönülüyor…</title>
+<style>body{font-family:-apple-system,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;background:#f6f7f9;color:#111418}.box{text-align:center;padding:24px}a{color:#4f46e5}</style>
+</head><body><div class="box"><p>Uygulamaya dönülüyor…</p>
+<p><a id="link" href="#">Otomatik açılmadıysa dokunun</a></p></div>
+<script>
+var target = 'icerikplanlayici://oauth' + window.location.search;
+document.getElementById('link').setAttribute('href', target);
+window.location.replace(target);
+</script></body></html>`);
+});
+
 // Mobil uygulamanın video oynatıcısı. Sayfa BU origin'den servis edildiği için
 // YouTube embed'i geçerli bir origin görür (aksi halde "Hata 152/153" verir).
 // Yerel kontroller kapalı (controls:0); komutlar RN tarafından injectJavaScript
