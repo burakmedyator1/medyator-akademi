@@ -204,7 +204,12 @@ if (fs.existsSync(frontendDist)) {
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(400).json({ error: err.message || 'Bir hata oluştu' });
+  // Beklenen (doğrulama vb.) hatalar route'ların kendi içinde açık mesajla
+  // dönülüyor; buraya düşenler beklenmedik hatalardır — çoğunlukla Prisma /
+  // veritabanı bağlantı hataları. Ham mesajı kullanıcıya göstermek hem iç
+  // altyapı bilgisini (sunucu adresi vb.) sızdırır hem de anlaşılmazdır;
+  // ayrıntı sunucu loguna yazılır, kullanıcıya genel bir mesaj döner.
+  res.status(500).json({ error: 'Sunucuda geçici bir sorun oluştu, lütfen birazdan tekrar dene.' });
 });
 
 // PostgreSQL boşsa diskteki SQLite verisini tek seferlik içeri aktar

@@ -789,7 +789,13 @@ router.post('/students/:id/send-email', async (req, res, next) => {
       return res.status(400).json({ error: 'Konu ve içerik zorunlu' });
     }
 
-    await sendAdminEmail({ name: student.name, email: student.email, subject, body });
+    // Mailer hataları (örn. SMTP yapılandırılmamış) admin için anlamlı —
+    // genel hata işleyicisine düşürmeden açık mesajla dön.
+    try {
+      await sendAdminEmail({ name: student.name, email: student.email, subject, body });
+    } catch (mailErr) {
+      return res.status(502).json({ error: mailErr.message });
+    }
     res.json({ sent: true });
   } catch (err) {
     next(err);
@@ -986,7 +992,11 @@ router.post('/preregistrations/:id/send-email', async (req, res, next) => {
       return res.status(400).json({ error: 'Konu ve içerik zorunlu' });
     }
 
-    await sendAdminEmail({ name: preregistration.user.name, email: preregistration.user.email, subject, body });
+    try {
+      await sendAdminEmail({ name: preregistration.user.name, email: preregistration.user.email, subject, body });
+    } catch (mailErr) {
+      return res.status(502).json({ error: mailErr.message });
+    }
     res.json({ sent: true });
   } catch (err) {
     next(err);
