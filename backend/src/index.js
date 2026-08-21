@@ -21,6 +21,7 @@ import testimonialRoutes from './routes/testimonials.js';
 import faqRoutes from './routes/faq.js';
 import couponRoutes from './routes/coupons.js';
 import adminRoutes from './routes/admin.js';
+import iapRoutes from './routes/iap.js';
 import { STORAGE_DIR } from './storagePath.js';
 import { runStartupImportIfNeeded } from './sqliteImport.js';
 
@@ -112,6 +113,7 @@ app.use('/uploads', express.static(path.join(STORAGE_DIR, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/iap', iapRoutes);
 app.use('/api/instructors', instructorRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/push', pushRoutes);

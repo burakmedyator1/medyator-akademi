@@ -98,10 +98,16 @@ router.post('/:id/enroll', requireAuth, rejectInstructor, async (req, res, next)
     const courseId = toId(req.params.id);
     if (!courseId) return res.status(404).json({ error: 'Kurs bulunamadı' });
 
-    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true, comingSoon: true } });
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true, comingSoon: true, price: true } });
     if (!course) return res.status(404).json({ error: 'Kurs bulunamadı' });
     if (course.comingSoon) {
       return res.status(403).json({ error: 'Bu kurs yakında satışa sunulacak, henüz kayıt alınmıyor' });
+    }
+    // Ücretli kurslar yalnızca uygulama içi satın alma (IAP) ile alınır — ücretsiz
+    // self-enroll yalnız ücretsiz kurslara açık (App Store 3.1.1). Erişim, satın
+    // alma doğrulandıktan sonra RevenueCat webhook'u ile tanımlanır.
+    if ((course.price || 0) > 0) {
+      return res.status(402).json({ error: 'Bu kurs uygulama içi satın alma ile alınır' });
     }
 
     const existing = await prisma.enrollment.findUnique({
