@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { PushRegistrar } from '@/components/PushRegistrar';
+import { configureIAP } from '@/lib/iap';
 
 /**
  * Kök yerleşim: tüm sağlayıcılar (Auth, Settings) + gruplar arası Stack.
@@ -22,6 +23,8 @@ export default function RootLayout() {
   // modüller yok; video tam ekranında yatay override edilir).
   useEffect(() => {
     if (Platform.OS === 'web') return;
+    // RevenueCat'i açılışta yapılandır (iOS + public anahtar varsa; aksi halde no-op).
+    configureIAP();
     ScreenCapture.preventScreenCaptureAsync().catch(() => {});
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
     return () => { ScreenCapture.allowScreenCaptureAsync().catch(() => {}); };

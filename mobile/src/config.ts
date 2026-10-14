@@ -15,3 +15,9 @@ const fallback =
   Platform.OS === 'android' ? 'http://10.0.2.2:4000' : 'http://localhost:4000';
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL || fallback).replace(/\/$/, '');
+
+// RevenueCat public SDK anahtarı (Apple). RevenueCat panosundan alınır,
+// `mobile/.env` → EXPO_PUBLIC_RC_IOS_KEY olarak girilir (public anahtar,
+// uygulamaya gömülmesi güvenlidir — secret anahtar yalnız backend'de durur).
+// Boşsa IAP devre dışı kalır (uygulama çöker değil, satın alma gizlenir).
+export const RC_IOS_KEY = process.env.EXPO_PUBLIC_RC_IOS_KEY || '';

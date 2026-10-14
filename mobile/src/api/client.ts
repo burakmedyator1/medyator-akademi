@@ -52,6 +52,9 @@ async function upload(path: string, field: string, asset: UploadAsset) {
   return data;
 }
 
+/** Kursun App Store IAP ürün id'si — backend'deki `course_<id>` ile aynı konvansiyon. */
+export const courseProductId = (courseId: number | string) => `course_${courseId}`;
+
 /** /uploads/... göreli yolunu mutlak URL'e çevirir (Image source için). */
 export function mediaUrl(path?: string | null): string | undefined {
   if (!path) return undefined;
@@ -85,6 +88,9 @@ export const api = {
   getProfile: () => request('/me/profile', { auth: true }),
   updateProfile: (payload: any) => request('/me/profile', { method: 'PUT', body: payload, auth: true }),
   deleteAccount: () => request('/me/account', { method: 'DELETE', auth: true }),
+  // Satın alma sonrası (ve "geri yükle"de) webhook gecikmesini kapatan mutabakat:
+  // backend RevenueCat'i secret key ile sorgulayıp erişimi tanımlar.
+  iapSync: () => request('/iap/sync', { method: 'POST', auth: true }),
   registerPushToken: (token: string) => request('/push/token', { method: 'POST', body: { token }, auth: true }),
 
   sendContact: (payload: any) => request('/contact', { method: 'POST', body: payload }),

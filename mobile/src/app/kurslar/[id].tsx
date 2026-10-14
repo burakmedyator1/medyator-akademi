@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api, mediaUrl } from '@/api/client';
+import { IAP_ENABLED, getCourseProduct, buyCourse, type PurchasesStoreProduct } from '@/lib/iap';
 import { useAuth } from '@/context/AuthContext';
 import { useCourseColors } from '@/theme/courseColors';
 import { coverColorValue } from '@/lib/coverColors';
@@ -32,6 +33,7 @@ export default function CourseDetail() {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [product, setProduct] = useState<PurchasesStoreProduct | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -47,12 +49,18 @@ export default function CourseDetail() {
   }, [id, user]);
 
   const refresh = useCallback(async () => {
+    let loaded: Course | null = null;
     try {
-      setCourse((await api.getCourse(id)) as Course);
+      loaded = (await api.getCourse(id)) as Course;
+      setCourse(loaded);
     } catch {
       /* yok say */
     }
     await loadEnrollment();
+    // Online ücretli kursun App Store fiyatını/ürününü yükle (yüz yüze kurs IAP'a girmez).
+    if (IAP_ENABLED && loaded && (loaded.price || 0) > 0 && loaded.deliveryType !== 'in_person') {
+      setProduct(await getCourseProduct(loaded.id));
+    }
   }, [id, loadEnrollment]);
 
   // Ekran açıkken otomatik tazele (web admin değişiklikleri yansısın).
@@ -60,6 +68,9 @@ export default function CourseDetail() {
 
   const isPaid = (course?.price || 0) > 0;
   const approved = enrollment?.paymentStatus === 'approved';
+  // Yüz yüze eğitim uygulama dışı tüketilen hizmettir: App Store 3.1.5(a) gereği
+  // IAP ile satılmaz; uygulamada yalnız bilgilendirilir, kayıt dışarıda yapılır.
+  const isInPerson = course?.deliveryType === 'in_person';
   const totalMinutes = useMemo(
     () => (course?.lessons || []).reduce((sum, l) => sum + (l.durationMinutes || 0), 0),
     [course]
@@ -99,6 +110,32 @@ export default function CourseDetail() {
     }
   }
 
+  // Online ücretli kursu App Store IAP ile satın al. Erişimi backend verir:
+  // StoreKit akışı → iapSync (webhook gecikmesini kapatan sunucu doğrulaması)
+  // → enrollment'ı yeniden oku. İstemci "satın aldım" diyerek erişim açamaz.
+  async function handleBuy() {
+    if (!user) {
+      router.push(`/(auth)/giris?redirect=/kurslar/${id}` as any);
+      return;
+    }
+    if (user.role !== 'student') {
+      Alert.alert('Bilgi', 'Satın alma yalnızca öğrenci hesaplarıyla yapılabilir.');
+      return;
+    }
+    setError('');
+    setBusy(true);
+    try {
+      await buyCourse(id, product);
+      await api.iapSync();
+      await loadEnrollment();
+    } catch (err: any) {
+      // Kullanıcı App Store sayfasını kapattıysa hata gösterme.
+      if (!err?.userCancelled) setError(err?.message || 'Satın alma tamamlanamadı');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!course) {
     return (
       <View style={[styles.loading, { backgroundColor: c.pageBg }]}>
@@ -108,11 +145,18 @@ export default function CourseDetail() {
   }
 
   const instructorPhoto = mediaUrl(course.instructorPhotoUrl);
-  // App Store 3.1.1: uygulama içinde dijital içerik satılamaz, harici bir satın
-  // alma yoluna yönlendirilemez. Ücretli kurslar yalnızca web sitesinden alınır;
-  // uygulama, erişimi olmayan ücretli kursu sadece kilitli gösterir.
-  const canAct = approved || !user || !isPaid;
-  const primaryLabel = approved ? 'Derse Devam Et' : !user ? 'Giriş Yap' : 'Ücretsiz Kaydol';
+  // Alt buton kararı (App Store 3.1.1): dijital içerik uygulama İÇİNDE IAP ile
+  // satılır. Erişimi olan → derse devam; ücretsiz → kaydol; online ücretli →
+  // "Satın Al" (IAP). Yüz yüze eğitim IAP'a girmez (aşağıda bilgilendirilir).
+  let primaryAction: { label: string; onPress: () => void } | null = null;
+  if (approved) primaryAction = { label: 'Derse Devam Et', onPress: handlePrimary };
+  else if (!user) primaryAction = { label: 'Giriş Yap', onPress: handlePrimary };
+  else if (!isPaid) primaryAction = { label: 'Ücretsiz Kaydol', onPress: handlePrimary };
+  else if (!isInPerson && IAP_ENABLED && user.role === 'student')
+    primaryAction = {
+      label: product ? `Satın Al · ${product.priceString}` : 'Satın Al',
+      onPress: handleBuy,
+    };
 
   return (
     <View style={{ flex: 1, backgroundColor: c.pageBg }}>
@@ -257,8 +301,8 @@ export default function CourseDetail() {
 
       {/* Sabit alt buton */}
       <View style={[styles.ctaBar, { paddingBottom: insets.bottom + 12, backgroundColor: c.card, borderTopColor: c.border }]}>
-        {canAct ? (
-          <Pressable onPress={handlePrimary} disabled={busy} style={{ opacity: busy ? 0.7 : 1 }}>
+        {primaryAction ? (
+          <Pressable onPress={primaryAction.onPress} disabled={busy} style={{ opacity: busy ? 0.7 : 1 }}>
             <LinearGradient
               colors={c.gradient}
               start={{ x: 0, y: 0 }}
@@ -268,10 +312,17 @@ export default function CourseDetail() {
               {busy ? (
                 <ActivityIndicator color={c.onAccent} />
               ) : (
-                <Text style={styles.ctaText}>{primaryLabel}</Text>
+                <Text style={styles.ctaText}>{primaryAction.label}</Text>
               )}
             </LinearGradient>
           </Pressable>
+        ) : isInPerson ? (
+          <View style={[styles.locked, { borderColor: c.border, backgroundColor: c.pageBg }]}>
+            <Ionicons name="people-outline" size={18} color={c.textMuted} />
+            <Text style={{ color: c.textSecondary, fontSize: 13.5, flex: 1, lineHeight: 18 }}>
+              Bu eğitim yüz yüze veriliyor. Kayıt ve bilgi için medyatorakademi.com üzerinden bize ulaşabilirsin.
+            </Text>
+          </View>
         ) : (
           <View style={[styles.locked, { borderColor: c.border, backgroundColor: c.pageBg }]}>
             <Ionicons name="lock-closed" size={17} color={c.textMuted} />

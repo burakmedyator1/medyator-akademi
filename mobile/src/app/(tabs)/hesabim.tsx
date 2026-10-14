@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { DateField } from '@/components/form/DateField';
 import { AuthGate } from '@/components/AuthGate';
 import { api } from '@/api/client';
+import { IAP_ENABLED, restoreIAP } from '@/lib/iap';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/theme/theme';
 
@@ -96,6 +97,7 @@ function StudentAccount() {
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [savingPw, setSavingPw] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     api
@@ -151,6 +153,26 @@ function StudentAccount() {
   async function handleLogout() {
     await logout();
     router.replace('/(tabs)');
+  }
+
+  // Apple zorunlu: başka cihazda/yeniden kurulumda alınmış kursları geri getir.
+  // RevenueCat sahipliği okur → iapSync backend erişimini (Enrollment) tazeler.
+  async function handleRestore() {
+    setRestoring(true);
+    try {
+      await restoreIAP();
+      const { synced } = (await api.iapSync()) as { synced: number };
+      Alert.alert(
+        'Satın alımlar geri yüklendi',
+        synced > 0
+          ? `${synced} kurs erişimin hesabına tanımlandı.`
+          : 'Bu hesaba bağlı bir satın alma bulunamadı.',
+      );
+    } catch (err: any) {
+      Alert.alert('Hata', err?.message || 'Satın alımlar geri yüklenemedi.');
+    } finally {
+      setRestoring(false);
+    }
   }
 
   async function doDelete() {
@@ -218,6 +240,15 @@ function StudentAccount() {
         ) : null}
         <Button title="Şifreyi Güncelle" onPress={changePassword} loading={savingPw} />
       </Card>
+
+      {IAP_ENABLED ? (
+        <Button
+          title="Satın Alımları Geri Yükle"
+          variant="outline"
+          onPress={handleRestore}
+          loading={restoring}
+        />
+      ) : null}
 
       <Button title="Çıkış Yap" variant="outline" onPress={handleLogout} />
 

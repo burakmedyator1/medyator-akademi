@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api } from '@/api/client';
 import { getToken, setToken, getStoredUser, setStoredUser } from '@/api/storage';
+import { identifyIAP, resetIAP } from '@/lib/iap';
 
 export type Role = 'student' | 'instructor' | 'admin';
 
@@ -37,7 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const [stored, token] = await Promise.all([getStoredUser<User>(), getToken()]);
-        if (stored && token) setUser(stored);
+        if (stored && token) {
+          setUser(stored);
+          // Saklı oturumu RevenueCat'e de tanıt (satın alma/geri yükleme için).
+          identifyIAP(stored.id);
+        }
       } finally {
         setLoading(false);
       }
@@ -48,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setToken(token);
     await setStoredUser(userData);
     setUser(userData);
+    // RevenueCat app_user_id === User.id → backend webhook erişimi doğru hesaba verir.
+    identifyIAP(userData.id);
   }, []);
 
   const login = useCallback(
@@ -72,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setToken(null);
     await setStoredUser(null);
     setUser(null);
+    resetIAP();
   }, []);
 
   return (
