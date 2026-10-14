@@ -13,14 +13,16 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://medyatorakademi.com"
+        "EXPO_PUBLIC_API_URL": "https://medyatorakademi.com",
+        "EXPO_PUBLIC_RC_IOS_KEY": "appl_BZyfZreUhEfBjMxhcDovDuVnvUt"
       }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://medyatorakademi.com"
+        "EXPO_PUBLIC_API_URL": "https://medyatorakademi.com",
+        "EXPO_PUBLIC_RC_IOS_KEY": "appl_BZyfZreUhEfBjMxhcDovDuVnvUt"
       }
     }
   },
