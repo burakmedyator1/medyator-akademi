@@ -52,10 +52,9 @@ router.post('/revenuecat/webhook', async (req, res) => {
     }
     const event = req.body && req.body.event;
     if (!event) return res.status(200).json({ ok: true });
-    // Prod'da yalnız gerçek satın almalar (sandbox event'lerini yok say).
-    if (process.env.NODE_ENV === 'production' && event.environment && event.environment !== 'PRODUCTION') {
-      return res.status(200).json({ ok: true });
-    }
+    // Sandbox olayları da işlenir: App Review satın almayı sandbox'ta test eder ve
+    // Apple, prod sunucunun sandbox makbuzlarını da kabul etmesini önerir. Sandbox
+    // satın alma yalnız TestFlight testçilerinden ve inceleme ekibinden gelebilir.
     const userId = pickUserId(event);
     const courseId = productIdToCourseId(event.product_id, event.entitlement_ids);
     if (userId && courseId) {
